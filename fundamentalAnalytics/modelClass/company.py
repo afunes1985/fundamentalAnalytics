@@ -15,3 +15,4 @@ class Company(Base):
     name = Column(String(250), nullable=False)
     ticker = Column(String(45), nullable=False)
     sector = Column(String(45), nullable=False)
+    industry = Column(String(100), nullable=False)
