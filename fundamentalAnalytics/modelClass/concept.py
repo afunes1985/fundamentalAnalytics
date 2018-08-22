@@ -3,7 +3,7 @@ Created on 7 ago. 2018
 
 @author: afunes
 '''
-class FAConcept():
+class Concept():
     def __init__(self, row):
         if(row is not None):
             self.setAttr(row[0], row[1], row[2], row[3])

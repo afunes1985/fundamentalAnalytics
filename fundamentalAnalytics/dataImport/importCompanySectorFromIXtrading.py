@@ -14,8 +14,6 @@ from modelClass.company import Company
 
 
 try:
-    #connection = client.HTTPSConnection('api.iextrading.com', 443, timeout = 30)
-    
     dbconnector = DbConnector()
     session = dbconnector.getNewSession()
     
