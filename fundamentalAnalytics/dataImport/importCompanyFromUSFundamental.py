@@ -3,24 +3,20 @@ Created on 9 nov. 2017
 
 @author: afunes
 '''
-import httplib
-import json
+import logging
 
-from dao.dao import DaoCompany
+import requests
+
 from modelClass.company import Company
 
-connection = httplib.HTTPSConnection('api.usfundamentals.com', 443, timeout = 30)
-connection.request('GET', '/v1/companies/xbrl?format=json&token=mQ_RmHg4Dw63ZSK-deZzhQ', None, {})
+response = requests.get("https://api.usfundamentals.com/v1/companies/xbrl?format=json&token=mQ_RmHg4Dw63ZSK-deZzhQ", timeout = 10) 
+print('Response status ' + str(response.status_code))
 try:
-    response = connection.getresponse()
-    content = response.read()
-    # Success
-    print('Response status ' + str(response.status))
-    json_data = json.loads(content)
+    json_data = response.json()
     for x in json_data:
-        company = Company(None)
-        company.companyID = x['company_id']
-        company.name = x['name_latest']
-        DaoCompany.insertCompany(company)
-except httplib.HTTPException:
-    print('Exception during request')
+        print(x['company_id'])
+        #company = Company()
+        #company.companyID = x['company_id']
+        #company.name = x['name_latest']
+except Exception as e:
+    logging.warning(e)

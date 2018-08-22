@@ -6,7 +6,7 @@ Created on 18 ago. 2018
 from dao.dao import DaoCompanyFundamental
 
 
-class AFRatioEngine(object):
+class Engine(object):
 
 
     def __init__(self, params):

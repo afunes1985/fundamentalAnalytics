@@ -5,6 +5,7 @@ Created on 20 ago. 2018
 '''
 
 from pandas.core.frame import DataFrame
+from sqlalchemy.sql.expression import text
 
 from base.dbConnector import DbConnector
 import plotly.graph_objs as go
@@ -16,12 +17,14 @@ session = dbconnector.getNewSession()
 
 
 with dbconnector.engine.connect() as con:
-    query = "SELECT * FROM company_q_fundamental where indicatorID = 'CashAndCashEquivalentsAtCarryingValue' and companyID = '1318605'"
-    rs = con.execute(query)
+    #indicatorID = 'CashAndCashEquivalentsAtCarryingValue'
+    params = { 'indicatorID' : 'CashAndCashEquivalentsAtCarryingValue',
+               'companyID' : '1318605'}
+    query = text("SELECT * FROM company_q_fundamental where indicatorID = :indicatorID and companyID = :companyID")
+    rs = con.execute(query, params)
     df = DataFrame(rs.fetchall())
-    df.columns = rs.keys()
-    data = [go.Scatter(
-          x=rs.keys(),
-          y=df.values.tolist()[0])]
-    py.iplot(data)
+    #data = [go.Scatter(
+    #    x=rs.keys(),
+    #    y=df.values.tolist()[0])]
+    #py.iplot(data)
     print(df)
