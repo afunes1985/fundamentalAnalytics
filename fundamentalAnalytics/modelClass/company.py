@@ -9,7 +9,7 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
  
 class Company(Base):
-    __tablename__ = 'company'
+    __tablename__ = 'fa_company'
     id = Column(Integer, primary_key=True)
     companyID = Column(String(45), nullable=False)
     name = Column(String(250), nullable=False)
