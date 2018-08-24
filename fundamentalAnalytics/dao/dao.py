@@ -7,9 +7,18 @@ from sqlalchemy.sql.expression import text
 
 from base.dbConnector import DbConnector
 
+class GenericDao():
+    @staticmethod
+    def getFirstResult(objectClazz, attributeClazz, value):
+        dbconnector = DbConnector()
+        session = dbconnector.getNewSession()
+    
+        objectResult = session.query(objectClazz)\
+        .filter(attributeClazz.__eq__(value))\
+        .first()
+        return objectResult
 
 class DaoCompanyResult():
-
     
     @staticmethod
     def getCompanyResult(companyID, ticker, indicatorID):
