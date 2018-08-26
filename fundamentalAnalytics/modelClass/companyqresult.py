@@ -3,16 +3,18 @@ Created on 20 ago. 2018
 
 @author: afunes
 '''
-from sqlalchemy.ext.declarative.api import declarative_base
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, Float
+from sqlalchemy.orm import relationship, backref
+from sqlalchemy.sql.schema import ForeignKey
 
-Base = declarative_base()
+from modelClass import PersistenObject
 
-class CompanyQResult(Base):
+class CompanyQResult(PersistenObject):
     __tablename__ = 'fa_company_q_result'
-    id = Column(Integer, primary_key=True)
-    companyID = Column(Integer, nullable=False)
-    indicatorID = Column(String(200), nullable=False)
-    year = Column(Integer, nullable=False)
-    quarter = Column(Integer, nullable=False)
+    companyOID = Column(Integer, ForeignKey('fa_company.OID'))
+    company = relationship('Company', back_populates="companyQResultList")
+    conceptOID = Column(Integer, ForeignKey('fa_concept.OID'))
+    concept = relationship("Concept", backref=backref("companyQResult1"))
+    periodOID = Column(Integer, ForeignKey('fa_period.OID'))
+    period = relationship("Period", backref=backref("companyQResult2"))
     value = Column(Float(), nullable=False)

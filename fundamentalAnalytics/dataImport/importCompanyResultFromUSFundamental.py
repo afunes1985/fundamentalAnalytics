@@ -16,7 +16,7 @@ from modelClass.companyqresult import CompanyQResult
 dbconnector = DbConnector()
 session = dbconnector.getNewSession()
 
-ticker = 'TSLA'
+ticker = 'INTC'
 
 company = session.query(Company)\
 .filter(Company.ticker.__eq__(ticker))\

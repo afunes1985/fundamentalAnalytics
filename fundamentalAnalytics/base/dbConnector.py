@@ -6,7 +6,7 @@ Created on 20 ago. 2018
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
 
-class DbConnector():
+class DBConnector():
     
     def __init__(self):
         self.engine = create_engine('mysql+mysqlconnector://root:root@localhost/fundamenalanalytics')

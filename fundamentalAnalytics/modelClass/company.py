@@ -4,15 +4,15 @@ Created on 20 ago. 2018
 @author: afunes
 '''
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
- 
-Base = declarative_base()
- 
-class Company(Base):
+from sqlalchemy.orm import relationship, backref
+
+from modelClass import PersistenObject
+
+class Company(PersistenObject):
     __tablename__ = 'fa_company'
-    id = Column(Integer, primary_key=True)
-    companyID = Column(String(45), nullable=False)
+    CIK = Column(String(45), nullable=False)
     name = Column(String(250), nullable=False)
     ticker = Column(String(45), nullable=False)
     sector = Column(String(45), nullable=False)
     industry = Column(String(100), nullable=False)
+    companyQResultList = relationship("CompanyQResult", back_populates="company")

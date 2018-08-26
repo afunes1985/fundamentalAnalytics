@@ -3,11 +3,9 @@ Created on 9 nov. 2017
 
 @author: afunes
 '''
-import httplib
 import json
 import logging
 
-from dao.dao import DaoCompany
 from modelClass.company import Company
 
 

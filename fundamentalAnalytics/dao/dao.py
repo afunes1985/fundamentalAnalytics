@@ -5,24 +5,35 @@ Created on 20 ago. 2018
 '''
 from sqlalchemy.sql.expression import text
 
-from base.dbConnector import DbConnector
+from base.dbConnector import DBConnector
 
 class GenericDao():
     @staticmethod
-    def getFirstResult(objectClazz, attributeClazz, value):
-        dbconnector = DbConnector()
-        session = dbconnector.getNewSession()
+    def getFirstResult(objectClazz, attributeClazz, value, session = None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
     
         objectResult = session.query(objectClazz)\
         .filter(attributeClazz.__eq__(value))\
         .first()
+        return objectResult
+    
+    @staticmethod
+    def getOneResult(objectClazz, condition, session = None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        objectResult = session.query(objectClazz)\
+        .filter(condition)\
+        .one()
         return objectResult
 
 class DaoCompanyResult():
     
     @staticmethod
     def getCompanyResult(companyID, ticker, indicatorID):
-        dbconnector = DbConnector()
+        dbconnector = DBConnector()
         with dbconnector.engine.connect() as con:
             params = { 'indicatorID' : indicatorID,
                        'companyID' : companyID,
