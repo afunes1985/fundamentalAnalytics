@@ -6,7 +6,6 @@ Created on 26 ago. 2018
 from pyramid.config import Configurator
 
 from base.dbConnector import DBConnector
-from base.tools.singleton import Singleton
 from modelClass import initialize_sql
 
 
