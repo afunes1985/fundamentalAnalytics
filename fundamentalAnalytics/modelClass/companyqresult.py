@@ -4,10 +4,12 @@ Created on 20 ago. 2018
 @author: afunes
 '''
 from sqlalchemy import Column, Integer, Float
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy.sql.sqltypes import String
 
 from modelClass import PersistenObject
+
 
 class CompanyQResult(PersistenObject):
     __tablename__ = 'fa_company_q_result'
@@ -18,3 +20,4 @@ class CompanyQResult(PersistenObject):
     periodOID = Column(Integer, ForeignKey('fa_period.OID'))
     period = relationship("Period", back_populates="companyQResultList")
     value = Column(Float(), nullable=False)
+    periodType = Column(String(3), nullable=True)
