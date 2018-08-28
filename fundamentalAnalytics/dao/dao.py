@@ -9,13 +9,13 @@ from base.dbConnector import DBConnector
 
 class GenericDao():
     @staticmethod
-    def getFirstResult(objectClazz, attributeClazz, value, session = None):
+    def getFirstResult(objectClazz, condition, session = None):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
     
         objectResult = session.query(objectClazz)\
-        .filter(attributeClazz.__eq__(value))\
+        .filter(condition)\
         .first()
         return objectResult
     
@@ -40,10 +40,12 @@ class DaoCompanyResult():
                        'ticker' : ticker}
             query = text("""select CONCAT(year, 'Q', quarter) as yq, value 
                             FROM fa_company_q_result cqr
-                                inner join fa_company c on cqr.companyID = c.companyID
-                            where (cqr.indicatorID = :indicatorID or :indicatorID is null) 
-                                and (cqr.companyID = :companyID or :companyID is null)
-                                and (c.ticker = :ticker or :ticker is null)
+                                inner join fa_company company on cqr.companyOID = company.OID
+                                inner join fa_concept concept on cqr.conceptOID = concept.OID
+                                inner join fa_period period on cqr.periodOID = period.OID
+                            where (concept.conceptID = :indicatorID or :indicatorID is null) 
+                                and (company.CIK = :companyID or :companyID is null)
+                                and (company.ticker = :ticker or :ticker is null)
                             order by year, quarter""")
             rs = con.execute(query, params)
             return rs 
