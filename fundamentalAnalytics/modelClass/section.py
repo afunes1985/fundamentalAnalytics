@@ -12,8 +12,8 @@ from modelClass import PersistenObject
 
 class Section(PersistenObject):
     __tablename__ = 'fa_section'
-    section = Column(String(45), nullable=False)
-    subSection = Column(String(45), nullable=False)
-    currentNonCurrent = Column(String(45), nullable=False)
+    sectionID = Column(String(45), nullable=False)
+    subSectionID = Column(String(45), nullable=False)
+    currentNonCurrentID = Column(String(45), nullable=False)
     conceptOID = Column(Integer, ForeignKey('fa_concept.OID'))
     conceptList = relationship("Concept", back_populates="section")

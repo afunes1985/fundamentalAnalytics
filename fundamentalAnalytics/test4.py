@@ -15,5 +15,5 @@ session = DBConnector().getNewSession()
 company = GenericDao.getOneResult(Company,Company.ticker.__eq__("INTC") , session)
 
 for cqr in company.companyQResultList:
-    if (cqr.concept.conceptID == 'CashAndCashEquivalentsAtCarryingValue'):
-        print(cqr.period.year, cqr.period.quarter, cqr.concept.conceptID, cqr.concept.label, cqr.value)
+    if (cqr.concept.section.OID == 1):
+        print(cqr.concept.section.sectionID, cqr.period.year, cqr.period.quarter, cqr.concept.conceptID, cqr.concept.label, cqr.value, cqr.periodType)

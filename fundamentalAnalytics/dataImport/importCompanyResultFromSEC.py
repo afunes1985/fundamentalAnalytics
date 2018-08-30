@@ -54,35 +54,60 @@ def getValueFromKey(xmlDictRoot, key, contextRefToUse):
         value = None
         xmlItem = None
         contextRefToUseFI = "FI" + contextRefToUse
-        contextRefToUseFD = "FD" + contextRefToUse
+        contextRefToUseFDQTD = "FD" + contextRefToUse + "QTD"
+        contextRefToUseFDYTD = "FD" + contextRefToUse + "YTD"
         if isinstance(xmlDictRoot[key], list):
             logging.getLogger('info').debug("***************************** " + str(xmlDictRoot[key]))
+            matchingList = []
             for item in xmlDictRoot[key]:
+                cqrRow = CompanyQResult()
+                #Si tiene context ref
                 if(item.get('@contextRef', -1) != -1):
-                    if(item.get('@contextRef', -1) == contextRefToUseFI):
-                        logging.getLogger('info').info(str(item.get('@contextRef', -1)) + " " + str(item.get('#text', -1)))
-                        xmlItem = item
-                    elif(len(item.get('@contextRef', -1)) >= 11):
-                        logging.getLogger('info').info(str(item.get('@contextRef', -1)) + " " + str(item.get('#text', -1)))
-                        xmlItem = item
+                    contextRef = item['@contextRef']
+                    if(contextRef.find("_", 0) != -1):
+                            logging.getLogger('notFound_FIWith').debug("With - " + contextRefToUseFI + " " + key + " " + str(item))
+                    elif(len(contextRef) == 8):
+                        contextRef = contextRef
+                    #Si conextRef es igual a FI2018Q2
+                    elif(contextRef == contextRefToUseFI):
+                        cqrRow.periodType = "FIX"
+                        cqrRow.row = item
+                        matchingList.append(cqrRow)
+                    #Si contextRef es igual a FD2018Q2QTD
+                    elif(contextRef[0:11]  == contextRefToUseFDQTD):
+                        logging.getLogger('tempData').debug(key + " " + str(item))
+                        cqrRow.periodType = contextRef[8:11]
+                        cqrRow.row = item
+                        matchingList.append(cqrRow)
                     else:
                         if(item.get('@contextRef', -1)[0:2] == "FI"):
                             logging.getLogger('notFound_FI').debug("Not Found for " + contextRefToUseFI + " " + key + " " + str(item))
                         elif(item.get('@contextRef', -1)[0:2] == "FD"):
-                            logging.getLogger('notFound_FD').debug("Not Found for " + contextRefToUseFD + " " + key + " " + str(item))
+                            logging.getLogger('notFound_FD').debug("Not Found for " + contextRefToUseFDQTD + " " + key + " " + str(item))
                         else:
                             logging.getLogger('skippedConcept').debug("Skipped concept for " + contextRefToUseFI + " " + str(item))
-                        return None
                 else:
                     logging.getLogger('notContextRef').debug(item)
+            if(not matchingList):
+                logging.getLogger('noMatching').debug(key + " " + contextRefToUse + " " + str(xmlDictRoot[key]))
+                return None
+            elif(len(matchingList) == 1):
+                cqr = matchingList[0]
+            else:
+                logging.getLogger('matchListMoreThanOne').debug(key + " " + contextRefToUse + " " + str(len(matchingList)))
+                return None
         else:
-            xmlItem = xmlDictRoot[key]
+            cqr = CompanyQResult()
+            cqr.row = xmlDictRoot[key]
+            cqr.periodType = "FIX"
             
+        xmlItem = cqr.row
+        #Valida que este dentro de las unidades permitidas (USD, SHARES, ETC)
         if(xmlItem.get('@unitRef', -1) != -1):
             if any(xmlItem['@unitRef'] in s for s in unitRefList):
                 value0 = xmlItem.get('#text', -1)
             else:
-                logging.getLogger('skippedConcept').info("Skipped concept " + str(xmlItem))
+                logging.getLogger('skippedConcept').debug("unitRef not valid " + str(xmlItem))
                 return None
         else:
             logging.getLogger('notUnitRef').debug("Not unitRef " + str(xmlItem))
@@ -90,7 +115,6 @@ def getValueFromKey(xmlDictRoot, key, contextRefToUse):
         try:
             if(value0 is not None):
                 value = Decimal(value0)
-                cqr = CompanyQResult()
                 cqr.value = value
                 return cqr
         except InvalidOperation:
@@ -147,7 +171,7 @@ def importSECFile(filenameList, replace, yearStrategy, session):
             point3 = fileText.find("</XBRL>", point2, len(fileText))
             xmlText = fileText[point2:point3]
             xmlDict = xmltodict.parse(xmlText)
-            #logging.debug(xmlText)
+            logging.getLogger('bodyXML').debug(xmlText)
             resultDict = {}
             xmlDictRoot = xmlDict.get('xbrli:xbrl', -1)
             if(xmlDictRoot == -1):
@@ -247,17 +271,21 @@ yearStrategy = YearStrategy.DOC_PERIOD_END_DATE
 Initializer()
 session = DBConnector().getNewSession()
 company = GenericDao.getOneResult(Company,Company.ticker.__eq__(COMPANY_TICKER), session)
-periodList = objectResult = session.query(Period).filter(and_(or_(Period.year < 2018, and_(Period.year >= 2018, Period.quarter <= 3)), Period.year > 2016)).order_by(Period.year.asc(), Period.quarter.asc()).all()
-
+#periodList = objectResult = session.query(Period).filter(and_(or_(Period.year < 2018, and_(Period.year >= 2018, Period.quarter <= 3)), Period.year > 2016)).order_by(Period.year.asc(), Period.quarter.asc()).all()
+periodList = objectResult = session.query(Period).filter(and_(Period.year == 2018, Period.quarter == 3)).order_by(Period.year.asc(), Period.quarter.asc()).all()
 createLog('InvalidOperation', logging.DEBUG)
 createLog('general', logging.DEBUG)
-createLog('info', logging.INFO)
+createLog('bodyXML', logging.DEBUG)
 createLog('skippedConcept', logging.DEBUG)
-createLog('notUnitRef', logging.INFO)
-createLog('notContextRef', logging.INFO)
+createLog('notUnitRef', logging.DEBUG)
+createLog('notContextRef', logging.DEBUG)
 createLog('notFound_FD', logging.DEBUG)
 createLog('notFound_FI', logging.DEBUG)
 createLog('addResultData', logging.INFO)
+createLog('noMatching', logging.DEBUG)
+createLog('notFound_FIWith', logging.DEBUG)
+createLog('matchListMoreThanOne', logging.DEBUG)
+createLog('tempData', logging.DEBUG)
 
 for period in periodList:
     readSECIndexFor(period, company, replace, yearStrategy)
