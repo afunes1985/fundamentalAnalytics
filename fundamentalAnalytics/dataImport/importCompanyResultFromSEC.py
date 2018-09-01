@@ -26,6 +26,14 @@ from modelClass.period import Period
 import pandas as pd
 
 
+class LoggingException(Exception):
+    def __init__(self, loggerName, message):
+        self.loggerName = loggerName
+        self.message = message
+
+    def log(self):
+        logging.getLogger(self.loggerName).debug(self.message)
+
 from enum import Enum
 class YearStrategy(Enum):
     FISCAL_YEAR = 1
@@ -34,183 +42,10 @@ class YearStrategy(Enum):
     
 unitRefList = ['usd', 'number', 'shares', 'usdPerShare']
 
-def createLog(logName, level):
-    logger= logging.getLogger(logName)
-    logger.setLevel(level)
-    fh = logging.FileHandler('log\\' + logName + '.log', mode='w')
-    fh.setLevel(level)
-    fh.setFormatter(logging.Formatter('%(levelname)s:%(message)s'))
-    logger.addHandler(fh)
-    
-def setDictValue(dict_, conceptID, value):
-    if(dict_.get(conceptID, -1) == -1):
-        dict_[conceptID] = value
-    else:
-        logging.getLogger('general').warning("Duplicated key " + str(conceptID) + " " +str(value))
-
-def getValueFromKey(xmlDictRoot, key, contextRefToUse):
-    try:
-        value0 = None
-        value = None
-        xmlItem = None
-        contextRefToUseFI = "FI" + contextRefToUse
-        contextRefToUseFDQTD = "FD" + contextRefToUse + "QTD"
-        contextRefToUseFDYTD = "FD" + contextRefToUse + "YTD"
-        if isinstance(xmlDictRoot[key], list):
-            logging.getLogger('info').debug("***************************** " + str(xmlDictRoot[key]))
-            matchingList = []
-            for item in xmlDictRoot[key]:
-                cqrRow = CompanyQResult()
-                #Si tiene context ref
-                if(item.get('@contextRef', -1) != -1):
-                    contextRef = item['@contextRef']
-                    if(contextRef.find("_", 0) != -1):
-                            logging.getLogger('notFound_FIWith').debug("With - " + contextRefToUseFI + " " + key + " " + str(item))
-                    elif(len(contextRef) == 8):
-                        contextRef = contextRef
-                    #Si conextRef es igual a FI2018Q2
-                    elif(contextRef == contextRefToUseFI):
-                        cqrRow.periodType = "FIX"
-                        cqrRow.row = item
-                        matchingList.append(cqrRow)
-                    #Si contextRef es igual a FD2018Q2QTD
-                    elif(contextRef[0:11]  == contextRefToUseFDQTD):
-                        logging.getLogger('tempData').debug(key + " " + str(item))
-                        cqrRow.periodType = contextRef[8:11]
-                        cqrRow.row = item
-                        matchingList.append(cqrRow)
-                    else:
-                        if(item.get('@contextRef', -1)[0:2] == "FI"):
-                            logging.getLogger('notFound_FI').debug("Not Found for " + contextRefToUseFI + " " + key + " " + str(item))
-                        elif(item.get('@contextRef', -1)[0:2] == "FD"):
-                            logging.getLogger('notFound_FD').debug("Not Found for " + contextRefToUseFDQTD + " " + key + " " + str(item))
-                        else:
-                            logging.getLogger('skippedConcept').debug("Skipped concept for " + contextRefToUseFI + " " + str(item))
-                else:
-                    logging.getLogger('notContextRef').debug(item)
-            if(not matchingList):
-                logging.getLogger('noMatching').debug(key + " " + contextRefToUse + " " + str(xmlDictRoot[key]))
-                return None
-            elif(len(matchingList) == 1):
-                cqr = matchingList[0]
-            else:
-                logging.getLogger('matchListMoreThanOne').debug(key + " " + contextRefToUse + " " + str(len(matchingList)))
-                return None
-        else:
-            cqr = CompanyQResult()
-            cqr.row = xmlDictRoot[key]
-            cqr.periodType = "FIX"
-            
-        xmlItem = cqr.row
-        #Valida que este dentro de las unidades permitidas (USD, SHARES, ETC)
-        if(xmlItem.get('@unitRef', -1) != -1):
-            if any(xmlItem['@unitRef'] in s for s in unitRefList):
-                value0 = xmlItem.get('#text', -1)
-            else:
-                logging.getLogger('skippedConcept').debug("unitRef not valid " + str(xmlItem))
-                return None
-        else:
-            logging.getLogger('notUnitRef').debug("Not unitRef " + str(xmlItem))
-            return None
-        try:
-            if(value0 is not None):
-                value = Decimal(value0)
-                cqr.value = value
-                return cqr
-        except InvalidOperation:
-            logging.getLogger('InvalidOperation').warning("Error formating field " + str(xmlItem))
-    except Exception:
-        logging.getLogger('general').exception("Error formating field " + key)
-        return None
-
-def addResultData(resultDict, company, period, session):
-    for conceptID, cqr in resultDict.items():
-        try:
-            concept = GenericDao.getOneResult(Concept, Concept.conceptID.__eq__(conceptID), session)
-        except NoResultFound:
-            logging.getLogger('general').debug("Add " +conceptID)
-            concept = Concept()
-            concept.conceptID = conceptID
-            session.add(concept)
-            session.flush()
-        try:
-            cqrToAdd = GenericDao.getOneResult(CompanyQResult, and_(CompanyQResult.company == company,  CompanyQResult.period == period, CompanyQResult.concept == concept), session)
-        except NoResultFound:
-            cqrToAdd = CompanyQResult()
-        cqrToAdd.company = company
-        cqrToAdd.concept = concept
-        cqrToAdd.period = period
-        cqrToAdd.value = cqr.value
-        cqrToAdd.periodType = cqr.periodType
-        session.add(cqrToAdd)
-        logging.getLogger('addResultData').debug("Added " + str(cqrToAdd.__dict__))
-    session.commit()
-    
-def getFiscalYear(documentPeriodYear, fiscalYear, yearStrategy):
-    if(documentPeriodYear != fiscalYear):
-        if (yearStrategy == YearStrategy.ERROR):
-            raise Exception('FISCAL YEAR IS DIF THAN PERIOD YEAR ' + fiscalYear + " " + documentPeriodYear)
-        else:
-            logging.getLogger('general').warning('FISCAL YEAR IS DIF THAN PERIOD YEAR ' + fiscalYear + " " + documentPeriodYear)
-            fiscalYearToUse = fiscalYear
-    if(yearStrategy == YearStrategy.FISCAL_YEAR):
-        fiscalYearToUse = fiscalYear
-    elif(yearStrategy == YearStrategy.DOC_PERIOD_END_DATE):
-        fiscalYearToUse = documentPeriodYear
-    else:
-        fiscalYearToUse = fiscalYear
-    return fiscalYearToUse
-
-def importSECFile(filenameList, replace, yearStrategy, session):
-        for filename in filenameList:
-            logging.info("Processing file " + filename)
-            fileText = getTxtFileFromCache("C://Users//afunes//iCloudDrive//PortfolioViewer//cache//" + filename, 
-                                        "https://www.sec.gov/Archives/" + filename)
-            point1 = fileText.find("EX-101.INS", 0, len(fileText))
-            point2 = fileText.find("<XBRL>", point1, len(fileText)) + len("<XBRL>")+1
-            point3 = fileText.find("</XBRL>", point2, len(fileText))
-            xmlText = fileText[point2:point3]
-            xmlDict = xmltodict.parse(xmlText)
-            logging.getLogger('bodyXML').debug(xmlText)
-            resultDict = {}
-            xmlDictRoot = xmlDict.get('xbrli:xbrl', -1)
-            if(xmlDictRoot == -1):
-                xmlDictRoot = xmlDict.get('xbrl', -1)
-            logging.getLogger('general').debug("filename " + filename)
-            CIK = xmlDictRoot['dei:EntityCentralIndexKey']['#text']
-            logging.getLogger('general').debug("CIK " + CIK)
-            fiscalYear = xmlDictRoot['dei:DocumentFiscalYearFocus']['#text']
-            logging.getLogger('general').debug("fiscalYear " + fiscalYear)
-            fiscalPeriod = xmlDictRoot['dei:DocumentFiscalPeriodFocus']['#text']
-            fiscalPeriod = fiscalPeriod[1:2]
-            logging.getLogger('general').debug("fiscalPeriod " + fiscalPeriod)
-            documentType = xmlDictRoot['dei:DocumentType']['#text']
-            logging.getLogger('general').debug("documentType " + documentType)
-            documentPeriodEndDate = xmlDictRoot['dei:DocumentPeriodEndDate']['#text']
-            logging.getLogger('general').debug("documentPeriodEndDate " + documentPeriodEndDate)
-            documentPeriodYear = documentPeriodEndDate[0:4]
-            fiscalYearToUse = getFiscalYear(documentPeriodYear, fiscalYear, yearStrategy)
-            if (fiscalPeriod =='Y'):
-                fiscalPeriod = 4
-            contextRefToUse = fiscalYearToUse + "Q" + str(fiscalPeriod)
-            for key in xmlDictRoot:
-                if(key[0:8] == "us-gaap:" and key.find("TextBlock") == -1):
-                    conceptID = key[8:len(key)]
-                    cqr = getValueFromKey(xmlDictRoot, key, contextRefToUse)
-                    if cqr is not None:
-                        setDictValue(resultDict, conceptID, cqr)
-            company = GenericDao.getOneResult(Company,Company.ticker.__eq__("INTC") , session)
-            period = GenericDao.getOneResult(Period, and_(Period.year.__eq__(fiscalYearToUse),Period.quarter.__eq__(fiscalPeriod)), session)
-            
-            if(replace or not session.query(exists().where(and_(CompanyQResult.period == period, CompanyQResult.company == company))).scalar()):
-                addResultData(resultDict, company, period, session)
-            else:
-                logging.warning("Exists result for period " + str(period.year) + "-" +  str(period.quarter))
-
 def getBinaryFileFromCache(filename, url):
     xbrlFile = Path(filename)
     if xbrlFile.exists():
-        with open(filename, mode='rb') as file: # b is important -> binary
+        with open(filename, mode='rb') as file: 
             file = file.read()
     else:
         response = requests.get(url, timeout = 30) 
@@ -236,6 +71,186 @@ def getTxtFileFromCache(filename, url):
             f.write(response.content)
             fileText = response.text
     return fileText
+
+
+def createLog(logName, level):
+    logger= logging.getLogger(logName)
+    logger.setLevel(level)
+    fh = logging.FileHandler('log\\' + logName + '.log', mode='w')
+    fh.setLevel(level)
+    fh.setFormatter(logging.Formatter('%(levelname)s:%(message)s'))
+    logger.addHandler(fh)
+    
+def setDictValue(dict_, conceptID, value):
+    if(dict_.get(conceptID, -1) == -1):
+        dict_[conceptID] = value
+    else:
+        logging.getLogger('general').warning("Duplicated key " + str(conceptID) + " " +str(value))
+
+def getValueFromElement(xmlElement):
+    value = None
+    value0 = None
+    #Valida que este dentro de las unidades permitidas (USD, SHARES, ETC)
+    if(xmlElement.get('@unitRef', -1) != -1):
+        if any(xmlElement['@unitRef'] in s for s in unitRefList):
+            value0 = xmlElement.get('#text', -1)
+        else:
+            raise LoggingException('skipped', "unitRef not valid " + str(xmlElement))
+    else:
+        raise LoggingException('notinclude_UnitRef', "Not unitRef " + str(xmlElement))
+    try:
+        if(value0 is not None):
+            value = Decimal(value0)
+            return value
+    except InvalidOperation:
+        raise LoggingException('InvalidOperation_convertToDecimal', "Error formating field " + str(xmlElement))
+
+def addResultData(resultList, company, period, session):
+    for cqr in resultList:
+        try:
+            concept = GenericDao.getOneResult(Concept, Concept.conceptID.__eq__(cqr.conceptID), session)
+        except NoResultFound:
+            logging.getLogger('general').debug("Add " +cqr.conceptID)
+            concept = Concept()
+            concept.conceptID = cqr.conceptID
+            session.add(concept)
+            session.flush()
+        try:
+            cqrToAdd = GenericDao.getOneResult(CompanyQResult, and_(CompanyQResult.company == company,  CompanyQResult.period == period, CompanyQResult.concept == concept, CompanyQResult.periodType == cqr.periodType), session)
+        except NoResultFound:
+            cqrToAdd = CompanyQResult()
+        cqrToAdd.company = company
+        cqrToAdd.concept = concept
+        cqrToAdd.period = period
+        cqrToAdd.value = cqr.value
+        cqrToAdd.periodType = cqr.periodType
+        session.add(cqrToAdd)
+        logging.getLogger('addResultData').debug("Added " + str(cqr.conceptID) + " " + cqr.periodType)
+    session.commit()
+    
+def getFiscalYear(documentPeriodYear, fiscalYear, yearStrategy):
+    if(documentPeriodYear != fiscalYear):
+        if (yearStrategy == YearStrategy.ERROR):
+            raise Exception('FISCAL YEAR IS DIF THAN PERIOD YEAR ' + fiscalYear + " " + documentPeriodYear)
+        else:
+            logging.getLogger('general').warning('FISCAL YEAR IS DIF THAN PERIOD YEAR ' + fiscalYear + " " + documentPeriodYear)
+            fiscalYearToUse = fiscalYear
+    if(yearStrategy == YearStrategy.FISCAL_YEAR):
+        fiscalYearToUse = fiscalYear
+    elif(yearStrategy == YearStrategy.DOC_PERIOD_END_DATE):
+        fiscalYearToUse = documentPeriodYear
+    else:
+        fiscalYearToUse = fiscalYear
+    return fiscalYearToUse
+
+def getCQRListFromTagName(xmlDictRoot, tagName, contextRefToUse):
+    resultList = []
+    if isinstance(xmlDictRoot[tagName], list):
+        for xmlElement in xmlDictRoot[tagName]:
+            try:
+                cqr =  getCQRFromElement(element = xmlElement, tagName = tagName, contextRefToUse = contextRefToUse)
+                resultList.append(cqr)
+            except LoggingException as le:
+                le.log()
+    else:
+        try:
+            cqr =  getCQRFromElement(element = xmlDictRoot[tagName], tagName = tagName, contextRefToUse = contextRefToUse)
+            resultList.append(cqr)
+        except LoggingException as le:
+            le.log()
+    if(not resultList):
+        logging.getLogger('matchList_empty').debug(tagName + " " + contextRefToUse + " " + str(xmlDictRoot[tagName]))
+    return resultList
+
+
+def getCQRFromElement(element, tagName, contextRefToUse):
+        contextRefToUseFI = "FI" + contextRefToUse
+        contextRefToUseFDQTD = "FD" + contextRefToUse + "QTD"
+        contextRefToUseFDYTD = "FD" + contextRefToUse + "YTD"
+        conceptID = tagName[8:len(tagName)]
+        #Si tiene context ref
+        if(element.get('@contextRef', -1) != -1):
+            contextRef = element['@contextRef']
+            cqr = CompanyQResult()
+            cqr.conceptID = conceptID
+            cqr.value = getValueFromElement(element)
+            cqr.row = element
+            if(contextRef.find("_", 0) != -1):
+                raise LoggingException('skipped_underscore', "With underscore " + contextRefToUseFI + " " + tagName + " " + str(element))
+            #Si conextRef es igual a FI2018Q2
+            elif(contextRef == contextRefToUseFI):
+                cqr.periodType = "FIX"
+                return cqr
+            #Si contextRef es igual a FD2018Q2QTD
+            elif(contextRef[0:11]  == contextRefToUseFDQTD):
+                logging.getLogger('tempData').debug(tagName + " " + str(element))
+                cqr.periodType = contextRef[8:11]
+                return cqr
+            #Si contextRef es igual a FD2018Q2QTD
+            elif(contextRef[0:11]  == contextRefToUseFDYTD):
+                #logging.getLogger('tempData').debug(tagName + " " + str(element))
+                cqr.periodType = contextRef[8:11]
+                return cqr
+            else:
+                if(contextRef[0:2] == "FI"):
+                    raise LoggingException('skipped_FI', "Not Found for " + contextRefToUseFI + " " + tagName + " " + str(element))
+                elif(contextRef[0:2] == "FD"):
+                    raise LoggingException('skipped_FD', "Not Found for " + contextRefToUseFDQTD + " " + tagName + " " + str(element))
+                else:
+                    raise LoggingException('skipped', "Skipped concept for " + contextRefToUseFI + " " + str(element))
+        else:
+            raise LoggingException('notinclude_ContextRef', str(element))
+
+def getCQRListFromXML(xmlDictRoot, contextRefToUse):
+    qrcResultList = []
+    for tagName in xmlDictRoot:
+        if(tagName[0:8] == "us-gaap:" and tagName.find("TextBlock") == -1):
+            returnList = getCQRListFromTagName(xmlDictRoot, tagName, contextRefToUse)
+            if (returnList is not None):
+                qrcResultList = qrcResultList + returnList
+    return qrcResultList
+
+def importSECFile(filenameList, replace, yearStrategy, session):
+        for filename in filenameList:
+            logging.info("Processing file " + filename)
+            fileText = getTxtFileFromCache("C://Users//afunes//iCloudDrive//PortfolioViewer//cache//" + filename, 
+                                        "https://www.sec.gov/Archives/" + filename)
+            point1 = fileText.find("EX-101.INS", 0, len(fileText))
+            point2 = fileText.find("<XBRL>", point1, len(fileText)) + len("<XBRL>")+1
+            point3 = fileText.find("</XBRL>", point2, len(fileText))
+            xmlText = fileText[point2:point3]
+            xmlDict = xmltodict.parse(xmlText)
+            logging.getLogger('bodyXML').debug(xmlText)
+            
+            xmlDictRoot = xmlDict.get('xbrli:xbrl', -1)
+            if(xmlDictRoot == -1):
+                xmlDictRoot = xmlDict.get('xbrl', -1)
+            logging.getLogger('general').debug("filename " + filename)
+            CIK = xmlDictRoot['dei:EntityCentralIndexKey']['#text']
+            logging.getLogger('general').debug("CIK " + CIK)
+            fiscalYear = xmlDictRoot['dei:DocumentFiscalYearFocus']['#text']
+            logging.getLogger('general').debug("fiscalYear " + fiscalYear)
+            fiscalPeriod = xmlDictRoot['dei:DocumentFiscalPeriodFocus']['#text']
+            fiscalPeriod = fiscalPeriod[1:2]
+            logging.getLogger('general').debug("fiscalPeriod " + fiscalPeriod)
+            documentType = xmlDictRoot['dei:DocumentType']['#text']
+            logging.getLogger('general').debug("documentType " + documentType)
+            documentPeriodEndDate = xmlDictRoot['dei:DocumentPeriodEndDate']['#text']
+            logging.getLogger('general').debug("documentPeriodEndDate " + documentPeriodEndDate)
+            documentPeriodYear = documentPeriodEndDate[0:4]
+            fiscalYearToUse = getFiscalYear(documentPeriodYear, fiscalYear, yearStrategy)
+            if (fiscalPeriod =='Y'):
+                fiscalPeriod = 4
+            contextRefToUse = fiscalYearToUse + "Q" + str(fiscalPeriod)
+            qrcResultList = getCQRListFromXML(xmlDictRoot, contextRefToUse)
+            company = GenericDao.getOneResult(Company,Company.ticker.__eq__("INTC") , session)
+            period = GenericDao.getOneResult(Period, and_(Period.year.__eq__(fiscalYearToUse),Period.quarter.__eq__(fiscalPeriod)), session)
+            
+            if(replace or not session.query(exists().where(and_(CompanyQResult.period == period, CompanyQResult.company == company))).scalar()):
+                addResultData(qrcResultList, company, period, session)
+            else:
+                logging.warning("Exists result for period " + str(period.year) + "-" +  str(period.quarter))
+
 
 def readSECIndexFor(period, company, replace, yearStrategy):
     logging.info("Processing index file " + str(period.year) + "-" +  str(period.quarter))   
@@ -273,18 +288,17 @@ session = DBConnector().getNewSession()
 company = GenericDao.getOneResult(Company,Company.ticker.__eq__(COMPANY_TICKER), session)
 #periodList = objectResult = session.query(Period).filter(and_(or_(Period.year < 2018, and_(Period.year >= 2018, Period.quarter <= 3)), Period.year > 2016)).order_by(Period.year.asc(), Period.quarter.asc()).all()
 periodList = objectResult = session.query(Period).filter(and_(Period.year == 2018, Period.quarter == 3)).order_by(Period.year.asc(), Period.quarter.asc()).all()
-createLog('InvalidOperation', logging.DEBUG)
 createLog('general', logging.DEBUG)
 createLog('bodyXML', logging.DEBUG)
-createLog('skippedConcept', logging.DEBUG)
-createLog('notUnitRef', logging.DEBUG)
-createLog('notContextRef', logging.DEBUG)
-createLog('notFound_FD', logging.DEBUG)
-createLog('notFound_FI', logging.DEBUG)
-createLog('addResultData', logging.INFO)
-createLog('noMatching', logging.DEBUG)
-createLog('notFound_FIWith', logging.DEBUG)
-createLog('matchListMoreThanOne', logging.DEBUG)
+createLog('InvalidOperation_convertToDecimal', logging.DEBUG)
+createLog('notinclude_UnitRef', logging.DEBUG)
+createLog('notinclude_ContextRef', logging.DEBUG)
+createLog('skipped_FD', logging.DEBUG)
+createLog('skipped_FI', logging.DEBUG)
+createLog('skipped_underscore', logging.DEBUG)
+createLog('skipped', logging.DEBUG)
+createLog('addResultData', logging.DEBUG)
+createLog('matchList_empty', logging.DEBUG)
 createLog('tempData', logging.DEBUG)
 
 for period in periodList:
