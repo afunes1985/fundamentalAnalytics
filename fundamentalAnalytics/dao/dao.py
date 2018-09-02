@@ -42,10 +42,10 @@ class GenericDao():
 class DaoCompanyResult():
     
     @staticmethod
-    def getCompanyResult(companyID = None, ticker = None, indicatorID = None, sectionID = None, periodType = None):
+    def getCompanyResult(companyID = None, ticker = None, conceptID = None, sectionID = None, periodType = None):
         dbconnector = DBConnector()
         with dbconnector.engine.connect() as con:
-            params = { 'indicatorID' : indicatorID,
+            params = { 'conceptID' : conceptID,
                        'companyID' : companyID,
                        'ticker' : ticker,
                        'sectionID' : sectionID,
@@ -56,7 +56,7 @@ class DaoCompanyResult():
                                 inner join fa_concept concept on cqr.conceptOID = concept.OID
                                 inner join fa_period period on cqr.periodOID = period.OID
                                 left join fa_section section on concept.OID = section.conceptOID
-                            where (concept.conceptID = :indicatorID or :indicatorID is null) 
+                            where (concept.conceptID = :conceptID or :conceptID is null) 
                                 and (company.CIK = :companyID or :companyID is null)
                                 and (company.ticker = :ticker or :ticker is null)
                                 and (section.sectionID = :sectionID or :sectionID is null)
