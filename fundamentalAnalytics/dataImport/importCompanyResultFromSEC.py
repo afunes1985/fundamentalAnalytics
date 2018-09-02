@@ -149,6 +149,7 @@ def getCQRListFromTagName(xmlDictRoot, tagName, contextRefToUse):
         for xmlElement in xmlDictRoot[tagName]:
             try:
                 cqr =  getCQRFromElement(element = xmlElement, tagName = tagName, contextRefToUse = contextRefToUse)
+                logging.getLogger('tempData').debug("Add to list " + cqr.conceptID)
                 resultList.append(cqr)
             except LoggingException as le:
                 le.log()
@@ -183,12 +184,10 @@ def getCQRFromElement(element, tagName, contextRefToUse):
                 return cqr
             #Si contextRef es igual a FD2018Q2QTD
             elif(contextRef[0:11]  == contextRefToUseFDQTD):
-                logging.getLogger('tempData').debug(tagName + " " + str(element))
                 cqr.periodType = contextRef[8:11]
                 return cqr
             #Si contextRef es igual a FD2018Q2QTD
             elif(contextRef[0:11]  == contextRefToUseFDYTD):
-                #logging.getLogger('tempData').debug(tagName + " " + str(element))
                 cqr.periodType = contextRef[8:11]
                 return cqr
             else:
@@ -197,7 +196,7 @@ def getCQRFromElement(element, tagName, contextRefToUse):
                 elif(contextRef[0:2] == "FD"):
                     raise LoggingException('skipped_FD', "Not Found for " + contextRefToUseFDQTD + " " + tagName + " " + str(element))
                 else:
-                    raise LoggingException('skipped', "Skipped concept for " + contextRefToUseFI + " " + str(element))
+                    raise LoggingException('skipped', "Skipped concept for " + contextRefToUseFI + " " + tagName + " " + str(element))
         else:
             raise LoggingException('notinclude_ContextRef', str(element))
 
@@ -210,9 +209,8 @@ def getCQRListFromXML(xmlDictRoot, contextRefToUse):
                 qrcResultList = qrcResultList + returnList
     return qrcResultList
 
-def importSECFile(filenameList, replace, yearStrategy, session):
+def importSECFile(filenameList, replace, yearStrategy, company, session):
         for filename in filenameList:
-            logging.info("Processing file " + filename)
             fileText = getTxtFileFromCache("C://Users//afunes//iCloudDrive//PortfolioViewer//cache//" + filename, 
                                         "https://www.sec.gov/Archives/" + filename)
             point1 = fileText.find("EX-101.INS", 0, len(fileText))
@@ -243,7 +241,6 @@ def importSECFile(filenameList, replace, yearStrategy, session):
                 fiscalPeriod = 4
             contextRefToUse = fiscalYearToUse + "Q" + str(fiscalPeriod)
             qrcResultList = getCQRListFromXML(xmlDictRoot, contextRefToUse)
-            company = GenericDao.getOneResult(Company,Company.ticker.__eq__("INTC") , session)
             period = GenericDao.getOneResult(Period, and_(Period.year.__eq__(fiscalYearToUse),Period.quarter.__eq__(fiscalPeriod)), session)
             
             if(replace or not session.query(exists().where(and_(CompanyQResult.period == period, CompanyQResult.company == company))).scalar()):
@@ -267,18 +264,19 @@ def readSECIndexFor(period, company, replace, yearStrategy):
             df = pd.read_csv(StringIO(text2), sep="|")
             df.set_index("CIK", inplace=True)
             df.head()
+            logging.getLogger('bodyIndex').debug(df.to_string())
             rowData0 = df.loc[company.CIK]
             if isinstance(rowData0, DataFrame):
                 for rowData1 in rowData0.iterrows():
                     filename = rowData1[1]["Filename"]
                     formType = rowData1[1]["Form Type"]
                     if(formType == "10-Q" or formType == "10-K"):
-                        importSECFile([filename], replace, yearStrategy, session)
+                        importSECFile([filename], replace, yearStrategy, company, session)
             else:
                 filename = rowData0["Filename"]
                 formType = rowData0["Form Type"]
                 if(formType == "10-Q" or formType == "10-K"):
-                    importSECFile([filename], replace, yearStrategy, session)
+                    importSECFile([filename], replace, yearStrategy, company, session)
 
 COMPANY_TICKER = 'INTC'
 replace = True
@@ -286,20 +284,21 @@ yearStrategy = YearStrategy.DOC_PERIOD_END_DATE
 Initializer()
 session = DBConnector().getNewSession()
 company = GenericDao.getOneResult(Company,Company.ticker.__eq__(COMPANY_TICKER), session)
-#periodList = objectResult = session.query(Period).filter(and_(or_(Period.year < 2018, and_(Period.year >= 2018, Period.quarter <= 3)), Period.year > 2016)).order_by(Period.year.asc(), Period.quarter.asc()).all()
-periodList = objectResult = session.query(Period).filter(and_(Period.year == 2018, Period.quarter == 3)).order_by(Period.year.asc(), Period.quarter.asc()).all()
+periodList = objectResult = session.query(Period).filter(and_(or_(Period.year < 2018, and_(Period.year >= 2018, Period.quarter <= 3)), Period.year > 2012)).order_by(Period.year.asc(), Period.quarter.asc()).all()
+#periodList = objectResult = session.query(Period).filter(and_(Period.year == 2018, Period.quarter == 2)).order_by(Period.year.asc(), Period.quarter.asc()).all()
 createLog('general', logging.DEBUG)
-createLog('bodyXML', logging.DEBUG)
+createLog('bodyIndex', logging.INFO)
+createLog('bodyXML', logging.INFO)
 createLog('InvalidOperation_convertToDecimal', logging.DEBUG)
-createLog('notinclude_UnitRef', logging.DEBUG)
-createLog('notinclude_ContextRef', logging.DEBUG)
-createLog('skipped_FD', logging.DEBUG)
-createLog('skipped_FI', logging.DEBUG)
-createLog('skipped_underscore', logging.DEBUG)
+createLog('notinclude_UnitRef', logging.INFO)
+createLog('notinclude_ContextRef', logging.INFO)
+createLog('skipped_FD', logging.INFO)
+createLog('skipped_FI', logging.INFO)
+createLog('skipped_underscore', logging.INFO)
 createLog('skipped', logging.DEBUG)
-createLog('addResultData', logging.DEBUG)
-createLog('matchList_empty', logging.DEBUG)
-createLog('tempData', logging.DEBUG)
+createLog('addResultData', logging.INFO)
+createLog('matchList_empty', logging.INFO)
+createLog('tempData', logging.INFO)
 
 for period in periodList:
     readSECIndexFor(period, company, replace, yearStrategy)
