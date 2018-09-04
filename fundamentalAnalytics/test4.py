@@ -7,15 +7,14 @@ from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from dao.dao import GenericDao
 from modelClass.company import Company
-from modelClass.section import Section
 
 
 Initializer()
 session = DBConnector().getNewSession()
 
-company = GenericDao.getOneResult(Company,Company.ticker.__eq__("INTC") , session)
+company = GenericDao.getOneResult(Company,Company.ticker.__eq__("MSFT") , session)
 
 for cqr in company.companyQResultList:
-    if (cqr.concept.conceptID == "EquityInvestments"):
+    if (cqr.concept.conceptID == "AssetsCurrent"):
         print(cqr.period.year, cqr.period.quarter, cqr.concept.conceptID, cqr.concept.label, cqr.value, cqr.periodType)
          
