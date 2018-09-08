@@ -15,5 +15,5 @@ class Section(PersistenObject):
     sectionID = Column(String(45), nullable=False)
     subSectionID = Column(String(45), nullable=False)
     currentNonCurrentID = Column(String(45), nullable=False)
-    conceptOID = Column(Integer, ForeignKey('fa_concept.OID'))
-    conceptList = relationship("Concept", back_populates="section")
+    #conceptOID = Column(Integer, ForeignKey('fa_concept.OID'))
+    #conceptList = relationship("Concept", back_populates="section")

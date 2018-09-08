@@ -15,4 +15,4 @@ class Company(PersistenObject):
     ticker = Column(String(45), nullable=False)
     sector = Column(String(45), nullable=False)
     industry = Column(String(100), nullable=False)
-    companyQResultList = relationship("CompanyQResult", back_populates="company")
+    factList = relationship("Fact", back_populates="company")
