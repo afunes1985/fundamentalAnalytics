@@ -55,22 +55,22 @@ def getPeriodDict(xmlDictRoot):
                     try:
                         period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session)
                     except NoResultFound:
-                        #logging.getLogger('general').debug("Add " + factVO.conceptName)
                         period = Period()
                         period.startDate = startDate
                         period.endDate = endDate
                         session.add(period)
                         session.flush()
+                        logging.getLogger('addToDB').debug("ADDED period " + period.startDate + " " + period.endDate)
                     periodDict[item['@id']] = period
             elif(getDaysBetweenDates(instant, documentPeriodEndDate) < 5):
                 try:
                     period =  GenericDao.getOneResult(Period, and_(Period.instant == instant), session)
                 except NoResultFound:
-                    #logging.getLogger('general').debug("Add " + factVO.conceptName)
                     period = Period()
                     period.instant = instant
                     session.add(period)
                     session.flush()
+                    logging.getLogger('addToDB').debug("ADDED period " + period.instant)
                 periodDict[item['@id']] = period
 #         periodElement = getValueWithTagDict(tagNameAlias['XBRL_PERIOD'], item)
 #         startDate = getValueAsDate('XBRL_START_DATE', periodElement)
@@ -92,130 +92,134 @@ def getPeriodDict(xmlDictRoot):
 #                     contextRefDict["QTD"] = id_
     return periodDict
 
+def getReportDict(fileText):
+    #Obtengo reportes statements
+    xmlDict= getXmlDictFromText(fileText, "FILENAME", "FilingSummary.xml", "XML")
+    reportDict = {}
+    for report in xmlDict["FilingSummary"]["MyReports"]["Report"]:
+        if(report.get("MenuCategory", -1) == "Statements"):
+            try:
+                reportRole = report["Role"]
+                reportShortName = report["ShortName"]
+                report =  GenericDao.getOneResult(Report, and_(Report.shortName == reportShortName), session)
+            except NoResultFound:
+                report = Report()
+                report.shortName = reportShortName
+                session.add(report)
+                session.flush()
+                logging.getLogger('addToDB').debug("ADDED report " + reportShortName)
+            reportDict[reportRole] = report
+    logging.getLogger('general').debug("REPORT LIST " + str(reportDict))
+    return reportDict
+
+def getFactByReport(fileText, reportDict):
+    factToAddList = []
+    #Obtengo para cada reporte sus conceptos
+    xmlDict2= getXmlDictFromText(fileText, "TYPE", "EX-101.PRE", "XBRL")
+    for item in getValueWithTagDict(tagNameAlias['PRESENTATON_LINK'], getValueWithTagDict(tagNameAlias['LINKBASE'], xmlDict2)): 
+        reportRole = item['@xlink:role']
+        if any(reportRole in s for s in reportDict.keys()):
+            for item2 in getValueWithTagDict(tagNameAlias['LOC'], item):
+                factVO = FactVO()
+                factVO.xlink_href = item2["@xlink:href"]
+                factVO.report = reportDict[reportRole]
+                factToAddList.append(factVO)
+    return factToAddList
+
+def initProcessCache(fileText):
+    processCache = {}
+    xmlDict3= getXmlDictFromText(fileText, "TYPE", "EX-101.SCH", "XBRL")
+    xsdDF = pd.DataFrame(getValueWithTagDict(tagNameAlias['ELEMENT'], getValueWithTagDict(tagNameAlias['SCHEMA'], xmlDict3)))
+    xsdDF.set_index("@id", inplace=True)
+    xsdDF.head()
+    processCache["EX-101.SCH"] = xsdDF
+    return processCache
+    
+    
 def importSECFile(filenameList, replace, company, session):
         for filename in filenameList:
-            logging.getLogger('general').debug("filename " + filename)
+            logging.getLogger('general').debug("START - Processing filename " + filename)
             fileText = getTxtFileFromCache("C://Users//afunes//iCloudDrive//PortfolioViewer//cache//" + filename, 
                                         "https://www.sec.gov/Archives/" + filename)
-            #Obtengo reportes statements
-            xmlDict= getXmlDictFromText(fileText, "FILENAME", "FilingSummary.xml", "XML")
-            reportDict = {}
-            factToAddList = []
-            for report in xmlDict["FilingSummary"]["MyReports"]["Report"]:
-                if(report.get("MenuCategory", -1) == "Statements"):
-                    try:
-                        reportRole = report["Role"]
-                        reportShortName = report["ShortName"]
-                        report =  GenericDao.getOneResult(Report, and_(Report.shortName == reportShortName), session)
-                    except NoResultFound:
-                        #logging.getLogger('general').debug("Add " + factVO.conceptName)
-                        report = Report()
-                        report.shortName = reportShortName
-                        session.add(report)
-                        session.flush()
-                    reportDict[reportRole] = report
-                    logging.getLogger('bodyXML').debug(report)
-            #Obtengo para cada reporte sus conceptos
-            xmlDict2= getXmlDictFromText(fileText, "TYPE", "EX-101.PRE", "XBRL")
-            for item in getValueWithTagDict(tagNameAlias['PRESENTATON_LINK'], getValueWithTagDict(tagNameAlias['LINKBASE'], xmlDict2)): 
-                reportRole = item['@xlink:role']
-                if any(reportRole in s for s in reportDict.keys()):
-                    #logging.getLogger('bodyXML').debug(item)
-                    for item2 in getValueWithTagDict(tagNameAlias['LOC'], item):
-                        factVO = FactVO()
-                        factVO.xlink_href = item2["@xlink:href"]
-                        factVO.report = reportDict[reportRole]
-                        factToAddList.append(factVO)
-                        #logging.getLogger('bodyXML').debug(item2["@xlink:href"])
-            xsdDictCache = {}
-            xmlDict3= getXmlDictFromText(fileText, "TYPE", "EX-101.SCH", "XBRL")
-            xsdDF = pd.DataFrame(getValueWithTagDict(tagNameAlias['ELEMENT'], getValueWithTagDict(tagNameAlias['SCHEMA'], xmlDict3)))
-            xsdDF.set_index("@id", inplace=True)
-            xsdDF.head()
-            xsdDictCache["EX-101.SCH"] = xsdDF
+            reportDict = getReportDict(fileText)
+            factToAddList = getFactByReport(fileText, reportDict)
+            processCache = initProcessCache(fileText)
             
-            if (1 == 1):
-                listToDelete = []
-                for factVO in factToAddList:
-                    xsdURL = factVO.getXsdURL()
-                    conceptID = factVO.getConceptID()
-                    #logging.getLogger('bodyXML').debug(xsdURL)
-                    if(xsdURL[0:4] == "http"):
-                        xsdFileName = xsdURL[xsdURL.rfind("/") + 1: len(xsdURL)]
-                        #logging.getLogger('bodyXML').debug(xsdFileName)
-                        if(isinstance(xsdDictCache.get(xsdFileName, -1), int)):
-                            xsdFile = getXSDFileFromCache("C://Users//afunes//iCloudDrive//PortfolioViewer//cache//xsd//" + xsdFileName, xsdURL)
-                            xsdDict = xmltodict.parse(xsdFile)
-                            xsdDF = pd.DataFrame(xsdDict["xs:schema"]["xs:element"])
-                            xsdDF.set_index("@id", inplace=True)
-                            xsdDF.head()
-                            xsdDictCache[xsdFileName] = xsdDF
-                        else:
-                            xsdDF = xsdDictCache.get(xsdFileName, -1)
-                        factVO.conceptName = xsdDF.loc[conceptID]["@name"]
-                        factVO.periodType = xsdDF.loc[conceptID]["@xbrli:periodType"]
-                        factVO.balance = xsdDF.loc[conceptID]["@xbrli:balance"]
-                        factVO.type = xsdDF.loc[conceptID]["@type"]
-                        factVO.abstract = xsdDF.loc[conceptID]["@abstract"]
-                        if(factVO.abstract == "true"):
-                            listToDelete.append(factVO)
-                            logging.getLogger('bodyXML').debug("DELETE " +  str(factVO.__dict__))
-                        else:
-                            logging.getLogger('bodyXML').debug("COMPLETE " +  str(factVO.__dict__))
+            listToDelete = []
+            for factVO in factToAddList:
+                xsdURL = factVO.getXsdURL()
+                conceptID = factVO.getConceptID()
+                #logging.getLogger('bodyXML').debug(xsdURL)
+                if(xsdURL[0:4] == "http"):
+                    xsdFileName = xsdURL[xsdURL.rfind("/") + 1: len(xsdURL)]
+                    #logging.getLogger('bodyXML').debug(xsdFileName)
+                    if(isinstance(processCache.get(xsdFileName, -1), int)):
+                        xsdFile = getXSDFileFromCache("C://Users//afunes//iCloudDrive//PortfolioViewer//cache//xsd//" + xsdFileName, xsdURL)
+                        xsdDict = xmltodict.parse(xsdFile)
+                        xsdDF = pd.DataFrame(xsdDict["xs:schema"]["xs:element"])
+                        xsdDF.set_index("@id", inplace=True)
+                        xsdDF.head()
+                        processCache[xsdFileName] = xsdDF
                     else:
-                        xsdDF = xsdDictCache.get("EX-101.SCH", -1)
-                        factVO.conceptName = xsdDF.loc[conceptID]["@name"]
-                        factVO.periodType = xsdDF.loc[conceptID]["@xbrli:periodType"]
-                        factVO.balance = xsdDF.loc[conceptID]["@xbrli:balance"]
-                        factVO.type = xsdDF.loc[conceptID]["@type"]
-                        factVO.abstract = xsdDF.loc[conceptID]["@abstract"]
-                        if(factVO.abstract == "true"):
-                            listToDelete.append(factVO)
-                            logging.getLogger('bodyXML').debug("DELETE " +  str(factVO.__dict__))
-                        else:
-                            logging.getLogger('bodyXML').debug("COMPLETE " +  str(factVO.__dict__))
+                        xsdDF = processCache.get(xsdFileName, -1)
+                    factVO.conceptName = xsdDF.loc[conceptID]["@name"]
+                    factVO.periodType = xsdDF.loc[conceptID]["@xbrli:periodType"]
+                    factVO.balance = xsdDF.loc[conceptID]["@xbrli:balance"]
+                    factVO.type = xsdDF.loc[conceptID]["@type"]
+                    factVO.abstract = xsdDF.loc[conceptID]["@abstract"]
+                    if(factVO.abstract == "true"):
+                        listToDelete.append(factVO)
+                else:
+                    xsdDF = processCache["EX-101.SCH"]
+                    factVO.conceptName = xsdDF.loc[conceptID]["@name"]
+                    factVO.periodType = xsdDF.loc[conceptID]["@xbrli:periodType"]
+                    factVO.balance = xsdDF.loc[conceptID]["@xbrli:balance"]
+                    factVO.type = xsdDF.loc[conceptID]["@type"]
+                    factVO.abstract = xsdDF.loc[conceptID]["@abstract"]
+                    if(factVO.abstract == "true"):
+                        listToDelete.append(factVO)
                 
-                #DELETE ABSTRACT FACTS            
-                factToAddList = [x for x in factToAddList if x not in listToDelete]
-                
-                xmlDictRoot = getXmlDictFromText(fileText,"TYPE","EX-101.INS","XBRL")
-                xmlDictRoot = getValueAsDate('XBRL_ROOT', xmlDictRoot)
-                CIK = xmlDictRoot['dei:EntityCentralIndexKey']['#text']
-                logging.getLogger('general').debug("CIK " + CIK)
-                documentType = xmlDictRoot['dei:DocumentType']['#text']
-                logging.getLogger('general').debug("documentType " + documentType)
-                periodDict = getPeriodDict(xmlDictRoot)
-                logging.getLogger('general').debug("periodDict " + str(periodDict))
-                
-                for factVO in factToAddList:
-                        conceptID = factVO.xlink_href[factVO.xlink_href.find("#", 0) + 1:len(factVO.xlink_href)]
-                        try:
-                            element = xmlDictRoot[conceptID.replace("_", ":")]
-                            #print (element)
-                            if isinstance(element, list):
-                                for element1 in element:
-                                    if(periodDict.get(element1["@contextRef"], -1) != -1):
-                                        factValue = FactValueVO()
-                                        contextRef = element1["@contextRef"]
-                                        factValue.period = periodDict[contextRef]
-                                        factValue.unitRef = element1["@unitRef"]
-                                        factValue.value = element1["#text"]
-                                        factVO.factValueList.append(factValue)
-                            else:
+            #DELETE ABSTRACT FACTS            
+            factToAddList = [x for x in factToAddList if x not in listToDelete]
+            
+            xmlDictRoot = getXmlDictFromText(fileText,"TYPE","EX-101.INS","XBRL")
+            xmlDictRoot = getValueAsDate('XBRL_ROOT', xmlDictRoot)
+            CIK = xmlDictRoot['dei:EntityCentralIndexKey']['#text']
+            logging.getLogger('general').debug("CIK " + CIK)
+            documentType = xmlDictRoot['dei:DocumentType']['#text']
+            logging.getLogger('general').debug("documentType " + documentType)
+            periodDict = getPeriodDict(xmlDictRoot)
+            logging.getLogger('general').debug("periodDict " + str(periodDict))
+            
+            for factVO in factToAddList:
+                    conceptID = factVO.xlink_href[factVO.xlink_href.find("#", 0) + 1:len(factVO.xlink_href)]
+                    try:
+                        element = xmlDictRoot[conceptID.replace("_", ":")]
+                        #print (element)
+                        if isinstance(element, list):
+                            for element1 in element:
                                 if(periodDict.get(element1["@contextRef"], -1) != -1):
                                     factValue = FactValueVO()
                                     contextRef = element1["@contextRef"]
                                     factValue.period = periodDict[contextRef]
-                                    factValue.unitRef = element["@unitRef"]
-                                    factValue.value = element["#text"]
+                                    factValue.unitRef = element1["@unitRef"]
+                                    factValue.value = element1["#text"]
                                     factVO.factValueList.append(factValue)
-                        except KeyError:
-                            logging.getLogger('bodyXML').debug("Context Ref Not Found " + contextRef)
-                    
-                for factVO in factToAddList:
-                    logging.getLogger('bodyXML').debug(factVO.report.shortName + " " + factVO.getConceptID() + " " + str(factVO.factValueList)) 
+                        else:
+                            if(periodDict.get(element1["@contextRef"], -1) != -1):
+                                factValue = FactValueVO()
+                                contextRef = element1["@contextRef"]
+                                factValue.period = periodDict[contextRef]
+                                factValue.unitRef = element["@unitRef"]
+                                factValue.value = element["#text"]
+                                factVO.factValueList.append(factValue)
+                    except KeyError:
+                        logging.getLogger('bodyXML').debug("Context Ref Not Found " + contextRef)
                 
-                addFact(factToAddList, company, session)
+            for factVO in factToAddList:
+                logging.getLogger('bodyXML').debug(factVO.report.shortName + " " + factVO.getConceptID() + " " + str(factVO.factValueList)) 
+            addFact(factToAddList, company, session)
+        logging.getLogger('general').debug("END - Processing filename " + filename)
 
 def addFact(factToAddList, company, session):
     for factVO in factToAddList:
@@ -234,50 +238,50 @@ def addFact(factToAddList, company, session):
         factToAdd.company = company
         factToAdd.concept = concept
         factToAdd.report = factVO.report
-        #factToAdd.period = period
         if (len(factVO.factValueList)== 1):
             factToAdd.value = factVO.factValueList[0].value
+            factToAdd.period = factVO.factValueList[0].period
             if(factVO.factValueList[0].contextRef is not None):
                 print(factVO.factValueList[0].contextRef)
         session.add(factToAdd)
-        logging.getLogger('addResultData').debug("Added " + str(factVO.conceptName))
+        logging.getLogger('addToDB').debug("Added " + str(factVO.conceptName))
     session.commit()
 
 def readSECIndexFor(period, company, replace):
-    logging.info("Processing index file " + str(period.year) + "-" +  str(period.quarter))   
+    logging.getLogger('general').debug("START - Processing index file " + company.ticker  + " " + str(period.year) + "-" +  str(period.quarter) + " " + " replace " + str(replace))   
     file = getBinaryFileFromCache('C://Users//afunes//iCloudDrive//PortfolioViewer//cache//master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
                                 "https://www.sec.gov/Archives/edgar/full-index/" + str(period.year) + "/QTR" + str(period.quarter)+ "/master.gz")
-    if 1 == 1:
-        with gzip.open(BytesIO(file), 'rb') as f:
-            file_content = f.read()
-            text = file_content.decode("utf-8")
-            text = text[text.find("CIK", 0, len(text)): len(text)]
-            point1 = text.find("\n")
-            point2 = text.find("\n", point1+1)
-            text2 = text[0:point1] + text[point2 : len(text)]
-            df = pd.read_csv(StringIO(text2), sep="|")
-            df.set_index("CIK", inplace=True)
-            df.head()
-            #logging.getLogger('bodyIndex').debug(df.to_string())
-            rowData0 = df.loc[company.CIK]
-            if isinstance(rowData0, DataFrame):
-                for rowData1 in rowData0.iterrows():
-                    filename = rowData1[1]["Filename"]
-                    formType = rowData1[1]["Form Type"]
-                    if(formType == "10-Q" or formType == "10-K"):
-                        importSECFile([filename], replace, company, session)
-            else:
-                filename = rowData0["Filename"]
-                formType = rowData0["Form Type"]
+    with gzip.open(BytesIO(file), 'rb') as f:
+        file_content = f.read()
+        text = file_content.decode("ISO-8859-1")
+        text = text[text.find("CIK", 0, len(text)): len(text)]
+        point1 = text.find("\n")
+        point2 = text.find("\n", point1+1)
+        text2 = text[0:point1] + text[point2 : len(text)]
+        df = pd.read_csv(StringIO(text2), sep="|")
+        df.set_index("CIK", inplace=True)
+        df.head()
+        #logging.getLogger('bodyIndex').debug(df.to_string())
+        rowData0 = df.loc[company.CIK]
+        if isinstance(rowData0, DataFrame):
+            for rowData1 in rowData0.iterrows():
+                filename = rowData1[1]["Filename"]
+                formType = rowData1[1]["Form Type"]
                 if(formType == "10-Q" or formType == "10-K"):
                     importSECFile([filename], replace, company, session)
+        else:
+            filename = rowData0["Filename"]
+            formType = rowData0["Form Type"]
+            if(formType == "10-Q" or formType == "10-K"):
+                importSECFile([filename], replace, company, session)
+    logging.getLogger('general').debug("END - Processing index file " + company.ticker  + " " + str(period.year) + "-" +  str(period.quarter) + " " + " replace " + str(replace)) 
 
 COMPANY_TICKER = 'MSFT'
 replace = True
 Initializer()
 session = DBConnector().getNewSession()
 company = GenericDao.getOneResult(Company,Company.ticker.__eq__(COMPANY_TICKER), session)
-#periodList = objectResult = session.query(Period).filter(and_(or_(Period.year < 2018, and_(Period.year >= 2018, Period.quarter <= 3)), Period.year > 2012)).order_by(Period.year.asc(), Period.quarter.asc()).all()
+#periodList = objectResult = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2016)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
 periodList = objectResult = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 2)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
 createLog('general', logging.DEBUG)
 createLog('bodyIndex', logging.INFO)
@@ -288,9 +292,10 @@ createLog('notinclude_ContextRef', logging.INFO)
 createLog('skipped_underscore', logging.INFO)
 createLog('skipped', logging.INFO)
 createLog('xsdNotFound', logging.DEBUG)
-createLog('addResultData', logging.INFO)
+createLog('addToDB', logging.INFO)
 createLog('matchList_empty', logging.INFO)
 createLog('tempData', logging.INFO)
+logging.info("START")
 
 for period in periodList:
     readSECIndexFor(period, company, replace)
