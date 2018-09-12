@@ -50,18 +50,17 @@ class DaoCompanyResult():
                        'ticker' : ticker,
                        'sectionID' : sectionID,
                        'periodType' : periodType}
-            query = text("""select section.sectionID, concept.conceptID, concept.label, CONCAT(year, 'Q', quarter) as yq, value, cqr.periodType
-                            FROM fa_company_q_result cqr
-                                inner join fa_company company on cqr.companyOID = company.OID
-                                inner join fa_concept concept on cqr.conceptOID = concept.OID
-                                inner join fa_period period on cqr.periodOID = period.OID
-                                left join fa_section section on concept.OID = section.conceptOID
-                            where (concept.conceptID = :conceptID or :conceptID is null) 
-                                and (company.CIK = :companyID or :companyID is null)
-                                and (company.ticker = :ticker or :ticker is null)
-                                and (section.sectionID = :sectionID or :sectionID is null)
-                                and (cqr.periodType = :periodType or :periodType is null)
-                            order by year, quarter, concept.conceptID""")
+            query = text("""select report.shortName, concept.conceptID, concept.label, fact.value, IFNULL(period.endDate, period.instant)
+    FROM fa_fact fact
+        left join fa_company company on fact.companyOID = company.OID
+        left join fa_concept concept on fact.conceptOID = concept.OID
+        left join fa_period period on fact.periodOID = period.OID
+        left join fa_report report on fact.reportOID = report.OID
+    #where (concept.conceptID = :conceptID or :conceptID is null) 
+        #and (company.CIK = :companyID or :companyID is null)
+        #and (company.ticker = :ticker or :ticker is null)
+        #and (report.shortName = :reportShortName or :reportShortName is null)
+    order by report.shortName, concept.conceptID""")
             rs = con.execute(query, params)
             return rs 
     

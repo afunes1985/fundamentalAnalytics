@@ -33,6 +33,7 @@ tagNameAlias = { "DOCUMENT_FISCAL_PERIOD_FOCUS" : ['dei:DocumentFiscalPeriodFocu
                 }
 
 def getBinaryFileFromCache(filename, url):
+    logging.getLogger('general').debug("BIN - Processing filename " + filename)
     xbrlFile = Path(filename)
     if xbrlFile.exists():
         with open(filename, mode='rb') as file: 
@@ -48,6 +49,7 @@ def getBinaryFileFromCache(filename, url):
     return file
 
 def getTxtFileFromCache(filename, url):
+    logging.getLogger('general').debug("TXT - Processing filename " + filename)
     xbrlFile = Path(filename)
     if xbrlFile.exists():
         with open(filename, mode='r') as file: 
@@ -63,6 +65,7 @@ def getTxtFileFromCache(filename, url):
     return fileText
 
 def getXSDFileFromCache(filename, url):
+    logging.getLogger('general').debug("XSD - Processing filename " + filename)
     xbrlFile = Path(filename)
     if xbrlFile.exists():
         with open(filename, mode='r') as file: 
