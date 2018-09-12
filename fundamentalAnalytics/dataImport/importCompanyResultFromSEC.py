@@ -26,6 +26,7 @@ from tools.tools import getValueWithTagDict, tagNameAlias, getXmlDictFromText, \
     getValueAsDate, getDaysBetweenDates, getTxtFileFromCache, \
     getXSDFileFromCache, getBinaryFileFromCache, createLog
 from valueobject.valueobject import FactVO, FactValueVO
+from modelClass.abstractConcept import AbstractConcept
 
 
 def getUnitDict(xmlDictRoot):
@@ -89,20 +90,43 @@ def getReportDict(fileText):
     logging.getLogger('general').debug("REPORT LIST " + str(reportDict))
     return reportDict
 
+def addAbstractConcept(factVO):
+    try:
+        abstractConcept =  GenericDao.getOneResult(AbstractConcept, and_(AbstractConcept.conceptName == factVO.conceptName), session)
+    except NoResultFound:
+        abstractConcept = AbstractConcept()
+        abstractConcept.conceptName = factVO.conceptName
+        session.add(abstractConcept)
+        session.flush()
+        logging.getLogger('addToDB').debug("ADDED abstractConcept " + abstractConcept.conceptName)
+
 def getFactByReport(fileText, reportDict, processCache):
     factToAddList = []
     #Obtengo para cada reporte sus conceptos
     xmlDict2= getXmlDictFromText(fileText, "TYPE", "EX-101.PRE", "XBRL")
     for item in getValueWithTagDict(tagNameAlias['PRESENTATON_LINK'], getValueWithTagDict(tagNameAlias['LINKBASE'], xmlDict2)): 
         reportRole = item['@xlink:role']
+        abstractFactDict = {}
+        factDict = {}
         if any(reportRole in s for s in reportDict.keys()):
             for item2 in getValueWithTagDict(tagNameAlias['LOC'], item):
                 factVO = FactVO()
                 factVO.xlink_href = item2["@xlink:href"]
                 factVO.report = reportDict[reportRole]
+                factVO.labelID = item2["@xlink:label"]
                 factVO = setXsdValue(factVO, processCache)
                 if factVO.abstract != "true":
                     factToAddList.append(factVO)
+                    factDict[factVO.labelID] = factVO
+                else:
+                    addAbstractConcept(factVO)
+                    abstractFactDict[factVO.labelID] = factVO
+            for item2 in getValueWithTagDict(['presentationArc'], item):
+                if(item2["@xlink:arcrole"] == "http://www.xbrl.org/2003/arcrole/parent-child"):
+                    abstractFrom = item2["@xlink:from"]
+                    factVO = abstractFactDict[abstractFrom]
+                    to = item2["@xlink:to"]
+                    print(str(factVO.__dict__))
     return factToAddList
 
 def initProcessCache(fileText):
