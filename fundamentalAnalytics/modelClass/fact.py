@@ -19,4 +19,7 @@ class Fact(PersistenObject):
     period = relationship("Period", back_populates="factList")
     reportOID = Column(Integer, ForeignKey('fa_report.OID'))
     report = relationship("Report", back_populates="factList")
+    fileDataOID = Column(Integer, ForeignKey('fa_file_data.OID'))
+    fileData = relationship("FileData", back_populates="factList")
     value = Column(Float(), nullable=False)
+    order = Column(Integer, nullable=False)

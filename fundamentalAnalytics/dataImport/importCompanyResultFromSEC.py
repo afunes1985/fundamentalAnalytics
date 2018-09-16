@@ -16,9 +16,12 @@ import xmltodict
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from dao.dao import GenericDao
+from modelClass.abstractConcept import AbstractConcept
+from modelClass.abstractFactRelation import AbstractFactRelation
 from modelClass.company import Company
 from modelClass.concept import Concept
 from modelClass.fact import Fact
+from modelClass.fileData import FileData
 from modelClass.period import QuarterPeriod, Period
 from modelClass.report import Report
 import pandas as pd
@@ -26,7 +29,6 @@ from tools.tools import getValueWithTagDict, tagNameAlias, getXmlDictFromText, \
     getValueAsDate, getDaysBetweenDates, getTxtFileFromCache, \
     getXSDFileFromCache, getBinaryFileFromCache, createLog
 from valueobject.valueobject import FactVO, FactValueVO
-from modelClass.abstractConcept import AbstractConcept
 
 
 def getUnitDict(xmlDictRoot):
@@ -56,7 +58,7 @@ def getPeriodDict(xmlDictRoot):
                         period.endDate = endDate
                         session.add(period)
                         session.flush()
-                        logging.getLogger('addToDB').debug("ADDED period " + period.startDate + " " + period.endDate)
+                        logging.getLogger('addToDB').debug("ADDED period " + str(period.startDate) + " " + str(period.endDate))
                     periodDict[item['@id']] = period
             elif(getDaysBetweenDates(instant, documentPeriodEndDate) < 5):
                 try:
@@ -66,7 +68,7 @@ def getPeriodDict(xmlDictRoot):
                     period.instant = instant
                     session.add(period)
                     session.flush()
-                    logging.getLogger('addToDB').debug("ADDED period " + period.instant)
+                    logging.getLogger('addToDB').debug("ADDED period " + str(period.instant))
                 periodDict[item['@id']] = period
     return periodDict
 
@@ -99,15 +101,28 @@ def addAbstractConcept(factVO):
         session.add(abstractConcept)
         session.flush()
         logging.getLogger('addToDB').debug("ADDED abstractConcept " + abstractConcept.conceptName)
+    factVO.abstractConcept = abstractConcept
+    return factVO
+
+def addAbstractFactRelation(factVO):
+    try:
+        abstractFactRelation =  GenericDao.getOneResult(AbstractFactRelation, and_(AbstractFactRelation.OID == 99), session)
+    except NoResultFound:
+        abstractFactRelation = AbstractFactRelation()
+        abstractFactRelation.abstractFromOID = factVO.abstractFromOID
+        session.add(abstractFactRelation)
+        session.flush()
+        logging.getLogger('addToDB').debug("ADDED abstractConcept " + abstractFactRelation.conceptName)
+    factVO.abstractConcept = abstractFactRelation
+    return factVO
 
 def getFactByReport(fileText, reportDict, processCache):
-    factToAddList = []
+    factToAddDict = {}
     #Obtengo para cada reporte sus conceptos
-    xmlDict2= getXmlDictFromText(fileText, "TYPE", "EX-101.PRE", "XBRL")
-    for item in getValueWithTagDict(tagNameAlias['PRESENTATON_LINK'], getValueWithTagDict(tagNameAlias['LINKBASE'], xmlDict2)): 
+    xmlDictPre= getXmlDictFromText(fileText, "TYPE", "EX-101.PRE", "XBRL")
+    for item in getValueWithTagDict(tagNameAlias['PRESENTATON_LINK'], getValueWithTagDict(tagNameAlias['LINKBASE'], xmlDictPre)): 
         reportRole = item['@xlink:role']
-        abstractFactDict = {}
-        factDict = {}
+        #abstractFactDict = {}
         if any(reportRole in s for s in reportDict.keys()):
             for item2 in getValueWithTagDict(tagNameAlias['LOC'], item):
                 factVO = FactVO()
@@ -116,18 +131,24 @@ def getFactByReport(fileText, reportDict, processCache):
                 factVO.labelID = item2["@xlink:label"]
                 factVO = setXsdValue(factVO, processCache)
                 if factVO.abstract != "true":
-                    factToAddList.append(factVO)
-                    factDict[factVO.labelID] = factVO
+                    factToAddDict[factVO.labelID] = factVO
                 else:
-                    addAbstractConcept(factVO)
-                    abstractFactDict[factVO.labelID] = factVO
+                    factVO = addAbstractConcept(factVO)
+                    #abstractFactDict[factVO.labelID] = factVO
+                    
             for item2 in getValueWithTagDict(['presentationArc'], item):
                 if(item2["@xlink:arcrole"] == "http://www.xbrl.org/2003/arcrole/parent-child"):
-                    abstractFrom = item2["@xlink:from"]
-                    factVO = abstractFactDict[abstractFrom]
-                    to = item2["@xlink:to"]
-                    print(str(factVO.__dict__))
-    return factToAddList
+                    #abstractFrom = item2["@xlink:from"]
+                    #factVOFrom = abstractFactDict[abstractFrom]
+                    objectTo = item2["@xlink:to"]
+#                     addAbstractFactRelation(factVOFrom)
+                    if (factToAddDict.get(objectTo, -1) != -1):
+                        factVOTo = factToAddDict[objectTo]
+                        factVOTo.order = item2["@order"]
+                        factToAddDict[objectTo] = factVOTo
+#                         print(factVOTo.__dict__)
+#                     print(str(factVOFrom.__dict__))
+    return list(factToAddDict.values())
 
 def initProcessCache(fileText):
     processCache = {}
@@ -136,6 +157,9 @@ def initProcessCache(fileText):
     xsdDF.set_index("@id", inplace=True)
     xsdDF.head()
     processCache["EX-101.SCH"] = xsdDF
+    
+    insXMLDict = getXmlDictFromText(fileText,"TYPE","EX-101.INS","XBRL")
+    processCache["EX-101.INS"] = insXMLDict
     return processCache
 
 def setXsdAttr(factVO, xsdDF, conceptID):
@@ -166,13 +190,18 @@ def setXsdValue(factVO, processCache):
         factVO = setXsdAttr(factVO, xsdDF, conceptID)
     return factVO
 
-def setFactValues(fileText, factToAddList):
-    insXMLDict = getXmlDictFromText(fileText,"TYPE","EX-101.INS","XBRL")
+def getFactValue(periodDict, element):
+    if(periodDict.get(element["@contextRef"], -1) != -1):
+        factValue = FactValueVO()
+        contextRef = element["@contextRef"]
+        factValue.period = periodDict[contextRef]
+        factValue.unitRef = element["@unitRef"]
+        factValue.value = element["#text"]
+        return factValue
+
+def setFactValues(fileText, factToAddList, processCache):
+    insXMLDict = processCache["EX-101.INS"]
     insXMLDict = getValueAsDate('XBRL_ROOT', insXMLDict)
-    CIK = insXMLDict['dei:EntityCentralIndexKey']['#text']
-    logging.getLogger('general').debug("CIK " + CIK)
-    documentType = insXMLDict['dei:DocumentType']['#text']
-    logging.getLogger('general').debug("documentType " + documentType)
     periodDict = getPeriodDict(insXMLDict)
     logging.getLogger('general').debug("periodDict " + str(periodDict))
     
@@ -182,25 +211,51 @@ def setFactValues(fileText, factToAddList):
             element = insXMLDict[conceptID.replace("_", ":")]
             if isinstance(element, list):
                 for element1 in element:
-                    if(periodDict.get(element1["@contextRef"], -1) != -1):
-                        factValue = FactValueVO()
-                        contextRef = element1["@contextRef"]
-                        factValue.period = periodDict[contextRef]
-                        factValue.unitRef = element1["@unitRef"]
-                        factValue.value = element1["#text"]
+                    factValue = getFactValue(periodDict, element1)
+                    if (factValue is not None):
                         factVO.factValueList.append(factValue)
             else:
-                if(periodDict.get(element1["@contextRef"], -1) != -1):
-                    factValue = FactValueVO()
-                    contextRef = element1["@contextRef"]
-                    factValue.period = periodDict[contextRef]
-                    factValue.unitRef = element["@unitRef"]
-                    factValue.value = element["#text"]
+                factValue = getFactValue(periodDict, element)
+                if (factValue is not None):
                     factVO.factValueList.append(factValue)
         except KeyError as e:
-            logging.getLogger('bodyXML').debug("KeyError " + str(e) + " " + conceptID )
+            logging.getLogger('Error').debug("KeyError " + str(e) + " " + conceptID )
     return factToAddList
 
+
+def getFileData(processCache, filename):
+    insXMLDict = processCache["EX-101.INS"]
+    insXMLDict = getValueAsDate('XBRL_ROOT', insXMLDict)
+    documentType = insXMLDict['dei:DocumentType']['#text']
+    logging.getLogger('general').debug("documentType " + documentType)
+    amendmentFlag = insXMLDict['dei:AmendmentFlag']['#text']
+    amendmentFlag = amendmentFlag.lower() in ("true")
+    logging.getLogger('general').debug("AmendmentFlag " + str(amendmentFlag))
+    documentPeriodEndDate = insXMLDict['dei:DocumentPeriodEndDate']['#text']
+    logging.getLogger('general').debug("DocumentPeriodEndDate " + documentPeriodEndDate)
+    documentFiscalYearFocus = insXMLDict['dei:DocumentFiscalYearFocus']['#text']
+    logging.getLogger('general').debug("DocumentFiscalYearFocus " + documentFiscalYearFocus)
+    documentFiscalPeriodFocus = insXMLDict['dei:DocumentFiscalPeriodFocus']['#text']
+    logging.getLogger('general').debug("DocumentFiscalPeriodFocus " + documentFiscalPeriodFocus)
+    entityCentralIndexKey = insXMLDict['dei:EntityCentralIndexKey']['#text']
+    logging.getLogger('general').debug("EntityCentralIndexKey " + entityCentralIndexKey)
+
+    try:
+        fileData = GenericDao.getOneResult(FileData, FileData.documentPeriodEndDate.__eq__(documentPeriodEndDate), session)
+    except NoResultFound:
+        fileData = FileData()
+        fileData.documentType = documentType
+        fileData.amendmentFlag = amendmentFlag
+        fileData.documentPeriodEndDate = documentPeriodEndDate
+        fileData.documentFiscalYearFocus = documentFiscalYearFocus
+        fileData.documentFiscalPeriodFocus = documentFiscalPeriodFocus
+        fileData.entityCentralIndexKey = entityCentralIndexKey
+        fileData.fileName = filename
+        session.add(fileData)
+        session.flush()
+        logging.getLogger('addToDB').debug("Added fileData" + fileData.documentPeriodEndDate)
+    return fileData
+    
 
 def importSECFile(filenameList, replace, company, session):
     for filename in filenameList:
@@ -208,28 +263,25 @@ def importSECFile(filenameList, replace, company, session):
         fileText = getTxtFileFromCache("C://Users//afunes//iCloudDrive//PortfolioViewer//cache//" + filename, 
                                     "https://www.sec.gov/Archives/" + filename)
         processCache = initProcessCache(fileText)
+        fileData = getFileData(processCache, filename)
         reportDict = getReportDict(fileText)
         factToAddList = getFactByReport(fileText, reportDict, processCache)
-        #factToAddList = setXsdValue(factToAddList, processCache)
-        factToAddList = setFactValues(fileText, factToAddList)
-            
+        factToAddList = setFactValues(fileText, factToAddList, processCache)
+        addFact(factToAddList, company, fileData, session)
         for factVO in factToAddList:
-            logging.getLogger('bodyXML').debug(factVO.report.shortName + " " + factVO.conceptName + " " + str(factVO.factValueList)) 
-        addFact(factToAddList, company, session)
+            logging.getLogger('general').debug(factVO.report.shortName + " " + factVO.conceptName + " " + str(factVO.factValueList)) 
         logging.getLogger('general').debug("END - Processing filename " + filename)
 
-def addFact(factToAddList, company, session):
+def addFact(factToAddList, company, fileData, session):
     for factVO in factToAddList:
         try:
             concept = GenericDao.getOneResult(Concept, Concept.conceptName.__eq__(factVO.conceptName), session)
         except NoResultFound:
-            print(factVO)
             concept = Concept()
-            concept.conceptID = factVO.conceptName
+            concept.conceptName = factVO.conceptName
             session.add(concept)
             session.flush()
             logging.getLogger('addToDB').debug("Added concept" + factVO.conceptName)
-            
         try:
             factToAdd = GenericDao.getOneResult(Fact, and_(Fact.company == company, Fact.concept == concept), session)
         except NoResultFound:
@@ -237,11 +289,17 @@ def addFact(factToAddList, company, session):
         factToAdd.company = company
         factToAdd.concept = concept
         factToAdd.report = factVO.report
+        factToAdd.order = factVO.order
+        factToAdd.fileData = fileData
         if (len(factVO.factValueList)== 1):
             factToAdd.value = factVO.factValueList[0].value
             factToAdd.period = factVO.factValueList[0].period
             if(factVO.factValueList[0].contextRef is not None):
                 print(factVO.factValueList[0].contextRef)
+        elif(len(factVO.factValueList)== 0):
+            logging.getLogger('Error').debug("NoneFactValue " + factToAdd.concept.conceptName)
+        else:
+            logging.getLogger('Error').debug("MoreThanOneFactValue " + factToAdd.concept.conceptName)
         session.add(factToAdd)
         logging.getLogger('addToDB').debug("Added fact" + str(factVO.conceptName))
     session.commit()
@@ -275,16 +333,17 @@ def readSECIndexFor(period, company, replace):
                 importSECFile([filename], replace, company, session)
     logging.getLogger('general').debug("END - Processing index file " + company.ticker  + " " + str(period.year) + "-" +  str(period.quarter) + " " + " replace " + str(replace)) 
 
-COMPANY_TICKER = 'MSFT'
+COMPANY_TICKER = 'TSLA'
 replace = True
 Initializer()
 session = DBConnector().getNewSession()
 company = GenericDao.getOneResult(Company,Company.ticker.__eq__(COMPANY_TICKER), session)
 #periodList = objectResult = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2016)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
-periodList = objectResult = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 2)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+periodList = objectResult = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 3)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
 createLog('general', logging.DEBUG)
 createLog('bodyIndex', logging.INFO)
 createLog('bodyXML', logging.DEBUG)
+createLog('Error', logging.DEBUG)
 createLog('InvalidOperation_convertToDecimal', logging.DEBUG)
 createLog('notinclude_UnitRef', logging.INFO)
 createLog('notinclude_ContextRef', logging.INFO)
