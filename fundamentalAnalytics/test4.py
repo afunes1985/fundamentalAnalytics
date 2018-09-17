@@ -12,9 +12,10 @@ from modelClass.company import Company
 Initializer()
 session = DBConnector().getNewSession()
 
-company = GenericDao.getOneResult(Company,Company.ticker.__eq__("MSFT") , session)
+company = GenericDao.getOneResult(Company,Company.ticker.__eq__("TSLA") , session)
 
-for cqr in company.companyQResultList:
-    if (cqr.concept.conceptID == "AssetsCurrent"):
-        print(cqr.period.year, cqr.period.quarter, cqr.concept.conceptID, cqr.concept.label, cqr.value, cqr.periodType)
+for fact in company.factList:
+    if (fact.concept.conceptName == "AssetsCurrent"):
+        for factValue in fact.factValueList:
+            print(factValue.period.startDate, factValue.period.endDate, factValue.period.instant, factValue.value)
          

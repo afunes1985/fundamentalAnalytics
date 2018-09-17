@@ -10,17 +10,18 @@ import logging
 
 from pandas.core.frame import DataFrame
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import and_
+from sqlalchemy.sql.expression import and_, or_
 import xmltodict 
 
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
-from dao.dao import GenericDao
+from dao.dao import GenericDao, Dao
 from modelClass.abstractConcept import AbstractConcept
 from modelClass.abstractFactRelation import AbstractFactRelation
 from modelClass.company import Company
 from modelClass.concept import Concept
 from modelClass.fact import Fact
+from modelClass.factValue import FactValue
 from modelClass.fileData import FileData
 from modelClass.period import QuarterPeriod, Period
 from modelClass.report import Report
@@ -49,13 +50,15 @@ def getPeriodDict(xmlDictRoot):
             endDate = getValueAsDate('XBRL_END_DATE', periodElement) 
             instant = getValueAsDate('XBRL_INSTANT', periodElement) 
             if(endDate != -1 and getDaysBetweenDates(documentPeriodEndDate, endDate) < 5):
-                if(85 < getDaysBetweenDates(startDate, documentPeriodEndDate) < 95):
+                #if(85 < getDaysBetweenDates(startDate, documentPeriodEndDate) < 95):
                     try:
                         period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session)
+                        period.daysBetween = getDaysBetweenDates(startDate, endDate)
                     except NoResultFound:
                         period = Period()
                         period.startDate = startDate
                         period.endDate = endDate
+                        period.daysBetween = getDaysBetweenDates(startDate, endDate)
                         session.add(period)
                         session.flush()
                         logging.getLogger('addToDB').debug("ADDED period " + str(period.startDate) + " " + str(period.endDate))
@@ -78,16 +81,9 @@ def getReportDict(fileText):
     reportDict = {}
     for report in xmlDict["FilingSummary"]["MyReports"]["Report"]:
         if(report.get("MenuCategory", -1) == "Statements"):
-            try:
-                reportRole = report["Role"]
-                reportShortName = report["ShortName"]
-                report =  GenericDao.getOneResult(Report, and_(Report.shortName == reportShortName), session)
-            except NoResultFound:
-                report = Report()
-                report.shortName = reportShortName
-                session.add(report)
-                session.flush()
-                logging.getLogger('addToDB').debug("ADDED report " + reportShortName)
+            reportRole = report["Role"]
+            reportShortName = report["ShortName"]
+            report = Dao.getReport(reportShortName, session)
             reportDict[reportRole] = report
     logging.getLogger('general').debug("REPORT LIST " + str(reportDict))
     return reportDict
@@ -117,12 +113,11 @@ def addAbstractFactRelation(factVO):
     return factVO
 
 def getFactByReport(fileText, reportDict, processCache):
-    factToAddDict = {}
+    factToAddList = []
     #Obtengo para cada reporte sus conceptos
     xmlDictPre= getXmlDictFromText(fileText, "TYPE", "EX-101.PRE", "XBRL")
     for item in getValueWithTagDict(tagNameAlias['PRESENTATON_LINK'], getValueWithTagDict(tagNameAlias['LINKBASE'], xmlDictPre)): 
         reportRole = item['@xlink:role']
-        #abstractFactDict = {}
         if any(reportRole in s for s in reportDict.keys()):
             for item2 in getValueWithTagDict(tagNameAlias['LOC'], item):
                 factVO = FactVO()
@@ -131,24 +126,17 @@ def getFactByReport(fileText, reportDict, processCache):
                 factVO.labelID = item2["@xlink:label"]
                 factVO = setXsdValue(factVO, processCache)
                 if factVO.abstract != "true":
-                    factToAddDict[factVO.labelID] = factVO
+                    factToAddList.append(factVO)
                 else:
                     factVO = addAbstractConcept(factVO)
-                    #abstractFactDict[factVO.labelID] = factVO
-                    
             for item2 in getValueWithTagDict(['presentationArc'], item):
                 if(item2["@xlink:arcrole"] == "http://www.xbrl.org/2003/arcrole/parent-child"):
-                    #abstractFrom = item2["@xlink:from"]
-                    #factVOFrom = abstractFactDict[abstractFrom]
                     objectTo = item2["@xlink:to"]
-#                     addAbstractFactRelation(factVOFrom)
-                    if (factToAddDict.get(objectTo, -1) != -1):
-                        factVOTo = factToAddDict[objectTo]
-                        factVOTo.order = item2["@order"]
-                        factToAddDict[objectTo] = factVOTo
-#                         print(factVOTo.__dict__)
-#                     print(str(factVOFrom.__dict__))
-    return list(factToAddDict.values())
+                    for factVO in factToAddList:
+                        if (factVO.labelID == objectTo
+                            and factVO.report == reportDict[reportRole]):
+                            factVO.order = item2["@order"]
+    return factToAddList
 
 def initProcessCache(fileText):
     processCache = {}
@@ -210,10 +198,10 @@ def setFactValues(fileText, factToAddList, processCache):
         try:
             element = insXMLDict[conceptID.replace("_", ":")]
             if isinstance(element, list):
-                for element1 in element:
-                    factValue = getFactValue(periodDict, element1)
-                    if (factValue is not None):
-                        factVO.factValueList.append(factValue)
+                    for element1 in element:
+                        factValue = getFactValue(periodDict, element1)
+                        if (factValue is not None):
+                            factVO.factValueList.append(factValue)
             else:
                 factValue = getFactValue(periodDict, element)
                 if (factValue is not None):
@@ -268,41 +256,32 @@ def importSECFile(filenameList, replace, company, session):
         factToAddList = getFactByReport(fileText, reportDict, processCache)
         factToAddList = setFactValues(fileText, factToAddList, processCache)
         addFact(factToAddList, company, fileData, session)
-        for factVO in factToAddList:
-            logging.getLogger('general').debug(factVO.report.shortName + " " + factVO.conceptName + " " + str(factVO.factValueList)) 
+        #for factVO in factToAddList:
+            #logging.getLogger('general').debug(factVO.report.shortName + " " + factVO.conceptName + " " + str(factVO.factValueList)) 
         logging.getLogger('general').debug("END - Processing filename " + filename)
 
-def addFact(factToAddList, company, fileData, session):
-    for factVO in factToAddList:
-        try:
-            concept = GenericDao.getOneResult(Concept, Concept.conceptName.__eq__(factVO.conceptName), session)
-        except NoResultFound:
-            concept = Concept()
-            concept.conceptName = factVO.conceptName
-            session.add(concept)
-            session.flush()
-            logging.getLogger('addToDB').debug("Added concept" + factVO.conceptName)
-        try:
-            factToAdd = GenericDao.getOneResult(Fact, and_(Fact.company == company, Fact.concept == concept), session)
-        except NoResultFound:
-            factToAdd = Fact()
-        factToAdd.company = company
-        factToAdd.concept = concept
-        factToAdd.report = factVO.report
-        factToAdd.order = factVO.order
-        factToAdd.fileData = fileData
-        if (len(factVO.factValueList)== 1):
-            factToAdd.value = factVO.factValueList[0].value
-            factToAdd.period = factVO.factValueList[0].period
-            if(factVO.factValueList[0].contextRef is not None):
-                print(factVO.factValueList[0].contextRef)
-        elif(len(factVO.factValueList)== 0):
-            logging.getLogger('Error').debug("NoneFactValue " + factToAdd.concept.conceptName)
-        else:
-            logging.getLogger('Error').debug("MoreThanOneFactValue " + factToAdd.concept.conceptName)
-        session.add(factToAdd)
+def addFact(factVOList, company, fileData, session):
+    for factVO in factVOList:
+        concept = Dao.getConcept(factVO.conceptName, session)
+        fact = Dao.getFact(company, concept, factVO.report, fileData, session)
+        fact.company = company
+        fact.concept = concept
+        fact.report = factVO.report
+        fact.order = factVO.order
+        fact.fileData = fileData
+        if (len(factVO.factValueList) > 0): 
+            for factValueVO in factVO.factValueList:
+                factValue = Dao.getFactValue(fact, factValueVO.period, session)
+                factValue.value = factValueVO.value
+                factValue.period = factValueVO.period
+                factValue.fact = fact
+                fact.factValueList.append(factValue)
+        elif(len(factVO.factValueList) == 0):
+            logging.getLogger('Error').debug("NoneFactValue " + fact.concept.conceptName + " " +  fileData.fileName)
+        session.add(fact)
         logging.getLogger('addToDB').debug("Added fact" + str(factVO.conceptName))
     session.commit()
+
 
 def readSECIndexFor(period, company, replace):
     logging.getLogger('general').debug("START - Processing index file " + company.ticker  + " " + str(period.year) + "-" +  str(period.quarter) + " " + " replace " + str(replace))   
@@ -338,8 +317,8 @@ replace = True
 Initializer()
 session = DBConnector().getNewSession()
 company = GenericDao.getOneResult(Company,Company.ticker.__eq__(COMPANY_TICKER), session)
-#periodList = objectResult = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2016)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
-periodList = objectResult = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 3)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+periodList = objectResult = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2016)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+#periodList = objectResult = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2017, QuarterPeriod.quarter == 2)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
 createLog('general', logging.DEBUG)
 createLog('bodyIndex', logging.INFO)
 createLog('bodyXML', logging.DEBUG)
@@ -358,7 +337,8 @@ logging.info("START")
 for period in periodList:
     readSECIndexFor(period, company, replace)
     
-    
+
+
     
     
     

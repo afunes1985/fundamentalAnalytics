@@ -3,9 +3,17 @@ Created on 20 ago. 2018
 
 @author: afunes
 '''
-from sqlalchemy.sql.expression import text
+import logging
+
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import text, and_
 
 from base.dbConnector import DBConnector
+from modelClass.concept import Concept
+from modelClass.fact import Fact
+from modelClass.factValue import FactValue
+from modelClass.report import Report
+
 
 class GenericDao():
     @staticmethod
@@ -64,3 +72,41 @@ class DaoCompanyResult():
             rs = con.execute(query, params)
             return rs 
     
+class Dao():
+    @staticmethod
+    def getFactValue(fact, period, session):
+        try:
+            return GenericDao.getOneResult(FactValue, and_(FactValue.fact.__eq__(fact), FactValue.period.__eq__(period)), session)
+        except NoResultFound:
+            return FactValue()
+
+    @staticmethod
+    def getConcept(conceptName, session):
+        try:
+            return GenericDao.getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session)
+        except NoResultFound:
+            concept = Concept()
+            concept.conceptName = conceptName
+            session.add(concept)
+            session.flush()
+            logging.getLogger('addToDB').debug("Added concept" + conceptName)
+            return concept
+    
+    @staticmethod
+    def getFact(company, concept, report, fileData, session):
+        try:
+            return GenericDao.getOneResult(Fact, and_(Fact.company == company, Fact.concept == concept, Fact.report == report, fileData == fileData), session)
+        except NoResultFound:
+            return Fact()
+        
+    @staticmethod  
+    def getReport(reportShortName, session):
+        try:
+            return GenericDao.getOneResult(Report, and_(Report.shortName == reportShortName), session)
+        except NoResultFound:
+            report = Report()
+            report.shortName = reportShortName
+            session.add(report)
+            session.flush()
+            logging.getLogger('addToDB').debug("ADDED report " + reportShortName)
+            return report
