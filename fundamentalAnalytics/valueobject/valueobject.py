@@ -27,3 +27,8 @@ class FactVO():
     
     def getConceptID(self):
         return self.xlink_href[self.xlink_href.find("#", 0) + 1:len(self.xlink_href)]
+    
+class CompanyVO():
+    def __init__(self):
+        self.CIK = None
+        

@@ -4,12 +4,22 @@ Created on 8 sep. 2018
 @author: afunes
 '''
 from _datetime import datetime
+from _io import BytesIO
+import gzip
 import logging
 import os
 from pathlib import Path
 
+import pandas
 import requests
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import and_
 import xmltodict
+
+from dao.dao import GenericDao, Dao
+from modelClass.period import Period
+from valueobject.constant import Constant
+from valueobject.valueobject import FactVO, FactValueVO
 
 
 tagNameAlias = { "DOCUMENT_FISCAL_PERIOD_FOCUS" : ['dei:DocumentFiscalPeriodFocus'],
@@ -29,16 +39,18 @@ tagNameAlias = { "DOCUMENT_FISCAL_PERIOD_FOCUS" : ['dei:DocumentFiscalPeriodFocu
                  "SCHEMA" : ["xsd:schema", "schema"],
                  "ELEMENT" : ["xsd:element","element"],
                  "UNIT" : ["xbrli:unit","unit"],
-                 "MEASURE" : ["xbrli:measure","measure"]
+                 "MEASURE" : ["xbrli:measure","measure"],
+                 "PRESENTATIONARC" : ["link:presentationArc", "presentationArc"]
                 }
 
-def getBinaryFileFromCache(filename, url):
-    logging.getLogger('general').debug("BIN - Processing filename " + filename)
+def getBinaryFileFromCache(filename, url = None):
+    logging.getLogger('general').debug("BIN - Processing filename " + filename.replace("//", "/"))
     xbrlFile = Path(filename)
+    file = None
     if xbrlFile.exists():
         with open(filename, mode='rb') as file: 
             file = file.read()
-    else:
+    elif (url is not None):
         response = requests.get(url, timeout = 30) 
         directory = os.path.dirname(filename)
         if not os.path.exists(directory):
@@ -49,7 +61,7 @@ def getBinaryFileFromCache(filename, url):
     return file
 
 def getTxtFileFromCache(filename, url):
-    logging.getLogger('general').debug("TXT - Processing filename " + filename)
+    logging.getLogger('general').debug("TXT - Processing filename " + filename.replace("//","/"))
     xbrlFile = Path(filename)
     if xbrlFile.exists():
         with open(filename, mode='r') as file: 
@@ -101,7 +113,13 @@ def getValueWithTagDict(tagnameList, element, raiseException = True):
         raise Exception("Element for tagname not found "  + str(tagnameList) + " " +  str(element))
     else:
         return -1
-    
+def getXmlDictFromText2(fileText, tagKey, key, mainTagList):
+    for mainTag in mainTagList:
+        try:
+            return getXmlDictFromText(fileText, tagKey, key, mainTag)
+        except Exception as e:
+            print(e)
+
 def getXmlDictFromText(fileText, tagKey, key, mainTag):
     xmlText = getXMLFromText(fileText, tagKey, key, mainTag)
     xmlDict = xmltodict.parse(xmlText)
@@ -136,3 +154,5 @@ class LoggingException(Exception):
 
     def log(self):
         logging.getLogger(self.loggerName).debug(self.message)
+        
+

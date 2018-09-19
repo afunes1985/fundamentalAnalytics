@@ -20,3 +20,6 @@ try:
         #company.name = x['name_latest']
 except Exception as e:
     logging.warning(e)
+    
+    
+    

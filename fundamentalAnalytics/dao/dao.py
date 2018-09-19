@@ -9,9 +9,12 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import text, and_
 
 from base.dbConnector import DBConnector
+from modelClass.abstractConcept import AbstractConcept
+from modelClass.abstractFactRelation import AbstractFactRelation
 from modelClass.concept import Concept
 from modelClass.fact import Fact
 from modelClass.factValue import FactValue
+from modelClass.fileData import FileData
 from modelClass.report import Report
 
 
@@ -95,7 +98,7 @@ class Dao():
     @staticmethod
     def getFact(company, concept, report, fileData, session):
         try:
-            return GenericDao.getOneResult(Fact, and_(Fact.company == company, Fact.concept == concept, Fact.report == report, fileData == fileData), session)
+            return GenericDao.getOneResult(Fact, and_(Fact.company == company, Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session)
         except NoResultFound:
             return Fact()
         
@@ -110,3 +113,60 @@ class Dao():
             session.flush()
             logging.getLogger('addToDB').debug("ADDED report " + reportShortName)
             return report
+    
+    @staticmethod   
+    def getFileData(documentPeriodEndDate, entityCentralIndexKey, session):
+        try:
+            return GenericDao.getOneResult(FileData, and_(FileData.documentPeriodEndDate == documentPeriodEndDate, FileData.entityCentralIndexKey == entityCentralIndexKey), session)
+        except NoResultFound:
+            return FileData()
+        
+    @staticmethod   
+    def addFact(factVOList, company, fileData, session):
+        for factVO in factVOList:
+            concept = Dao.getConcept(factVO.conceptName, session)
+            fact = Dao.getFact(company, concept, factVO.report, fileData, session)
+            fact.company = company
+            fact.concept = concept
+            fact.report = factVO.report
+            fact.order = factVO.order
+            fact.fileData = fileData
+            if (len(factVO.factValueList) > 0): 
+                for factValueVO in factVO.factValueList:
+                    factValue = Dao.getFactValue(fact, factValueVO.period, session)
+                    factValue.value = factValueVO.value
+                    factValue.period = factValueVO.period
+                    factValue.fact = fact
+                    fact.factValueList.append(factValue)
+            elif(len(factVO.factValueList) == 0):
+                logging.getLogger('Error').debug("NoneFactValue " + fact.concept.conceptName + " " +  fileData.fileName)
+            session.add(fact)
+            logging.getLogger('addToDB').debug("Added fact" + str(factVO.conceptName))
+        session.commit()
+        
+    @staticmethod     
+    def addAbstractConcept(factVO, session):
+        try:
+            abstractConcept =  GenericDao.getOneResult(AbstractConcept, and_(AbstractConcept.conceptName == factVO.conceptName), session)
+        except NoResultFound:
+            abstractConcept = AbstractConcept()
+            abstractConcept.conceptName = factVO.conceptName
+            session.add(abstractConcept)
+            session.flush()
+            logging.getLogger('addToDB').debug("ADDED abstractConcept " + abstractConcept.conceptName)
+        factVO.abstractConcept = abstractConcept
+        return factVO
+    
+    @staticmethod
+    def addAbstractFactRelation(factVO, session):
+        try:
+            abstractFactRelation =  GenericDao.getOneResult(AbstractFactRelation, and_(AbstractFactRelation.OID == 99), session)
+        except NoResultFound:
+            abstractFactRelation = AbstractFactRelation()
+            abstractFactRelation.abstractFromOID = factVO.abstractFromOID
+            session.add(abstractFactRelation)
+            session.flush()
+            logging.getLogger('addToDB').debug("ADDED abstractFactRelation " + abstractFactRelation.conceptName)
+        factVO.abstractConcept = abstractFactRelation
+        return factVO
+
