@@ -18,6 +18,7 @@ from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from modelClass.period import QuarterPeriod
 from tools.tools import getBinaryFileFromCache, createLog
+from valueobject.constant import Constant
 
 
 class ImportFIlesFromSEC():
@@ -75,10 +76,10 @@ class ImportVO():
                 fileText = response.text
                 if not os.path.exists(fullFileName):
                     os.makedirs(fullFileName)
-                self.saveFile(fileText,"TYPE", "EX-101.SCH", "XBRL",fullFileName, True)
-                self.saveFile(fileText,"TYPE", "EX-101.PRE", "XBRL",fullFileName)
-                self.saveFile(fileText,"TYPE","EX-101.INS","XBRL",fullFileName)
-                self.saveFile2(fileText,"FILENAME", "FilingSummary.xml", ["XML", "XBRL"], fullFileName)
+                self.saveFile(fileText,"TYPE", Constant.DOCUMENT_SCH, "XBRL",fullFileName, True)
+                self.saveFile(fileText,"TYPE", Constant.DOCUMENT_PRE, "XBRL",fullFileName)
+                self.saveFile(fileText,"TYPE", Constant.DOCUMENT_INS, "XBRL",fullFileName)
+                self.saveFile2(fileText,"FILENAME", Constant.DOCUMENT_SUMMARY, ["XML", "XBRL"], fullFileName)
             else:
                 print("EXISTS " + fullFileName)
         except Exception as e:

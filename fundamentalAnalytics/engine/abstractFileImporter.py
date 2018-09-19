@@ -16,7 +16,7 @@ import xmltodict
 from dao.dao import GenericDao, Dao
 from modelClass.company import Company
 from modelClass.period import Period
-from tools.tools import getValueWithTagDict, tagNameAlias, getValueAsDate, \
+from tools.tools import getValueWithTagDict, getValueAsDate, \
     getDaysBetweenDates, getXSDFileFromCache, \
     getBinaryFileFromCache
 from valueobject.constant import Constant
@@ -25,17 +25,35 @@ from valueobject.valueobject import FactVO, FactValueVO
 
 class AbstractFileImporter():
     
+    def isPeriodAllowed(self, element):
+        periodDict = self.processCache[Constant.PERIOD_DICT]
+        if (periodDict.get(element["@contextRef"], -1) != -1):
+            return True
+        return False    
+    
+    def getElementValue(self, xmlDict, elementID, attrID, periodDict):
+        element = xmlDict[elementID]
+        value = None
+        if isinstance(element, list):
+            for ele in element:
+                if (self.isPeriodAllowed(ele)):
+                    value0 = ele[attrID]
+                    if(value is not None and value0 is not None):
+                        raise Exception("Duplicated Value " + elementID + " " + attrID)
+                        value = value0
+        return value
+    
     def getPeriodDict(self, xmlDictRoot, session): 
         periodDict = {}
-        for item in getValueWithTagDict(tagNameAlias['XBRL_CONTEXT'], xmlDictRoot):
-            entityElement = getValueWithTagDict(tagNameAlias['XBRL_ENTITY'], item)
-            if(getValueWithTagDict(tagNameAlias['XBRL_SEGMENT'], entityElement, False) == -1):
-                documentPeriodEndDate = getValueAsDate('DOCUMENT_PERIOD_END_DATE', xmlDictRoot)['#text']
+        for item in getValueWithTagDict(Constant.XBRL_CONTEXT, xmlDictRoot):
+            entityElement = getValueWithTagDict(Constant.XBRL_ENTITY, item)
+            if(getValueWithTagDict(Constant.XBRL_SEGMENT, entityElement, False) == -1):
+                documentPeriodEndDate = getValueAsDate(Constant.DOCUMENT_PERIOD_END_DATE, xmlDictRoot)['#text']
                 documentPeriodEndDate = datetime.strptime(documentPeriodEndDate, '%Y-%m-%d')
-                periodElement = getValueWithTagDict(tagNameAlias['XBRL_PERIOD'], item)
-                startDate = getValueAsDate('XBRL_START_DATE', periodElement)
-                endDate = getValueAsDate('XBRL_END_DATE', periodElement) 
-                instant = getValueAsDate('XBRL_INSTANT', periodElement) 
+                periodElement = getValueWithTagDict(Constant.XBRL_PERIOD, item)
+                startDate = getValueAsDate(Constant.XBRL_START_DATE, periodElement)
+                endDate = getValueAsDate(Constant.XBRL_END_DATE, periodElement)
+                instant = getValueAsDate(Constant.XBRL_INSTANT, periodElement) 
                 if(endDate != -1 and getDaysBetweenDates(documentPeriodEndDate, endDate) < 5):
                     #if(85 < getDaysBetweenDates(startDate, documentPeriodEndDate) < 95):
                         try:
@@ -64,13 +82,13 @@ class AbstractFileImporter():
 
     def initProcessCache(self, filename, session):
         processCache = {}
-        schDF = pandas.DataFrame(getValueWithTagDict(tagNameAlias['ELEMENT'], getValueWithTagDict(tagNameAlias['SCHEMA'], self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
+        schDF = pandas.DataFrame(getValueWithTagDict(Constant.ELEMENT, getValueWithTagDict(Constant.SCHEMA, self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
         schDF.set_index("@id", inplace=True)
         schDF.head()
         processCache[Constant.DOCUMENT_SCH] = schDF
         #XML INSTANCE
         insDict = self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_INS)
-        insDict = getValueAsDate('XBRL_ROOT', insDict)
+        insDict = getValueAsDate(Constant.XBRL_ROOT, insDict)
         processCache[Constant.DOCUMENT_INS] = insDict
         #XML SUMMARY
         sumDict= self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SUMMARY)
@@ -101,53 +119,21 @@ class AbstractFileImporter():
         logging.getLogger('general').debug("REPORT LIST " + str(reportDict))
         return reportDict
     
-    def getFileData(self, processCache, filename, session):
-        insXMLDict = processCache[Constant.DOCUMENT_INS]
-        periodDict = processCache[Constant.PERIOD_DICT]
-        documentType = insXMLDict['dei:DocumentType']['#text']
-        logging.getLogger('general').debug("documentType " + documentType)
-        amendmentFlag = insXMLDict['dei:AmendmentFlag']['#text']
-        amendmentFlag = amendmentFlag.lower() in ("true")
-        documentPeriodEndDate = insXMLDict['dei:DocumentPeriodEndDate']['#text']
-        logging.getLogger('general').debug("DocumentPeriodEndDate " + documentPeriodEndDate)
-        documentFiscalYearFocus = insXMLDict['dei:DocumentFiscalYearFocus']['#text']
-        logging.getLogger('general').debug("DocumentFiscalYearFocus " + documentFiscalYearFocus)
-        documentFiscalPeriodFocus = insXMLDict['dei:DocumentFiscalPeriodFocus']['#text']
-        logging.getLogger('general').debug("DocumentFiscalPeriodFocus " + documentFiscalPeriodFocus)
-        entityCentralIndexKey = insXMLDict['dei:EntityCentralIndexKey']['#text']
-        logging.getLogger('general').debug("EntityCentralIndexKey " + entityCentralIndexKey)
-        #tradingSymbol = insXMLDict['dei:TradingSymbol']['#text']
-        #logging.getLogger('general').debug("TradingSymbol " + tradingSymbol)
-        #entityRegistrantName = insXMLDict['dei:EntityRegistrantName']['#text']
-        fileData = Dao.getFileData(documentPeriodEndDate, entityCentralIndexKey, session)
-        fileData.documentType = documentType
-        fileData.amendmentFlag = amendmentFlag
-        fileData.documentPeriodEndDate = documentPeriodEndDate
-        fileData.documentFiscalYearFocus = documentFiscalYearFocus
-        fileData.documentFiscalPeriodFocus = documentFiscalPeriodFocus
-        fileData.entityCentralIndexKey = entityCentralIndexKey
-        fileData.fileName = filename
-        #fileData.tradingSymbol = tradingSymbol
-        #fileData.entityRegistrantName = entityRegistrantName
-        session.add(fileData)
-        session.flush()
-        logging.getLogger('addToDB').debug("Added fileData" + fileData.documentPeriodEndDate)
-        return fileData
     
     def getUnitDict(self, xmlDictRoot):
         unitDict = {}
-        for item in getValueWithTagDict(tagNameAlias['UNIT'], xmlDictRoot):
-            if (getValueWithTagDict(tagNameAlias['MEASURE'], item, False) == -1):
+        for item in getValueWithTagDict(Constant.UNIT, xmlDictRoot):
+            if (getValueWithTagDict(Constant.MEASURE, item, False) == -1):
                 unitDict[item['@id']]
     
     def getFactByReport(self, reportDict, processCache, session):
         factToAddList = []
         #Obtengo para cada reporte sus conceptos
         xmlDictPre = processCache[Constant.DOCUMENT_PRE]
-        for item in getValueWithTagDict(tagNameAlias['PRESENTATON_LINK'], getValueWithTagDict(tagNameAlias['LINKBASE'], xmlDictPre)): 
+        for item in getValueWithTagDict(Constant.PRESENTATON_LINK, getValueWithTagDict(Constant.LINKBASE, xmlDictPre)): 
             reportRole = item['@xlink:role']
             if any(reportRole in s for s in reportDict.keys()):
-                for item2 in getValueWithTagDict(tagNameAlias['LOC'], item):
+                for item2 in getValueWithTagDict(Constant.LOC, item):
                     factVO = FactVO()
                     factVO.xlink_href = item2["@xlink:href"]
                     factVO.report = reportDict[reportRole]
@@ -157,7 +143,7 @@ class AbstractFileImporter():
                         factToAddList.append(factVO)
                     else:
                         factVO = Dao.addAbstractConcept(factVO, session)
-                for item2 in getValueWithTagDict(tagNameAlias['PRESENTATIONARC'], item):
+                for item2 in getValueWithTagDict(Constant.PRESENTATIONARC, item):
                     try:
                             if(item2["@xlink:arcrole"] == "http://www.xbrl.org/2003/arcrole/parent-child"):
                                 objectTo = item2["@xlink:to"]

@@ -18,6 +18,7 @@ from modelClass.company import Company
 from modelClass.period import QuarterPeriod
 from tools.tools import getBinaryFileFromCache, getTxtFileFromCache, \
     getXmlDictFromText, createLog
+from valueobject.constant import Constant
 
 
 def readSECIndexFor(period, replace, session):
@@ -45,8 +46,8 @@ def readSECIndexFor(period, replace, session):
                                         "https://www.sec.gov/Archives/" + filename)
                     #print(filename)
                     processCache = {}
-                    insXMLDict = getXmlDictFromText(fileText,"TYPE","EX-101.INS","XBRL")
-                    processCache["EX-101.INS"] = insXMLDict
+                    insXMLDict = getXmlDictFromText(fileText,"TYPE",Constant.DOCUMENT_INS,"XBRL")
+                    processCache[Constant.DOCUMENT_INS] = insXMLDict
                     fileData = getFileData(processCache, filename, session)
                     print(fileData.__dict__)
                     company = Company()

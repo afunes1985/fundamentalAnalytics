@@ -22,27 +22,6 @@ from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
 
 
-tagNameAlias = { "DOCUMENT_FISCAL_PERIOD_FOCUS" : ['dei:DocumentFiscalPeriodFocus'],
-                 "DOCUMENT_FISCAL_YEAR_FOCUS" : ['dei:DocumentFiscalYearFocus'],
-                 "DOCUMENT_PERIOD_END_DATE" : ['dei:DocumentPeriodEndDate'],
-                 "XBRL_ROOT" : ['xbrli:xbrl','xbrl'],
-                 "XBRL_CONTEXT" :  ['xbrli:context','context'],
-                 "XBRL_PERIOD" : ['xbrli:period','period'],
-                 "XBRL_START_DATE" : ['xbrli:startDate','startDate'],
-                 "XBRL_END_DATE" : ['xbrli:endDate','endDate'],
-                 "XBRL_INSTANT" : ['xbrli:instant','instant'],
-                 "XBRL_ENTITY" : ['xbrli:entity','entity'],
-                 "XBRL_SEGMENT" : ['xbrli:segment','segment'],
-                 "LINKBASE" : ['link:linkbase','linkbase'],
-                 "PRESENTATON_LINK" : ["link:presentationLink","presentationLink"],
-                 "LOC" : ["link:loc", "loc"],
-                 "SCHEMA" : ["xsd:schema", "schema"],
-                 "ELEMENT" : ["xsd:element","element"],
-                 "UNIT" : ["xbrli:unit","unit"],
-                 "MEASURE" : ["xbrli:measure","measure"],
-                 "PRESENTATIONARC" : ["link:presentationArc", "presentationArc"]
-                }
-
 def getBinaryFileFromCache(filename, url = None):
     logging.getLogger('general').debug("BIN - Processing filename " + filename.replace("//", "/"))
     xbrlFile = Path(filename)
@@ -93,12 +72,12 @@ def getXSDFileFromCache(filename, url):
     return fileText
 
 def getValueAsDate(tagConstant, xmlElement):
-    value = getValueWithTagDict(tagNameAlias[tagConstant], xmlElement, False)
+    value = getValueWithTagDict(tagConstant, xmlElement, False)
     if(isinstance(value, str)):
         return datetime.strptime(value, '%Y-%m-%d')
     else:
         return value
-        
+
 def getDaysBetweenDates(firstDate, secondDate):
     if(secondDate != -1 and firstDate != -1):
         return abs((secondDate - firstDate).days)

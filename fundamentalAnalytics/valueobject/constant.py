@@ -12,3 +12,24 @@ class Constant:
     DOCUMENT_PRE = "EX-101.PRE"
     
     PERIOD_DICT = "PERIOD_DICT"
+    
+    DOCUMENT_FISCAL_PERIOD_FOCUS = ['dei:DocumentFiscalPeriodFocus']
+    DOCUMENT_FISCAL_YEAR_FOCUS =['dei:DocumentFiscalYearFocus']
+    DOCUMENT_PERIOD_END_DATE =['dei:DocumentPeriodEndDate']
+    XBRL_ROOT =['xbrli:xbrl','xbrl']
+    XBRL_CONTEXT = ['xbrli:context','context']
+    XBRL_PERIOD =['xbrli:period','period']
+    XBRL_START_DATE =['xbrli:startDate','startDate']
+    XBRL_END_DATE =['xbrli:endDate','endDate']
+    XBRL_INSTANT =['xbrli:instant','instant']
+    XBRL_ENTITY =['xbrli:entity','entity']
+    XBRL_SEGMENT =['xbrli:segment','segment']
+    LINKBASE =['link:linkbase','linkbase']
+    PRESENTATON_LINK =["link:presentationLink","presentationLink"]
+    LOC =["link:loc", "loc"]
+    SCHEMA =["xsd:schema", "schema"]
+    ELEMENT =["xsd:element","element"]
+    UNIT =["xbrli:unit","unit"]
+    MEASURE =["xbrli:measure","measure"]
+    PRESENTATIONARC =["link:presentationArc", "presentationArc"]
+                
