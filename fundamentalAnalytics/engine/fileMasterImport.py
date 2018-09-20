@@ -12,12 +12,13 @@ from pandas.core.frame import DataFrame
 
 from engine.fileImporter import FileImporter
 from tools.tools import getBinaryFileFromCache
+from valueobject.constant import Constant
 
 
 class FileMasterImporter():
     def doImport(self, period, company, replace, session):
         logging.getLogger('general').debug("START - Processing index file " + company.ticker  + " " + str(period.year) + "-" +  str(period.quarter) + " " + " replace " + str(replace))   
-        file = getBinaryFileFromCache('C://Users//afunes//iCloudDrive//PortfolioViewer//cache//master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
+        file = getBinaryFileFromCache(Constant.CACHE_FOLDER + 'master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
                                     "https://www.sec.gov/Archives/edgar/full-index/" + str(period.year) + "/QTR" + str(period.quarter)+ "/master.gz")
         with gzip.open(BytesIO(file), 'rb') as f:
             file_content = f.read()
@@ -46,6 +47,10 @@ class FileMasterImporter():
                         fi.doImport()
             else:
                 for rowData in df.iterrows():
-                    print(rowData)
+                    filename = rowData["Filename"]
+                    formType = rowData["Form Type"]
+                    if(formType == "10-Q" or formType == "10-K"):
+                        FileImporter(filename, replace)
+                        fi.doImport()
         logging.getLogger('general').debug("END - Processing index file " + company.ticker  + " " + str(period.year) + "-" +  str(period.quarter) + " " + " replace " + str(replace)) 
 

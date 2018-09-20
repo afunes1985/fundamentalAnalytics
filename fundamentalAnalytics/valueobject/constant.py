@@ -6,6 +6,8 @@ Created on 18 sep. 2018
 
 class Constant:
 
+    CACHE_FOLDER = "C://Users//afunes//Downloads//cache//"
+
     DOCUMENT_SCH = "EX-101.SCH"
     DOCUMENT_INS = "EX-101.INS"
     DOCUMENT_SUMMARY = "FilingSummary.xml"

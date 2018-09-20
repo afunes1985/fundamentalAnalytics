@@ -16,9 +16,10 @@ import xmltodict
 from dao.dao import GenericDao, Dao
 from modelClass.company import Company
 from modelClass.period import Period
-from tools.tools import getValueWithTagDict, getValueAsDate, \
+from tools.tools import getValueFromElement, getValueAsDate, \
     getDaysBetweenDates, getXSDFileFromCache, \
-    getBinaryFileFromCache
+    getBinaryFileFromCache, getListFromElement, getElementFromElement, \
+    getObjectFromElement
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
 
@@ -27,7 +28,7 @@ class AbstractFileImporter():
     
     def isPeriodAllowed(self, element):
         periodDict = self.processCache[Constant.PERIOD_DICT]
-        if (periodDict.get(element["@contextRef"], -1) != -1):
+        if (periodDict.get(element["@contextRef"], None) is not None):
             return True
         return False    
     
@@ -45,17 +46,15 @@ class AbstractFileImporter():
     
     def getPeriodDict(self, xmlDictRoot, session): 
         periodDict = {}
-        for item in getValueWithTagDict(Constant.XBRL_CONTEXT, xmlDictRoot):
-            entityElement = getValueWithTagDict(Constant.XBRL_ENTITY, item)
-            if(getValueWithTagDict(Constant.XBRL_SEGMENT, entityElement, False) == -1):
-                documentPeriodEndDate = getValueAsDate(Constant.DOCUMENT_PERIOD_END_DATE, xmlDictRoot)['#text']
-                documentPeriodEndDate = datetime.strptime(documentPeriodEndDate, '%Y-%m-%d')
-                periodElement = getValueWithTagDict(Constant.XBRL_PERIOD, item)
+        documentPeriodEndDate = getValueAsDate(['#text'], getObjectFromElement(Constant.DOCUMENT_PERIOD_END_DATE, xmlDictRoot))
+        for item in getListFromElement(Constant.XBRL_CONTEXT, xmlDictRoot):
+            entityElement = getElementFromElement(Constant.XBRL_ENTITY, item)
+            if(getElementFromElement(Constant.XBRL_SEGMENT, entityElement, False) is None):
+                periodElement = getElementFromElement(Constant.XBRL_PERIOD, item)
                 startDate = getValueAsDate(Constant.XBRL_START_DATE, periodElement)
                 endDate = getValueAsDate(Constant.XBRL_END_DATE, periodElement)
                 instant = getValueAsDate(Constant.XBRL_INSTANT, periodElement) 
-                if(endDate != -1 and getDaysBetweenDates(documentPeriodEndDate, endDate) < 5):
-                    #if(85 < getDaysBetweenDates(startDate, documentPeriodEndDate) < 95):
+                if(endDate is not None and getDaysBetweenDates(documentPeriodEndDate, endDate) < 5):
                         try:
                             period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session)
                             period.daysBetween = getDaysBetweenDates(startDate, endDate)
@@ -82,13 +81,13 @@ class AbstractFileImporter():
 
     def initProcessCache(self, filename, session):
         processCache = {}
-        schDF = pandas.DataFrame(getValueWithTagDict(Constant.ELEMENT, getValueWithTagDict(Constant.SCHEMA, self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
+        schDF = pandas.DataFrame(getListFromElement(Constant.ELEMENT, getElementFromElement(Constant.SCHEMA, self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
         schDF.set_index("@id", inplace=True)
         schDF.head()
         processCache[Constant.DOCUMENT_SCH] = schDF
         #XML INSTANCE
         insDict = self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_INS)
-        insDict = getValueAsDate(Constant.XBRL_ROOT, insDict)
+        insDict = getElementFromElement(Constant.XBRL_ROOT, insDict)
         processCache[Constant.DOCUMENT_INS] = insDict
         #XML SUMMARY
         sumDict= self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SUMMARY)
@@ -99,9 +98,8 @@ class AbstractFileImporter():
         #PERIOD
         periodDict = self.getPeriodDict(insDict, session)
         processCache[Constant.PERIOD_DICT] = periodDict 
-        
-        CIK = insDict['dei:EntityCentralIndexKey']['#text']
-        
+        #COMPANY
+        CIK = getValueFromElement(['#text'], insDict['dei:EntityCentralIndexKey'])
         self.company = GenericDao.getOneResult(Company,Company.CIK.__eq__(CIK), session)
         return processCache
     
@@ -122,18 +120,18 @@ class AbstractFileImporter():
     
     def getUnitDict(self, xmlDictRoot):
         unitDict = {}
-        for item in getValueWithTagDict(Constant.UNIT, xmlDictRoot):
-            if (getValueWithTagDict(Constant.MEASURE, item, False) == -1):
+        for item in getListFromElement(Constant.UNIT, xmlDictRoot):
+            if (getElementFromElement(Constant.MEASURE, item, False) == -1):
                 unitDict[item['@id']]
     
     def getFactByReport(self, reportDict, processCache, session):
         factToAddList = []
         #Obtengo para cada reporte sus conceptos
         xmlDictPre = processCache[Constant.DOCUMENT_PRE]
-        for item in getValueWithTagDict(Constant.PRESENTATON_LINK, getValueWithTagDict(Constant.LINKBASE, xmlDictPre)): 
+        for item in getListFromElement(Constant.PRESENTATON_LINK, getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
             reportRole = item['@xlink:role']
             if any(reportRole in s for s in reportDict.keys()):
-                for item2 in getValueWithTagDict(Constant.LOC, item):
+                for item2 in getListFromElement(Constant.LOC, item):
                     factVO = FactVO()
                     factVO.xlink_href = item2["@xlink:href"]
                     factVO.report = reportDict[reportRole]
@@ -141,21 +139,19 @@ class AbstractFileImporter():
                     factVO = self.setXsdValue(factVO, processCache)
                     if factVO.abstract != "true":
                         factToAddList.append(factVO)
-                    else:
-                        factVO = Dao.addAbstractConcept(factVO, session)
-                for item2 in getValueWithTagDict(Constant.PRESENTATIONARC, item):
+                    #else:
+                        #factVO = Dao.addAbstractConcept(factVO, session)
+                for item2 in getListFromElement(Constant.PRESENTATIONARC, item):
                     try:
-                            if(item2["@xlink:arcrole"] == "http://www.xbrl.org/2003/arcrole/parent-child"):
-                                objectTo = item2["@xlink:to"]
-                                for factVO in factToAddList:
-                                    if (factVO.labelID == objectTo
-                                        and factVO.report == reportDict[reportRole]):
-                                        factVO.order = item2["@order"]
+                        if(item2["@xlink:arcrole"] == "http://www.xbrl.org/2003/arcrole/parent-child"):
+                            objectTo = item2["@xlink:to"]
+                            for factVO in factToAddList:
+                                if (factVO.labelID == objectTo
+                                    and factVO.report == reportDict[reportRole]):
+                                    factVO.order = item2["@order"]
                     except Exception as e:
                         print(e)
         return factToAddList
-    
-    
     
     def setXsdAttr(self, factVO, xsdDF, conceptID):
         factVO.conceptName = xsdDF.loc[conceptID]["@name"]
@@ -170,15 +166,15 @@ class AbstractFileImporter():
         conceptID = factVO.getConceptID()
         if(xsdURL[0:4] == "http"):
             xsdFileName = xsdURL[xsdURL.rfind("/") + 1: len(xsdURL)]
-            if(isinstance(processCache.get(xsdFileName, -1), int)):
-                xsdFile = getXSDFileFromCache("C://Users//afunes//iCloudDrive//PortfolioViewer//cache//xsd//" + xsdFileName, xsdURL)
+            if(processCache.get(xsdFileName, None) is None):
+                xsdFile = getXSDFileFromCache(Constant.CACHE_FOLDER + "xsd//" + xsdFileName, xsdURL)
                 xsdDict = xmltodict.parse(xsdFile)
                 xsdDF = pandas.DataFrame(xsdDict["xs:schema"]["xs:element"])
                 xsdDF.set_index("@id", inplace=True)
                 xsdDF.head()
                 processCache[xsdFileName] = xsdDF
             else:
-                xsdDF = processCache.get(xsdFileName, -1)
+                xsdDF = processCache.get(xsdFileName, None)
             factVO = self.setXsdAttr(factVO, xsdDF, conceptID)
         else:
             xsdDF = processCache[Constant.DOCUMENT_SCH]
@@ -186,7 +182,7 @@ class AbstractFileImporter():
         return factVO
     
     def getFactValue(self, periodDict, element):
-        if(periodDict.get(element["@contextRef"], -1) != -1):
+        if(periodDict.get(element["@contextRef"], None) is not None):
             factValue = FactValueVO()
             contextRef = element["@contextRef"]
             factValue.period = periodDict[contextRef]
@@ -217,7 +213,7 @@ class AbstractFileImporter():
         return factToAddList
     
     def getXMLDictFromGZCache(self, filename, documentName):
-        finalFileName = "C://Users//afunes//iCloudDrive//PortfolioViewer//cache//" + filename[0: filename.find(".txt")] + "/" + documentName + ".gz"
+        finalFileName = Constant.CACHE_FOLDER + filename[0: filename.find(".txt")] + "/" + documentName + ".gz"
         logging.getLogger('general').debug("XML - Processing filename " + finalFileName.replace("//", "/"))
         file = getBinaryFileFromCache(finalFileName)
         if (file is not None):
