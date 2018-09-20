@@ -16,10 +16,7 @@ import xmltodict
 from dao.dao import GenericDao, Dao
 from modelClass.company import Company
 from modelClass.period import Period
-from tools.tools import getValueFromElement, getValueAsDate, \
-    getDaysBetweenDates, getXSDFileFromCache, \
-    getBinaryFileFromCache, getListFromElement, getElementFromElement, \
-    getObjectFromElement
+from tools.tools import getDaysBetweenDates, getXSDFileFromCache, getBinaryFileFromCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
 
@@ -46,14 +43,14 @@ class AbstractFileImporter():
     
     def getPeriodDict(self, xmlDictRoot, session): 
         periodDict = {}
-        documentPeriodEndDate = getValueAsDate(['#text'], getObjectFromElement(Constant.DOCUMENT_PERIOD_END_DATE, xmlDictRoot))
-        for item in getListFromElement(Constant.XBRL_CONTEXT, xmlDictRoot):
-            entityElement = getElementFromElement(Constant.XBRL_ENTITY, item)
-            if(getElementFromElement(Constant.XBRL_SEGMENT, entityElement, False) is None):
-                periodElement = getElementFromElement(Constant.XBRL_PERIOD, item)
-                startDate = getValueAsDate(Constant.XBRL_START_DATE, periodElement)
-                endDate = getValueAsDate(Constant.XBRL_END_DATE, periodElement)
-                instant = getValueAsDate(Constant.XBRL_INSTANT, periodElement) 
+        documentPeriodEndDate = self.getValueAsDate(['#text'], self.getObjectFromElement(Constant.DOCUMENT_PERIOD_END_DATE, xmlDictRoot))
+        for item in self.getListFromElement(Constant.XBRL_CONTEXT, xmlDictRoot):
+            entityElement = self.getElementFromElement(Constant.XBRL_ENTITY, item)
+            if(self.getElementFromElement(Constant.XBRL_SEGMENT, entityElement, False) is None):
+                periodElement = self.getElementFromElement(Constant.XBRL_PERIOD, item)
+                startDate = self.getValueAsDate(Constant.XBRL_START_DATE, periodElement)
+                endDate = self.getValueAsDate(Constant.XBRL_END_DATE, periodElement)
+                instant = self.getValueAsDate(Constant.XBRL_INSTANT, periodElement) 
                 if(endDate is not None and getDaysBetweenDates(documentPeriodEndDate, endDate) < 5):
                         try:
                             period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session)
@@ -81,13 +78,13 @@ class AbstractFileImporter():
 
     def initProcessCache(self, filename, session):
         processCache = {}
-        schDF = pandas.DataFrame(getListFromElement(Constant.ELEMENT, getElementFromElement(Constant.SCHEMA, self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
+        schDF = pandas.DataFrame(self.getListFromElement(Constant.ELEMENT, self.getElementFromElement(Constant.SCHEMA, self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
         schDF.set_index("@id", inplace=True)
         schDF.head()
         processCache[Constant.DOCUMENT_SCH] = schDF
         #XML INSTANCE
         insDict = self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_INS)
-        insDict = getElementFromElement(Constant.XBRL_ROOT, insDict)
+        insDict = self.getElementFromElement(Constant.XBRL_ROOT, insDict)
         processCache[Constant.DOCUMENT_INS] = insDict
         #XML SUMMARY
         sumDict= self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SUMMARY)
@@ -99,7 +96,7 @@ class AbstractFileImporter():
         periodDict = self.getPeriodDict(insDict, session)
         processCache[Constant.PERIOD_DICT] = periodDict 
         #COMPANY
-        CIK = getValueFromElement(['#text'], insDict['dei:EntityCentralIndexKey'])
+        CIK = self.getValueFromElement(['#text'], insDict['dei:EntityCentralIndexKey'])
         self.company = GenericDao.getOneResult(Company,Company.CIK.__eq__(CIK), session)
         return processCache
     
@@ -120,18 +117,18 @@ class AbstractFileImporter():
     
     def getUnitDict(self, xmlDictRoot):
         unitDict = {}
-        for item in getListFromElement(Constant.UNIT, xmlDictRoot):
-            if (getElementFromElement(Constant.MEASURE, item, False) == -1):
+        for item in self.getListFromElement(Constant.UNIT, xmlDictRoot):
+            if (self.getElementFromElement(Constant.MEASURE, item, False) == -1):
                 unitDict[item['@id']]
     
     def getFactByReport(self, reportDict, processCache, session):
         factToAddList = []
         #Obtengo para cada reporte sus conceptos
         xmlDictPre = processCache[Constant.DOCUMENT_PRE]
-        for item in getListFromElement(Constant.PRESENTATON_LINK, getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
+        for item in self.getListFromElement(Constant.PRESENTATON_LINK, self.getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
             reportRole = item['@xlink:role']
             if any(reportRole in s for s in reportDict.keys()):
-                for item2 in getListFromElement(Constant.LOC, item):
+                for item2 in self.getListFromElement(Constant.LOC, item):
                     factVO = FactVO()
                     factVO.xlink_href = item2["@xlink:href"]
                     factVO.report = reportDict[reportRole]
@@ -141,7 +138,7 @@ class AbstractFileImporter():
                         factToAddList.append(factVO)
                     #else:
                         #factVO = Dao.addAbstractConcept(factVO, session)
-                for item2 in getListFromElement(Constant.PRESENTATIONARC, item):
+                for item2 in self.getListFromElement(Constant.PRESENTATIONARC, item):
                     try:
                         if(item2["@xlink:arcrole"] == "http://www.xbrl.org/2003/arcrole/parent-child"):
                             objectTo = item2["@xlink:to"]
@@ -223,4 +220,57 @@ class AbstractFileImporter():
                 xmlDict = xmltodict.parse(text)
                 return xmlDict
         else:
-            return None
+            raise Exception("File doesn't found" + filename)
+        
+    def getValueAsDate(self, attrID, element):
+        value = self.getValueFromElement(attrID, element, False)
+        if(value is not None):
+            return datetime.strptime(value, '%Y-%m-%d')
+    
+    def getObjectFromElement(self, objectIDList, element):
+        for objectID in objectIDList:
+            if(element.get(objectID, None) is not None):
+                return element.get(objectID)
+            
+    def getObjectFromList(self, objectIDList, list_):
+        for objectID in objectIDList:
+            for itemList in list_:
+                if(itemList.get(objectID, None) is not None):
+                    return itemList#TODO
+                
+    def getListFromElement(self, elementIDList, element, raiseException = True):
+        obj = self.getObjectFromElement(elementIDList, element)
+        if (obj is None):
+            if (raiseException):
+                raise Exception("List for elementID not found "  + str(elementIDList) + " " +  str(element)[0:50])
+        elif(isinstance(obj, dict)):
+            return [obj]
+        elif(not isinstance(obj, list)):
+            raise Exception("List for elementID is not list "  + str(elementIDList) + " " +  str(element)[0:50])
+        else:
+            return obj
+    
+    def getElementFromElement(self, elementIDList, element, raiseException = True):
+        obj = self.getObjectFromElement(elementIDList, element)
+        if (obj is None):
+            if (raiseException):
+                raise Exception("Element for elementID not found "  + str(elementIDList) + " " +  str(element)[0:50])
+        elif(not isinstance(obj, dict)):
+            raise Exception("Element for elementID is not dict "  + str(elementIDList) + " " +  str(element)[0:50])
+        else:
+            return obj
+    
+    def getValueFromElement(self, attrIDList, element, raiseException = True):
+        if(isinstance(element, dict)):
+            obj = self.getObjectFromElement(attrIDList, element)
+        elif(isinstance(element, list)):
+            obj = self.getObjectFromList(attrIDList, element)
+        if (obj is None):
+            if (raiseException):
+                raise Exception("Value for attrID not found "  + str(attrIDList) + " " +  str(element)[0:50])
+        elif(isinstance(obj, dict)):
+            return self.getValueFromElement(attrIDList, obj, raiseException)
+        elif(not isinstance(obj, str)):
+            raise Exception("Value for elementID is not str "  + str(attrIDList) + " " +  str(element)[0:50])
+        else:
+            return obj

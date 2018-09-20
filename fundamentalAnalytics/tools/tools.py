@@ -71,62 +71,11 @@ def getXSDFileFromCache(filename, url):
             fileText = response.text
     return fileText
 
-def getValueAsDate(attrID, element):
-    value = getValueFromElement(attrID, element, False)
-    if(value is not None):
-        return datetime.strptime(value, '%Y-%m-%d')
-
 def getDaysBetweenDates(firstDate, secondDate):
     if(secondDate is not None and firstDate is not None):
         return abs((secondDate - firstDate).days)
     else:
         return 10000
-
-def getObjectFromElement(objectIDList, element):
-    for objectID in objectIDList:
-        if(element.get(objectID, None) is not None):
-            return element.get(objectID)
-        
-def getObjectFromList(objectIDList, list_):
-    for objectID in objectIDList:
-        for itemList in list_:
-            if(itemList.get(objectID, None) is not None):
-                return itemList#TODO
-            
-def getListFromElement(elementIDList, element, raiseException = True):
-    obj = getObjectFromElement(elementIDList, element)
-    if (obj is None):
-        if (raiseException):
-            raise Exception("List for elementID not found "  + str(elementIDList) + " " +  str(element)[0:50])
-    elif(not isinstance(obj, list)):
-        raise Exception("List for elementID is not list "  + str(elementIDList) + " " +  str(element)[0:50])
-    else:
-        return obj
-
-def getElementFromElement(elementIDList, element, raiseException = True):
-    obj = getObjectFromElement(elementIDList, element)
-    if (obj is None):
-        if (raiseException):
-            raise Exception("Element for elementID not found "  + str(elementIDList) + " " +  str(element)[0:50])
-    elif(not isinstance(obj, dict)):
-        raise Exception("Element for elementID is not dict "  + str(elementIDList) + " " +  str(element)[0:50])
-    else:
-        return obj
-
-def getValueFromElement(attrIDList, element, raiseException = True):
-    if(isinstance(element, dict)):
-        obj = getObjectFromElement(attrIDList, element)
-    elif(isinstance(element, list)):
-        obj = getObjectFromList(attrIDList, element)
-    if (obj is None):
-        if (raiseException):
-            raise Exception("Value for attrID not found "  + str(attrIDList) + " " +  str(element)[0:50])
-    elif(isinstance(obj, dict)):
-        return getValueFromElement(attrIDList, obj, raiseException)
-    elif(not isinstance(obj, str)):
-        raise Exception("Value for elementID is not str "  + str(attrIDList) + " " +  str(element)[0:50])
-    else:
-        return obj
 
 def getXmlDictFromText2(fileText, tagKey, key, mainTagList):
     for mainTag in mainTagList:

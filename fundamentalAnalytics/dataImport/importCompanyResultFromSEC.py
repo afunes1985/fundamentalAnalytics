@@ -17,13 +17,13 @@ from tools.tools import createLog
 
 
 if __name__ == "__main__":
-    COMPANY_TICKER = 'CSCO'
+    COMPANY_TICKER = 'INTC'
     replace = True
     Initializer()
     session = DBConnector().getNewSession()
     company = GenericDao.getOneResult(Company,Company.ticker.__eq__(COMPANY_TICKER), session)
     #periodList =  session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2015)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
-    periodList =  session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 1)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+    periodList =  session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 2)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
     createLog('general', logging.DEBUG)
     createLog('bodyIndex', logging.INFO)
     createLog('bodyXML', logging.DEBUG)
