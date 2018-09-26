@@ -220,7 +220,7 @@ class AbstractFileImporter():
                 xmlDict = xmltodict.parse(text)
                 return xmlDict
         else:
-            raise Exception("File doesn't found" + filename)
+            raise Exception("File doesn't found" + finalFileName.replace("//", "/"))
         
     def getValueAsDate(self, attrID, element):
         value = self.getValueFromElement(attrID, element, False)

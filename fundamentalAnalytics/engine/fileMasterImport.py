@@ -17,7 +17,7 @@ from valueobject.constant import Constant
 
 class FileMasterImporter():
     def doImport(self, period, company, replace, session):
-        logging.getLogger('general').debug("START - Processing index file " + company.ticker  + " " + str(period.year) + "-" +  str(period.quarter) + " " + " replace " + str(replace))   
+        logging.getLogger('general').debug("START - Processing index file " + str(period.year) + "-" +  str(period.quarter) + " " + " replace " + str(replace))   
         file = getBinaryFileFromCache(Constant.CACHE_FOLDER + 'master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
                                     "https://www.sec.gov/Archives/edgar/full-index/" + str(period.year) + "/QTR" + str(period.quarter)+ "/master.gz")
         with gzip.open(BytesIO(file), 'rb') as f:
@@ -47,10 +47,13 @@ class FileMasterImporter():
                         fi.doImport()
             else:
                 for rowData in df.iterrows():
-                    filename = rowData["Filename"]
-                    formType = rowData["Form Type"]
+                    filename = rowData[1]["Filename"]
+                    formType = rowData[1]["Form Type"]
                     if(formType == "10-Q" or formType == "10-K"):
-                        FileImporter(filename, replace)
-                        fi.doImport()
+                        try:
+                            fi = FileImporter(filename, replace)
+                            fi.doImport()
+                        except Exception as e:
+                                logging.getLogger('Error').debug("ERROR " + filename + " " + str(e))
         logging.getLogger('general').debug("END - Processing index file " + company.ticker  + " " + str(period.year) + "-" +  str(period.quarter) + " " + " replace " + str(replace)) 
 

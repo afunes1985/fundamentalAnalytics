@@ -19,20 +19,22 @@ class FileImporter(AbstractFileImporter):
         self.filename = filename
             
     def doImport(self):
-        logging.getLogger('general').debug("START - Processing filename " + self.filename)
-        fileData = self.getFileData(self.processCache, self.filename, self.session)
-        reportDict = self.getReportDict(self.processCache, self.session)
-        factToAddList = self.getFactByReport(reportDict, self.processCache, self.session)
-        factToAddList = self.setFactValues(factToAddList, self.processCache)
-        Dao.addFact(factToAddList, self.company, fileData, self.session)
-        #for factVO in factToAddList:
-            #logging.getLogger('general').debug(factVO.report.shortName + " " + factVO.conceptName + " " + str(factVO.factValueList)) 
-        logging.getLogger('general').debug("END - Processing filename " + self.filename)
+        try:
+            logging.getLogger('general').debug("START - Processing filename " + self.filename)
+            fileData = self.getFileData(self.processCache, self.filename, self.session)
+            reportDict = self.getReportDict(self.processCache, self.session)
+            factToAddList = self.getFactByReport(reportDict, self.processCache, self.session)
+            factToAddList = self.setFactValues(factToAddList, self.processCache)
+            Dao.addFact(factToAddList, self.company, fileData, self.session)
+            #for factVO in factToAddList:
+                #logging.getLogger('general').debug(factVO.report.shortName + " " + factVO.conceptName + " " + str(factVO.factValueList)) 
+            logging.getLogger('general').debug("END - Processing filename " + self.filename)
+        except Exception as e:
+            logging.getLogger('Error').debug("ERROR " + self.filename + " " + str(e))
         
         
     def getFileData(self, processCache, filename, session):
         insXMLDict = processCache[Constant.DOCUMENT_INS]
-        periodDict = processCache[Constant.PERIOD_DICT]
         documentType = insXMLDict['dei:DocumentType']['#text']
         logging.getLogger('general').debug("documentType " + documentType)
         amendmentFlag = insXMLDict['dei:AmendmentFlag']['#text']
