@@ -34,7 +34,6 @@ def readSECIndexFor(period, replace, session):
         df = pandas.read_csv(StringIO(text2), sep="|")
         df.set_index("CIK", inplace=True)
         df.head()
-        #logging.getLogger('bodyIndex').debug(df.to_string())}
         count = 0
         for row in df.iterrows():
             count += 1

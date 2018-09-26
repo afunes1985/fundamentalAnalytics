@@ -14,29 +14,24 @@ from engine.fileMasterImport import FileMasterImporter
 from modelClass.company import Company
 from modelClass.period import QuarterPeriod
 from tools.tools import createLog
+from valueobject.constant import Constant
 
 
 if __name__ == "__main__":
-    COMPANY_TICKER = 'INTC'
+    COMPANY_TICKER = None
     replace = True
     Initializer()
     session = DBConnector().getNewSession()
-    company = GenericDao.getOneResult(Company,Company.ticker.__eq__(COMPANY_TICKER), session)
+    if (COMPANY_TICKER is not None):
+        company = GenericDao.getOneResult(Company,Company.ticker.__eq__(COMPANY_TICKER), session)
+    else:
+        company = None
     #periodList =  session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2015)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
-    periodList =  session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 2)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
-    createLog('general', logging.DEBUG)
-    createLog('bodyIndex', logging.INFO)
-    createLog('bodyXML', logging.DEBUG)
-    createLog('Error', logging.DEBUG)
-    createLog('InvalidOperation_convertToDecimal', logging.DEBUG)
-    createLog('notinclude_UnitRef', logging.INFO)
-    createLog('notinclude_ContextRef', logging.INFO)
-    createLog('skipped_underscore', logging.INFO)
-    createLog('skipped', logging.INFO)
-    createLog('xsdNotFound', logging.DEBUG)
-    createLog('addToDB', logging.INFO)
-    createLog('matchList_empty', logging.INFO)
-    createLog('tempData', logging.INFO)
+    periodList =  session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 1)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+    createLog(Constant.LOGGER_GENERAL, logging.DEBUG)
+    createLog(Constant.LOGGER_ERROR, logging.DEBUG)
+    createLog(Constant.LOGGER_NONEFACTVALUE, logging.DEBUG)
+    createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
     
     for period in periodList:

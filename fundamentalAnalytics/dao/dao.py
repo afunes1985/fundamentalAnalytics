@@ -16,6 +16,7 @@ from modelClass.fact import Fact
 from modelClass.factValue import FactValue
 from modelClass.fileData import FileData
 from modelClass.report import Report
+from valueobject.constant import Constant
 
 
 class GenericDao():
@@ -92,7 +93,7 @@ class Dao():
             concept.conceptName = conceptName
             session.add(concept)
             session.flush()
-            logging.getLogger('addToDB').debug("Added concept" + conceptName)
+            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added concept" + conceptName)
             return concept
     
     @staticmethod
@@ -111,7 +112,7 @@ class Dao():
             report.shortName = reportShortName
             session.add(report)
             session.flush()
-            logging.getLogger('addToDB').debug("ADDED report " + reportShortName)
+            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added report " + reportShortName)
             return report
     
     @staticmethod   
@@ -139,9 +140,9 @@ class Dao():
                     factValue.fact = fact
                     fact.factValueList.append(factValue)
             elif(len(factVO.factValueList) == 0):
-                logging.getLogger('Error').debug("NoneFactValue " + fact.concept.conceptName + " " +  fileData.fileName)
+                logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + fact.concept.conceptName + " " +  fileData.fileName)
             session.add(fact)
-            logging.getLogger('addToDB').debug("Added fact" + str(factVO.conceptName))
+            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added fact" + str(factVO.conceptName))
         session.commit()
         
     @staticmethod     
@@ -153,7 +154,7 @@ class Dao():
             abstractConcept.conceptName = factVO.conceptName
             session.add(abstractConcept)
             session.flush()
-            logging.getLogger('addToDB').debug("ADDED abstractConcept " + abstractConcept.conceptName)
+            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added abstractConcept " + abstractConcept.conceptName)
         factVO.abstractConcept = abstractConcept
         return factVO
     
@@ -166,7 +167,7 @@ class Dao():
             abstractFactRelation.abstractFromOID = factVO.abstractFromOID
             session.add(abstractFactRelation)
             session.flush()
-            logging.getLogger('addToDB').debug("ADDED abstractFactRelation " + abstractFactRelation.conceptName)
+            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added abstractFactRelation " + abstractFactRelation.conceptName)
         factVO.abstractConcept = abstractFactRelation
         return factVO
 

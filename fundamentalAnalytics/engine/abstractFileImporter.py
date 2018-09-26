@@ -23,11 +23,23 @@ from valueobject.valueobject import FactVO, FactValueVO
 
 class AbstractFileImporter():
     
-    def isPeriodAllowed(self, element):
-        periodDict = self.processCache[Constant.PERIOD_DICT]
-        if (periodDict.get(element["@contextRef"], None) is not None):
+    def isPeriodDefaultAllowed(self, element):
+        if(self.getElementFromElement(Constant.XBRL_SEGMENT, element, False) is None):
             return True
-        return False    
+        return False   
+    
+    def isPeriodAllowed(self, element):
+        if (self.processCache is not None):
+            periodDict = self.processCache[Constant.PERIOD_DICT]
+            if (periodDict is not None and periodDict.get(element["@contextRef"], None) is not None):
+                return True
+            elif(self.isPeriodDefaultAllowed(element)):
+                return True
+            return False  
+        elif(self.isPeriodDefaultAllowed(element)):
+                return True
+        else:
+            return False 
     
     def getElementValue(self, xmlDict, elementID, attrID, periodDict):
         element = xmlDict[elementID]
@@ -62,7 +74,7 @@ class AbstractFileImporter():
                             period.daysBetween = getDaysBetweenDates(startDate, endDate)
                             session.add(period)
                             session.flush()
-                            logging.getLogger('addToDB').debug("ADDED period " + str(period.startDate) + " " + str(period.endDate))
+                            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added period " + str(period.startDate) + " " + str(period.endDate))
                         periodDict[item['@id']] = period
                 elif(getDaysBetweenDates(instant, documentPeriodEndDate) < 5):
                     try:
@@ -72,7 +84,7 @@ class AbstractFileImporter():
                         period.instant = instant
                         session.add(period)
                         session.flush()
-                        logging.getLogger('addToDB').debug("ADDED period " + str(period.instant))
+                        logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added period " + str(period.instant))
                     periodDict[item['@id']] = period
         return periodDict
 
@@ -111,7 +123,7 @@ class AbstractFileImporter():
                 reportShortName = report["ShortName"]
                 report = Dao.getReport(reportShortName, session)
                 reportDict[reportRole] = report
-        logging.getLogger('general').debug("REPORT LIST " + str(reportDict))
+        logging.getLogger(Constant.LOGGER_GENERAL).debug("REPORT LIST " + str(reportDict))
         return reportDict
     
     
@@ -190,7 +202,7 @@ class AbstractFileImporter():
     def setFactValues(self, factToAddList, processCache):
         insXMLDict = processCache[Constant.DOCUMENT_INS]
         periodDict = processCache[Constant.PERIOD_DICT]
-        logging.getLogger('general').debug("periodDict " + str(periodDict))
+        logging.getLogger(Constant.LOGGER_GENERAL).debug("periodDict " + str(periodDict))
         
         for factVO in factToAddList:
             conceptID = factVO.xlink_href[factVO.xlink_href.find("#", 0) + 1:len(factVO.xlink_href)]
@@ -206,12 +218,12 @@ class AbstractFileImporter():
                     if (factValue is not None):
                         factVO.factValueList.append(factValue)
             except KeyError as e:
-                logging.getLogger('Error').debug("KeyError " + str(e) + " " + conceptID )
+                logging.getLogger(Constant.LOGGER_ERROR).debug("KeyError " + str(e) + " " + conceptID )
         return factToAddList
     
     def getXMLDictFromGZCache(self, filename, documentName):
         finalFileName = Constant.CACHE_FOLDER + filename[0: filename.find(".txt")] + "/" + documentName + ".gz"
-        logging.getLogger('general').debug("XML - Processing filename " + finalFileName.replace("//", "/"))
+        logging.getLogger(Constant.LOGGER_GENERAL).debug("XML - Processing filename " + finalFileName.replace("//", "/"))
         file = getBinaryFileFromCache(finalFileName)
         if (file is not None):
             with gzip.open(BytesIO(file), 'rb') as f:
@@ -234,9 +246,10 @@ class AbstractFileImporter():
             
     def getObjectFromList(self, objectIDList, list_):
         for objectID in objectIDList:
-            for itemList in list_:
-                if(itemList.get(objectID, None) is not None):
-                    return itemList#TODO
+            for element in list_:
+                if(element.get(objectID, None) is not None):
+                    if(self.isPeriodAllowed(element)):
+                        return element
                 
     def getListFromElement(self, elementIDList, element, raiseException = True):
         obj = self.getObjectFromElement(elementIDList, element)

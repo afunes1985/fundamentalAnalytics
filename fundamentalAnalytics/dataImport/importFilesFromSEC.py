@@ -23,7 +23,7 @@ from valueobject.constant import Constant
 
 class ImportFIlesFromSEC():
     def importMasterIndexFor(self, period, replace, session):
-        file = getBinaryFileFromCache('C://Users//afunes//iCloudDrive//PortfolioViewer//cache//master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
+        file = getBinaryFileFromCache(Constant.CACHE_FOLDER + 'master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
                                     "https://www.sec.gov/Archives/edgar/full-index/" + str(period.year) + "/QTR" + str(period.quarter)+ "/master.gz")
         with gzip.open(BytesIO(file), 'rb') as f:
             file_content = f.read()
@@ -49,6 +49,7 @@ class ImportFIlesFromSEC():
                     threads.append(t)
             for thread in threads:
                 thread.join()
+            print("FINISHED")
                     
     
     
@@ -66,10 +67,9 @@ class ImportVO():
         
     def importFiles(self, filename):
         try:
-            fullFileName = "C://Users//afunes//iCloudDrive//PortfolioViewer//cache//" + filename
+            fullFileName = Constant.CACHE_FOLDER + filename
             fullFileName = fullFileName[0: fullFileName.find(".txt")]
             print(fullFileName)
-            if not os.path.exists(fullFileName):
                 url = "https://www.sec.gov/Archives/" + filename
                 print(url)
                 response = requests.get(url, timeout = 30) 
@@ -84,7 +84,11 @@ class ImportVO():
                 print("EXISTS " + fullFileName)
         except Exception as e:
                 print(e)
-                
+           
+    def validateIfSomeFilesNotExits(self, folder):
+        if not os.path.exists(folder + "//" + Constant.DOCUMENT_INS + ".gz"):
+            
+             
     def saveFile(self, fileText, tagKey, key, mainTag, fullFileName, skipIfNotExists = False):
         xmlFile= self.getXMLFromText(fileText, tagKey, key, mainTag, skipIfNotExists)
         if(xmlFile is not None):
@@ -117,8 +121,8 @@ class ImportVO():
 if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
-    #periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 1)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
-    periodList = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2015)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+    periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 1)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+    #periodList = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2015)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
     logging.info("START")
     createLog('general', logging.DEBUG)
     for period in periodList:

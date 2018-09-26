@@ -20,35 +20,33 @@ class FileImporter(AbstractFileImporter):
             
     def doImport(self):
         try:
-            logging.getLogger('general').debug("START - Processing filename " + self.filename)
+            logging.getLogger(Constant.LOGGER_GENERAL).debug("START - Processing filename " + self.filename)
             fileData = self.getFileData(self.processCache, self.filename, self.session)
             reportDict = self.getReportDict(self.processCache, self.session)
             factToAddList = self.getFactByReport(reportDict, self.processCache, self.session)
             factToAddList = self.setFactValues(factToAddList, self.processCache)
             Dao.addFact(factToAddList, self.company, fileData, self.session)
-            #for factVO in factToAddList:
-                #logging.getLogger('general').debug(factVO.report.shortName + " " + factVO.conceptName + " " + str(factVO.factValueList)) 
-            logging.getLogger('general').debug("END - Processing filename " + self.filename)
+            logging.getLogger(Constant.LOGGER_GENERAL).debug("END - Processing filename " + self.filename)
         except Exception as e:
-            logging.getLogger('Error').debug("ERROR " + self.filename + " " + str(e))
+            logging.getLogger(Constant.LOGGER_ERROR).debug("ERROR " + self.filename + " " + str(e))
         
         
     def getFileData(self, processCache, filename, session):
         insXMLDict = processCache[Constant.DOCUMENT_INS]
         documentType = insXMLDict['dei:DocumentType']['#text']
-        logging.getLogger('general').debug("documentType " + documentType)
+        logging.getLogger(Constant.LOGGER_GENERAL).debug("documentType " + documentType)
         amendmentFlag = insXMLDict['dei:AmendmentFlag']['#text']
         amendmentFlag = amendmentFlag.lower() in ("true")
         documentPeriodEndDate = insXMLDict['dei:DocumentPeriodEndDate']['#text']
-        logging.getLogger('general').debug("DocumentPeriodEndDate " + documentPeriodEndDate)
+        logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentPeriodEndDate " + documentPeriodEndDate)
         documentFiscalYearFocus = insXMLDict['dei:DocumentFiscalYearFocus']['#text']
-        logging.getLogger('general').debug("DocumentFiscalYearFocus " + documentFiscalYearFocus)
+        logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalYearFocus " + documentFiscalYearFocus)
         documentFiscalPeriodFocus = insXMLDict['dei:DocumentFiscalPeriodFocus']['#text']
-        logging.getLogger('general').debug("DocumentFiscalPeriodFocus " + documentFiscalPeriodFocus)
+        logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalPeriodFocus " + documentFiscalPeriodFocus)
         entityCentralIndexKey = insXMLDict['dei:EntityCentralIndexKey']['#text']
-        logging.getLogger('general').debug("EntityCentralIndexKey " + entityCentralIndexKey)
+        logging.getLogger(Constant.LOGGER_GENERAL).debug("EntityCentralIndexKey " + entityCentralIndexKey)
         #tradingSymbol = insXMLDict['dei:TradingSymbol']['#text']
-        #logging.getLogger('general').debug("TradingSymbol " + tradingSymbol)
+        #logging.getLogger(Constant.LOGGER_GENERAL).debug("TradingSymbol " + tradingSymbol)
         #entityRegistrantName = insXMLDict['dei:EntityRegistrantName']['#text']
         fileData = Dao.getFileData(documentPeriodEndDate, entityCentralIndexKey, session)
         fileData.documentType = documentType
@@ -62,7 +60,7 @@ class FileImporter(AbstractFileImporter):
         #fileData.entityRegistrantName = entityRegistrantName
         session.add(fileData)
         session.flush()
-        logging.getLogger('addToDB').debug("Added fileData" + fileData.documentPeriodEndDate)
+        logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added fileData" + fileData.documentPeriodEndDate)
         return fileData
         
 

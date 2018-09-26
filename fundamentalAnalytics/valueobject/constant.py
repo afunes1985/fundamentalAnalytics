@@ -34,4 +34,9 @@ class Constant:
     UNIT =["xbrli:unit","unit"]
     MEASURE =["xbrli:measure","measure"]
     PRESENTATIONARC =["link:presentationArc", "presentationArc"]
-                
+    CONTEXT_REF =["@contextRef"]
+    
+    LOGGER_ERROR = "Error"
+    LOGGER_NONEFACTVALUE = "NoneFactValue"
+    LOGGER_GENERAL = "general"
+    LOGGER_ADDTODB = "addToDB"

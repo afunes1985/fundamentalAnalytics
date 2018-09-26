@@ -23,7 +23,7 @@ from valueobject.valueobject import FactVO, FactValueVO
 
 
 def getBinaryFileFromCache(filename, url = None):
-    logging.getLogger('general').debug("BIN - Processing filename " + filename.replace("//", "/"))
+    logging.getLogger(Constant.LOGGER_GENERAL).debug("BIN - Processing filename " + filename.replace("//", "/"))
     xbrlFile = Path(filename)
     file = None
     if xbrlFile.exists():
@@ -40,7 +40,7 @@ def getBinaryFileFromCache(filename, url = None):
     return file
 
 def getTxtFileFromCache(filename, url):
-    logging.getLogger('general').debug("TXT - Processing filename " + filename.replace("//","/"))
+    logging.getLogger(Constant.LOGGER_GENERAL).debug("TXT - Processing filename " + filename.replace("//","/"))
     xbrlFile = Path(filename)
     if xbrlFile.exists():
         with open(filename, mode='r') as file: 
@@ -56,7 +56,7 @@ def getTxtFileFromCache(filename, url):
     return fileText
 
 def getXSDFileFromCache(filename, url):
-    logging.getLogger('general').debug("XSD - Processing filename " + filename)
+    logging.getLogger(Constant.LOGGER_GENERAL).debug("XSD - Processing filename " + filename)
     xbrlFile = Path(filename)
     if xbrlFile.exists():
         with open(filename, mode='r') as file: 
@@ -100,7 +100,7 @@ def setDictValue(dict_, conceptID, value):
     if(dict_.get(conceptID, -1) == -1):
         dict_[conceptID] = value
     else:   
-        logging.getLogger('general').warning("Duplicated key " + str(conceptID) + " " +str(value))
+        logging.getLogger(Constant.LOGGER_GENERAL).warning("Duplicated key " + str(conceptID) + " " +str(value))
         
 def createLog(logName, level):
     logger= logging.getLogger(logName)
