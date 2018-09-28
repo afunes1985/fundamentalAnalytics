@@ -106,7 +106,7 @@ class ImportVO():
     def getXMLFromText(self, fileText, tagKey, key, mainTag, skipIfNotExists):
         point1 = fileText.find("<" + tagKey + ">" + key, 0, len(fileText))
         if(point1 == -1 and skipIfNotExists == False):
-            raise Exception("Key " + key + " doesn't found")
+            raise Exception("Key " + key + " wasn't found")
         elif(point1 == -1):
             return None
         point2 = fileText.find("<" + mainTag +">", point1, len(fileText)) + len("<" + mainTag + ">")+1

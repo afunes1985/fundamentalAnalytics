@@ -51,9 +51,9 @@ class FileMasterImporter():
                     formType = rowData[1]["Form Type"]
                     if(formType == "10-Q" or formType == "10-K"):
                         try:
-                            fi = FileImporter(filename, replace)
-                            fi.doImport()
+                            fi = FileImporter(filename)
+                            fi.doImport(replace)
                         except Exception as e:
-                                logging.getLogger(Constant.LOGGER_ERROR).debug("ERROR " + filename + " " + str(e))
+                                logging.getLogger(Constant.LOGGER_ERROR).exception("ERROR " + filename + " " + str(e))
         logging.getLogger(Constant.LOGGER_GENERAL).debug("END - Processing index file " + str(period.year) + "-" +  str(period.quarter) + " " + " replace " + str(replace)) 
 

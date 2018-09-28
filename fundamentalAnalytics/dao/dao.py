@@ -116,11 +116,23 @@ class Dao():
             return report
     
     @staticmethod   
-    def getFileData(documentPeriodEndDate, entityCentralIndexKey, session):
+    def getFileData(filename, session = None):
         try:
-            return GenericDao.getOneResult(FileData, and_(FileData.documentPeriodEndDate == documentPeriodEndDate, FileData.entityCentralIndexKey == entityCentralIndexKey), session)
+            return GenericDao.getOneResult(FileData, and_(FileData.fileName == filename), session)
         except NoResultFound:
-            return FileData()
+            return None
+        
+    @staticmethod   
+    def addObject(objectToAdd, session = None, doCommit = False):
+        if(session is None):
+            session = DBConnector().getNewSession()
+        session.add(objectToAdd)
+        if(doCommit):
+            session.commit()
+        else:
+            session.flush()
+        logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added to DB " + str(objectToAdd))
+
         
     @staticmethod   
     def addFact(factVOList, company, fileData, session):

@@ -19,7 +19,7 @@ from valueobject.constant import Constant
 
 if __name__ == "__main__":
     COMPANY_TICKER = None
-    replace = True
+    replace = False
     Initializer()
     session = DBConnector().getNewSession()
     if (COMPANY_TICKER is not None):

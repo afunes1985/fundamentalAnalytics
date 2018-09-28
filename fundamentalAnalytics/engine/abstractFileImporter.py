@@ -109,7 +109,14 @@ class AbstractFileImporter():
         processCache[Constant.PERIOD_DICT] = periodDict 
         #COMPANY
         CIK = self.getValueFromElement(['#text'], insDict['dei:EntityCentralIndexKey'])
-        self.company = GenericDao.getOneResult(Company,Company.CIK.__eq__(CIK), session)
+        try:
+            self.company = GenericDao.getOneResult(Company,Company.CIK.__eq__(CIK), session)
+        except NoResultFound:
+            self.company = Company()
+            self.company.CIK = CIK
+            session.add(self.company)
+            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added Company" + str(CIK))
+            session.commit()
         return processCache
     
     
@@ -140,6 +147,9 @@ class AbstractFileImporter():
         for item in self.getListFromElement(Constant.PRESENTATON_LINK, self.getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
             reportRole = item['@xlink:role']
             if any(reportRole in s for s in reportDict.keys()):
+                presentationDF = pandas.DataFrame(self.getListFromElement(Constant.PRESENTATIONARC, item))
+                presentationDF.set_index("@xlink:to", inplace=True)
+                presentationDF.head() 
                 for item2 in self.getListFromElement(Constant.LOC, item):
                     factVO = FactVO()
                     factVO.xlink_href = item2["@xlink:href"]
@@ -147,27 +157,23 @@ class AbstractFileImporter():
                     factVO.labelID = item2["@xlink:label"]
                     factVO = self.setXsdValue(factVO, processCache)
                     if factVO.abstract != "true":
-                        factToAddList.append(factVO)
-                    #else:
-                        #factVO = Dao.addAbstractConcept(factVO, session)
-                for item2 in self.getListFromElement(Constant.PRESENTATIONARC, item):
-                    try:
-                        if(item2["@xlink:arcrole"] == "http://www.xbrl.org/2003/arcrole/parent-child"):
-                            objectTo = item2["@xlink:to"]
-                            for factVO in factToAddList:
-                                if (factVO.labelID == objectTo
-                                    and factVO.report == reportDict[reportRole]):
-                                    factVO.order = item2["@order"]
-                    except Exception as e:
-                        print(e)
+                        try:
+                            factVO.order = presentationDF.loc[factVO.labelID]["@order"]
+                            factToAddList.append(factVO)
+                        except Exception as e:
+                            logging.getLogger(Constant.LOGGER_ERROR).debug("Error " + str(e))
+                        
         return factToAddList
     
     def setXsdAttr(self, factVO, xsdDF, conceptID):
-        factVO.conceptName = xsdDF.loc[conceptID]["@name"]
-        factVO.periodType = xsdDF.loc[conceptID]["@xbrli:periodType"]
-        factVO.balance = xsdDF.loc[conceptID]["@xbrli:balance"]
-        factVO.type = xsdDF.loc[conceptID]["@type"]
-        factVO.abstract = xsdDF.loc[conceptID]["@abstract"]
+        try:
+            factVO.conceptName = xsdDF.loc[conceptID]["@name"]
+            factVO.periodType = xsdDF.loc[conceptID]["@xbrli:periodType"]
+            factVO.balance = xsdDF.loc[conceptID]["@xbrli:balance"]
+            factVO.type = xsdDF.loc[conceptID]["@type"]
+            factVO.abstract = xsdDF.loc[conceptID]["@abstract"]
+        except Exception as e:
+            raise e    
         return factVO
     
     def setXsdValue(self, factVO, processCache):    
@@ -232,7 +238,7 @@ class AbstractFileImporter():
                 xmlDict = xmltodict.parse(text)
                 return xmlDict
         else:
-            raise Exception("File doesn't found" + finalFileName.replace("//", "/"))
+            raise Exception("File wasn't found" + finalFileName.replace("//", "/"))
         
     def getValueAsDate(self, attrID, element):
         value = self.getValueFromElement(attrID, element, False)
@@ -240,9 +246,19 @@ class AbstractFileImporter():
             return datetime.strptime(value, '%Y-%m-%d')
     
     def getObjectFromElement(self, objectIDList, element):
+        objectsToReturn = []
         for objectID in objectIDList:
             if(element.get(objectID, None) is not None):
-                return element.get(objectID)
+                objectsToReturn.append(element.get(objectID))
+        if(len(objectsToReturn) == 1):
+            return objectsToReturn[0]
+        listToReturn = []
+        for obj in objectsToReturn:
+            if isinstance(obj, list):
+                listToReturn = listToReturn + obj
+        if (len(listToReturn) != 0):
+            return listToReturn
+        return None
             
     def getObjectFromList(self, objectIDList, list_):
         for objectID in objectIDList:

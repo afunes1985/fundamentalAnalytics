@@ -23,7 +23,7 @@ from valueobject.valueobject import FactVO, FactValueVO
 
 
 def getBinaryFileFromCache(filename, url = None):
-    logging.getLogger(Constant.LOGGER_GENERAL).debug("BIN - Processing filename " + filename.replace("//", "/"))
+    #logging.getLogger(Constant.LOGGER_GENERAL).debug("BIN - Processing filename " + filename.replace("//", "/"))
     xbrlFile = Path(filename)
     file = None
     if xbrlFile.exists():
