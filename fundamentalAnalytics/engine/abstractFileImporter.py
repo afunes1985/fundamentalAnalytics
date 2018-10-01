@@ -19,6 +19,7 @@ from modelClass.period import Period
 from tools.tools import getDaysBetweenDates, getXSDFileFromCache, getBinaryFileFromCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
+from pandas.core.series import Series
 
 
 class AbstractFileImporter():
@@ -33,25 +34,13 @@ class AbstractFileImporter():
             periodDict = self.processCache[Constant.PERIOD_DICT]
             if (periodDict is not None and periodDict.get(element["@contextRef"], None) is not None):
                 return True
-            elif(self.isPeriodDefaultAllowed(element)):
+            elif(self.isPeriodDefaultAllowed(element)):## VER SI SE DEBE BORRAR
                 return True
             return False  
         elif(self.isPeriodDefaultAllowed(element)):
                 return True
         else:
             return False 
-    
-    def getElementValue(self, xmlDict, elementID, attrID, periodDict):
-        element = xmlDict[elementID]
-        value = None
-        if isinstance(element, list):
-            for ele in element:
-                if (self.isPeriodAllowed(ele)):
-                    value0 = ele[attrID]
-                    if(value is not None and value0 is not None):
-                        raise Exception("Duplicated Value " + elementID + " " + attrID)
-                        value = value0
-        return value
     
     def getPeriodDict(self, xmlDictRoot, session): 
         periodDict = {}
@@ -167,11 +156,11 @@ class AbstractFileImporter():
     
     def setXsdAttr(self, factVO, xsdDF, conceptID):
         try:
-            factVO.conceptName = xsdDF.loc[conceptID]["@name"]
-            factVO.periodType = xsdDF.loc[conceptID]["@xbrli:periodType"]
-            factVO.balance = xsdDF.loc[conceptID]["@xbrli:balance"]
-            factVO.type = xsdDF.loc[conceptID]["@type"]
-            factVO.abstract = xsdDF.loc[conceptID]["@abstract"]
+            factVO.conceptName = self.getValueFromElement(["@name"], xsdDF.loc[conceptID]) 
+            factVO.periodType = self.getValueFromElement(["@xbrli:periodType"], xsdDF.loc[conceptID], False) 
+            factVO.balance = self.getValueFromElement(["@xbrli:balance"], xsdDF.loc[conceptID], False)
+            factVO.type = self.getValueFromElement(["@type"], xsdDF.loc[conceptID], False) 
+            factVO.abstract = self.getValueFromElement(["@abstract"], xsdDF.loc[conceptID], False)
         except Exception as e:
             raise e    
         return factVO
@@ -266,7 +255,16 @@ class AbstractFileImporter():
                 if(element.get(objectID, None) is not None):
                     if(self.isPeriodAllowed(element)):
                         return element
-                
+    
+    def getObjectFromSerie(self, objectIDList, serie):
+        obj = None
+        for objectID in objectIDList:
+            obj2 = serie.get(objectID, None)
+            if(obj2 is not None
+               and obj2 == obj2):
+                obj = obj2
+        return obj
+     
     def getListFromElement(self, elementIDList, element, raiseException = True):
         obj = self.getObjectFromElement(elementIDList, element)
         if (obj is None):
@@ -290,16 +288,19 @@ class AbstractFileImporter():
             return obj
     
     def getValueFromElement(self, attrIDList, element, raiseException = True):
+        obj = None
         if(isinstance(element, dict)):
             obj = self.getObjectFromElement(attrIDList, element)
         elif(isinstance(element, list)):
             obj = self.getObjectFromList(attrIDList, element)
+        elif(isinstance(element, Series)):
+            obj = self.getObjectFromSerie(attrIDList, element)    
         if (obj is None):
             if (raiseException):
                 raise Exception("Value for attrID not found "  + str(attrIDList) + " " +  str(element)[0:50])
         elif(isinstance(obj, dict)):
             return self.getValueFromElement(attrIDList, obj, raiseException)
-        elif(not isinstance(obj, str)):
+        elif(not isinstance(obj, str) and obj is not None):
             raise Exception("Value for elementID is not str "  + str(attrIDList) + " " +  str(element)[0:50])
         else:
             return obj

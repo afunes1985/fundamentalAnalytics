@@ -27,9 +27,9 @@ class FileImporter(AbstractFileImporter):
                 self.processCache = self.initProcessCache(self.filename, self.session)
                 fileData = self.completeFileData(fileData, self.processCache, self.filename, self.session)
                 reportDict = self.getReportDict(self.processCache, self.session)
-                factToAddList = self.getFactByReport(reportDict, self.processCache, self.session)
-                factToAddList = self.setFactValues(factToAddList, self.processCache)
-                Dao.addFact(factToAddList, self.company, fileData, self.session)
+                factVOList = self.getFactByReport(reportDict, self.processCache, self.session)
+                factVOList = self.setFactValues(factVOList, self.processCache)
+                Dao.addFact(factVOList, self.company, fileData, self.session)
                 fileData.status = "OK"
                 Dao.addObject(objectToAdd = fileData, session = self.session, doCommit = True)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
@@ -56,17 +56,17 @@ class FileImporter(AbstractFileImporter):
     
     def completeFileData(self, fileData, processCache, filename, session):
         insXMLDict = processCache[Constant.DOCUMENT_INS]
-        documentType = insXMLDict['dei:DocumentType']['#text']
+        documentType = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentType'])
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("documentType " + documentType)
-        amendmentFlag = insXMLDict['dei:AmendmentFlag']['#text']
+        amendmentFlag = self.getValueFromElement(['#text'], insXMLDict['dei:AmendmentFlag'])
         amendmentFlag = amendmentFlag.lower() in ("true")
-        documentPeriodEndDate = insXMLDict['dei:DocumentPeriodEndDate']['#text']
+        documentPeriodEndDate = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentPeriodEndDate'])
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentPeriodEndDate " + documentPeriodEndDate)
-        documentFiscalYearFocus = insXMLDict['dei:DocumentFiscalYearFocus']['#text']
+        documentFiscalYearFocus = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentFiscalYearFocus'])
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalYearFocus " + documentFiscalYearFocus)
-        documentFiscalPeriodFocus = insXMLDict['dei:DocumentFiscalPeriodFocus']['#text']
+        documentFiscalPeriodFocus = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentFiscalPeriodFocus'])
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalPeriodFocus " + documentFiscalPeriodFocus)
-        entityCentralIndexKey = insXMLDict['dei:EntityCentralIndexKey']['#text']
+        entityCentralIndexKey = self.getValueFromElement(['#text'], insXMLDict['dei:EntityCentralIndexKey'])
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("EntityCentralIndexKey " + entityCentralIndexKey)
         #tradingSymbol = insXMLDict['dei:TradingSymbol']['#text']
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("TradingSymbol " + tradingSymbol)
