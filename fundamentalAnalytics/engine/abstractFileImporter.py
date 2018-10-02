@@ -16,7 +16,8 @@ import xmltodict
 from dao.dao import GenericDao, Dao
 from modelClass.company import Company
 from modelClass.period import Period
-from tools.tools import getDaysBetweenDates, getXSDFileFromCache, getBinaryFileFromCache
+from tools.tools import getDaysBetweenDates, getXSDFileFromCache, getBinaryFileFromCache,\
+    FileNotFoundException
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
 from pandas.core.series import Series
@@ -135,7 +136,7 @@ class AbstractFileImporter():
         xmlDictPre = processCache[Constant.DOCUMENT_PRE]
         for item in self.getListFromElement(Constant.PRESENTATON_LINK, self.getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
             reportRole = item['@xlink:role']
-            if any(reportRole in s for s in reportDict.keys()):
+            if (reportDict.get(reportRole, None) is not None):
                 presentationDF = pandas.DataFrame(self.getListFromElement(Constant.PRESENTATIONARC, item))
                 presentationDF.set_index("@xlink:to", inplace=True)
                 presentationDF.head() 
@@ -147,7 +148,7 @@ class AbstractFileImporter():
                     factVO = self.setXsdValue(factVO, processCache)
                     if factVO.abstract != "true":
                         try:
-                            factVO.order = presentationDF.loc[factVO.labelID]["@order"]
+                            factVO.order = self.getValueFromElement( ["@order"], presentationDF.loc[factVO.labelID], True) 
                             factToAddList.append(factVO)
                         except Exception as e:
                             logging.getLogger(Constant.LOGGER_ERROR).debug("Error " + str(e))
@@ -227,7 +228,7 @@ class AbstractFileImporter():
                 xmlDict = xmltodict.parse(text)
                 return xmlDict
         else:
-            raise Exception("File wasn't found" + finalFileName.replace("//", "/"))
+            raise FileNotFoundException("File not found " + finalFileName.replace("//", "/"))
         
     def getValueAsDate(self, attrID, element):
         value = self.getValueFromElement(attrID, element, False)

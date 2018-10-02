@@ -37,14 +37,14 @@ class FileMasterImporter():
                         filename = rowData1[1]["Filename"]
                         formType = rowData1[1]["Form Type"]
                         if(formType == "10-Q" or formType == "10-K"):
-                            fi = FileImporter(filename, replace)
-                            fi.doImport()
+                            fi = FileImporter(filename)
+                            fi.doImport(replace)
                 else:
                     filename = rowData0["Filename"]
                     formType = rowData0["Form Type"]
                     if(formType == "10-Q" or formType == "10-K"):
-                        FileImporter(filename, replace)
-                        fi.doImport()
+                        FileImporter(filename)
+                        fi.doImport(replace)
             else:
                 for rowData in df.iterrows():
                     filename = rowData[1]["Filename"]

@@ -54,25 +54,24 @@ class GenericDao():
 class DaoCompanyResult():
     
     @staticmethod
-    def getCompanyResult(companyID = None, ticker = None, conceptID = None, sectionID = None, periodType = None):
+    def getFactValues(CIK = None, ticker = None, conceptName = None):
         dbconnector = DBConnector()
         with dbconnector.engine.connect() as con:
-            params = { 'conceptID' : conceptID,
-                       'companyID' : companyID,
-                       'ticker' : ticker,
-                       'sectionID' : sectionID,
-                       'periodType' : periodType}
-            query = text("""select report.shortName, concept.conceptID, concept.label, fact.value, IFNULL(period.endDate, period.instant)
-    FROM fa_fact fact
-        left join fa_company company on fact.companyOID = company.OID
-        left join fa_concept concept on fact.conceptOID = concept.OID
-        left join fa_period period on fact.periodOID = period.OID
-        left join fa_report report on fact.reportOID = report.OID
-    #where (concept.conceptID = :conceptID or :conceptID is null) 
-        #and (company.CIK = :companyID or :companyID is null)
-        #and (company.ticker = :ticker or :ticker is null)
-        #and (report.shortName = :reportShortName or :reportShortName is null)
-    order by report.shortName, concept.conceptID""")
+            params = { 'conceptName' : conceptName,
+                       'CIK' : CIK,
+                       'ticker' : ticker}
+            query = text("""select distinct concept.conceptName, factValue.value, IFNULL(period.endDate, period.instant) date_
+                                    FROM fa_fact fact
+                                    left join fa_company company on fact.companyOID = company.OID
+                                    left join fa_concept concept on fact.conceptOID = concept.OID
+                                    left join fa_file_data fileData on fact.fileDataOID = fileData.OID
+                                    left join fa_fact_value factValue on factValue.factOID = fact.OID
+                                    left join fa_period period on factValue.periodOID = period.OID
+                                where company.ticker = 'TSLA'
+                                    and concept.conceptName = :conceptName
+                                    and (company.CIK = :CIK or :CIK is null)
+                                    and (company.ticker = :ticker or :ticker is null)
+                                order by IFNULL(period.endDate, period.instant)""")
             rs = con.execute(query, params)
             return rs 
     

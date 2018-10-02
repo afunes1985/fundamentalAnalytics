@@ -70,6 +70,7 @@ class ImportVO():
             fullFileName = Constant.CACHE_FOLDER + filename
             fullFileName = fullFileName[0: fullFileName.find(".txt")]
             print(fullFileName)
+            if(self.validateIfSomeFilesNotExits(fullFileName)):
                 url = "https://www.sec.gov/Archives/" + filename
                 print(url)
                 response = requests.get(url, timeout = 30) 
@@ -87,6 +88,14 @@ class ImportVO():
            
     def validateIfSomeFilesNotExits(self, folder):
         if not os.path.exists(folder + "//" + Constant.DOCUMENT_INS + ".gz"):
+            return True
+        if not os.path.exists(folder + "//" + Constant.DOCUMENT_PRE + ".gz"):
+            return True
+        if not os.path.exists(folder + "//" + Constant.DOCUMENT_SCH + ".gz"):
+            return True
+        if not os.path.exists(folder + "//" + Constant.DOCUMENT_SUMMARY + ".gz"):
+            return True
+        
             
              
     def saveFile(self, fileText, tagKey, key, mainTag, fullFileName, skipIfNotExists = False):

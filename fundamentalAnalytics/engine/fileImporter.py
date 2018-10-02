@@ -10,6 +10,7 @@ from dao.dao import Dao
 from engine.abstractFileImporter import AbstractFileImporter
 from valueobject.constant import Constant
 from modelClass.fileData import FileData
+from tools.tools import FileNotFoundException
 
 
 class FileImporter(AbstractFileImporter):
@@ -22,7 +23,7 @@ class FileImporter(AbstractFileImporter):
     def doImport(self, replace):
         try:
             fileData = self.initFileData(self.filename, self.session)
-            if(fileData.status != "OK" and replace != True):
+            if(fileData.status != "FNF" and fileData.status != "OK" and replace != True):
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
                 self.processCache = self.initProcessCache(self.filename, self.session)
                 fileData = self.completeFileData(fileData, self.processCache, self.filename, self.session)
@@ -33,17 +34,27 @@ class FileImporter(AbstractFileImporter):
                 fileData.status = "OK"
                 Dao.addObject(objectToAdd = fileData, session = self.session, doCommit = True)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
-        except Exception as e:
+        except FileNotFoundException as e:
+            self.addFileDataNewTrx("FNF")
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
-            session2 = DBConnector().getNewSession()
-            fileData2 = Dao.getFileData(self.filename, session2)
-            if(fileData2 is None):
-                fileData2 = FileData()
-            fileData2.fileName = self.filename
-            fileData2.status = "ERROR"
-            Dao.addObject(objectToAdd = fileData2, session = session2, doCommit = True)
             raise e
+        except Exception as e:
+            self.addFileDataNewTrx("ERROR")
+            logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
+            raise e
+        finally:
+            self.session.close()
         
+    
+    def addFileDataNewTrx(self, status):
+        session2 = DBConnector().getNewSession()
+        fileData2 = Dao.getFileData(self.filename, session2)
+        if(fileData2 is None):
+            fileData2 = FileData()
+        fileData2.fileName = self.filename
+        fileData2.status = status
+        Dao.addObject(objectToAdd = fileData2, session = session2, doCommit = True)
+        session2.close()
     
     def initFileData(self, filename, session):
         fileData = Dao.getFileData(filename, session)

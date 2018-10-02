@@ -119,4 +119,6 @@ class LoggingException(Exception):
     def log(self):
         logging.getLogger(self.loggerName).debug(self.message)
         
-
+class FileNotFoundException(Exception):
+    def __init__(self, fileName):
+        self.fileName = fileName
