@@ -13,8 +13,8 @@ import plotly.graph_objs as go
 import plotly.plotly as py
 
 
-def getTraceData(ticker, concept):
-    rs = DaoCompanyResult.getFactValues(ticker = ticker, conceptName = concept.conceptName)
+def getTraceData(ticker, concept, periodType):
+    rs = DaoCompanyResult.getFactValues(ticker = ticker, conceptName = concept.conceptName, periodType = periodType)
     rows = rs.fetchall()
     if (len(rows) != 0):
         df = DataFrame(rows)
@@ -30,19 +30,22 @@ def getTraceData(ticker, concept):
 data = []   
 ticker = 'TSLA'
 filename = ticker
+periodType = "QTD"
 Initializer()
 #listConceptID = ['NetIncomeLoss']
 #BALANCE
-listConceptID = ['CashAndCashEquivalentsAtCarryingValue', 'AssetsCurrent', 'Assets', 'LiabilitiesCurrent', 'StockholdersEquity']
-#listConceptID = ['OperatingExpenses', 'OperatingIncomeLoss', 'NetIncomeLoss', 'CashAndCashEquivalentsPeriodIncreaseDecrease', 'IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest']
+#listConceptID = ['CashAndCashEquivalentsAtCarryingValue', 'AssetsCurrent', 'Assets', 'LiabilitiesCurrent', 'StockholdersEquity']
+#listConceptID = ['OperatingExpenses', 'OperatingIncomeLoss', 'NetIncomeLoss', 'CashAndCashEquivalentsAtCarryingValue', 'IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest']
 #CASH FLOW
 #listConceptID = ['NetCashProvidedByUsedInOperatingActivitiesContinuingOperations', 'NetCashProvidedByUsedInInvestingActivitiesContinuingOperations','NetCashProvidedByUsedInFinancingActivitiesContinuingOperations']
 
 #listConceptID = ['NetCashProvidedByUsedInOperatingActivities', 'NetCashProvidedByUsedInInvestingActivities','NetCashProvidedByUsedInFinancingActivities']
+listConceptID = ['Revenues', 'CostOfRevenue','GrossProfit', 'OperatingExpenses', 'ProfitLoss', 'NetIncomeLoss']
+
 for conceptName in listConceptID:
     concept = GenericDao.getFirstResult(Concept, Concept.conceptName == conceptName)
-    data.append(getTraceData(ticker, concept))
-    filename = filename #+ " " + concept.label
+    data.append(getTraceData(ticker, concept, periodType))
+    filename = filename + " " + concept.conceptName
 print(filename)   
 layout = go.Layout(
     title=filename[0:100]

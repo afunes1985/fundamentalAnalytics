@@ -5,7 +5,7 @@ Created on 26 ago. 2018
 '''
 from sqlalchemy import Column
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Integer, DateTime
+from sqlalchemy.sql.sqltypes import Integer, DateTime, String
 
 from modelClass import PersistenObject
 
@@ -15,6 +15,7 @@ class Period(PersistenObject):
     startDate = Column(DateTime, nullable=False)
     endDate = Column(DateTime, nullable=False)
     instant = Column(DateTime, nullable=False)
+    type = Column(String(4), nullable=False)
     factValueList = relationship("FactValue", back_populates="period")
 
 class QuarterPeriod(PersistenObject):

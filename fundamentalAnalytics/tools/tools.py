@@ -16,7 +16,9 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import and_
 import xmltodict
 
+from base.dbConnector import DBConnector
 from dao.dao import GenericDao, Dao
+from modelClass.fileData import FileData
 from modelClass.period import Period
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
@@ -77,24 +79,24 @@ def getDaysBetweenDates(firstDate, secondDate):
     else:
         return 10000
 
-def getXmlDictFromText2(fileText, tagKey, key, mainTagList):
-    for mainTag in mainTagList:
-        try:
-            return getXmlDictFromText(fileText, tagKey, key, mainTag)
-        except Exception as e:
-            print(e)
-
 def getXmlDictFromText(fileText, tagKey, key, mainTag):
     xmlText = getXMLFromText(fileText, tagKey, key, mainTag)
     xmlDict = xmltodict.parse(xmlText)
     return xmlDict
 
-def getXMLFromText(fileText, tagKey, key, mainTag):
+def getXMLFromText(fileText, tagKey, key, mainTag, skipIfNotExists = False):
     point1 = fileText.find("<" + tagKey + ">" + key, 0, len(fileText))
+    if(point1 == -1 and skipIfNotExists == False):
+        raise FileNotFoundException("Key " + key + " not found")
+    elif(point1 == -1):
+        return None
     point2 = fileText.find("<" + mainTag +">", point1, len(fileText)) + len("<" + mainTag + ">")+1
-    point3 = fileText.find("</" + mainTag + ">", point2, len(fileText))
-    xmlText = fileText[point2:point3]
-    return xmlText
+    if (0 < point2 - point1 < 150 ):
+        point3 = fileText.find("</" + mainTag + ">", point2, len(fileText))
+        xmlText = fileText[point2:point3]
+        return xmlText
+    else:
+        return None
 
 def setDictValue(dict_, conceptID, value):
     if(dict_.get(conceptID, -1) == -1):
@@ -122,3 +124,21 @@ class LoggingException(Exception):
 class FileNotFoundException(Exception):
     def __init__(self, fileName):
         self.fileName = fileName
+        
+def addOrModifyFileData(status, importStatus = None, filename = None, externalSession = None):
+    if (externalSession is None):
+        session = DBConnector().getNewSession()
+    else:
+        session = externalSession
+    fileData = Dao.getFileData(filename, session)
+    if (fileData is None):
+        fileData = FileData()
+        fileData.fileName = filename
+    fileData.status = status
+    if importStatus is not None:
+        fileData.importStatus = importStatus
+    Dao.addObject(objectToAdd = fileData, session = session, doCommit = True)
+    if (externalSession is None):
+        session.close()
+    return fileData
+

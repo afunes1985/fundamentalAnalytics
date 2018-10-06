@@ -54,30 +54,33 @@ class AbstractFileImporter():
                 endDate = self.getValueAsDate(Constant.XBRL_END_DATE, periodElement)
                 instant = self.getValueAsDate(Constant.XBRL_INSTANT, periodElement) 
                 if(endDate is not None and getDaysBetweenDates(documentPeriodEndDate, endDate) < 5):
-                        try:
-                            period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session)
-                            period.daysBetween = getDaysBetweenDates(startDate, endDate)
-                        except NoResultFound:
-                            period = Period()
-                            period.startDate = startDate
-                            period.endDate = endDate
-                            period.daysBetween = getDaysBetweenDates(startDate, endDate)
-                            session.add(period)
-                            session.flush()
-                            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added period " + str(period.startDate) + " " + str(period.endDate))
-                        periodDict[item['@id']] = period
+                    try:
+                        period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session)
+                    except NoResultFound:
+                        period = Period()
+                        period.startDate = startDate
+                        period.endDate = endDate
+                        period.type = self.getPeriodType(startDate, endDate)
+                        Dao.addObject(objectToAdd = period, session = session, doCommit = False)
+                    periodDict[item['@id']] = period
                 elif(getDaysBetweenDates(instant, documentPeriodEndDate) < 5):
                     try:
                         period =  GenericDao.getOneResult(Period, and_(Period.instant == instant), session)
                     except NoResultFound:
                         period = Period()
                         period.instant = instant
-                        session.add(period)
-                        session.flush()
-                        logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added period " + str(period.instant))
+                        period.periodType = "INST"
+                        Dao.addObject(objectToAdd = period, session = session, doCommit = False)
                     periodDict[item['@id']] = period
         return periodDict
-
+    
+    def getPeriodType(self, startDate, endDate):
+        days = getDaysBetweenDates(startDate, endDate)
+        if(85 < days < 95):
+            return "QTD"
+        elif(days > 95):
+            return "YTD"
+        
     def initProcessCache(self, filename, session):
         processCache = {}
         schDF = pandas.DataFrame(self.getListFromElement(Constant.ELEMENT, self.getElementFromElement(Constant.SCHEMA, self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
@@ -98,15 +101,17 @@ class AbstractFileImporter():
         periodDict = self.getPeriodDict(insDict, session)
         processCache[Constant.PERIOD_DICT] = periodDict 
         #COMPANY
-        CIK = self.getValueFromElement(['#text'], insDict['dei:EntityCentralIndexKey'])
+        CIK = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityCentralIndexKey'], insDict, False), False)
+        entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], insDict, False), False) 
+        ticker = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:TradingSymbol'], insDict, False), False)
         try:
             self.company = GenericDao.getOneResult(Company,Company.CIK.__eq__(CIK), session)
         except NoResultFound:
             self.company = Company()
             self.company.CIK = CIK
-            session.add(self.company)
-            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added Company" + str(CIK))
-            session.commit()
+            self.company.entityRegistrantName = entityRegistrantName
+            self.company.ticker = ticker
+            Dao.addObject(objectToAdd = self.company, session = session, doCommit = True)
         return processCache
     
     
@@ -123,7 +128,7 @@ class AbstractFileImporter():
         logging.getLogger(Constant.LOGGER_GENERAL).debug("REPORT LIST " + str(reportDict))
         return reportDict
     
-    
+    #TODO
     def getUnitDict(self, xmlDictRoot):
         unitDict = {}
         for item in self.getListFromElement(Constant.UNIT, xmlDictRoot):

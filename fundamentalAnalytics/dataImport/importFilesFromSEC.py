@@ -16,8 +16,10 @@ from sqlalchemy.sql.expression import and_, or_
 
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
+from dao.dao import Dao
 from modelClass.period import QuarterPeriod
-from tools.tools import getBinaryFileFromCache, createLog
+from tools.tools import getBinaryFileFromCache, createLog, getXMLFromText, \
+    FileNotFoundException, addOrModifyFileData
 from valueobject.constant import Constant
 
 
@@ -67,24 +69,38 @@ class ImportVO():
         
     def importFiles(self, filename):
         try:
-            fullFileName = Constant.CACHE_FOLDER + filename
-            fullFileName = fullFileName[0: fullFileName.find(".txt")]
-            print(fullFileName)
-            if(self.validateIfSomeFilesNotExits(fullFileName)):
-                url = "https://www.sec.gov/Archives/" + filename
-                print(url)
-                response = requests.get(url, timeout = 30) 
-                fileText = response.text
-                if not os.path.exists(fullFileName):
-                    os.makedirs(fullFileName)
-                self.saveFile(fileText,"TYPE", Constant.DOCUMENT_SCH, "XBRL",fullFileName, True)
-                self.saveFile(fileText,"TYPE", Constant.DOCUMENT_PRE, "XBRL",fullFileName)
-                self.saveFile(fileText,"TYPE", Constant.DOCUMENT_INS, "XBRL",fullFileName)
-                self.saveFile2(fileText,"FILENAME", Constant.DOCUMENT_SUMMARY, ["XML", "XBRL"], fullFileName)
-            else:
-                print("EXISTS " + fullFileName)
+            session = DBConnector().getNewSession()
+            fileData = Dao.getFileData(filename, session)
+            if(fileData is None or fileData.importStatus != "OK" and fileData.importStatus != "IMP FNF" ):
+                addOrModifyFileData("PENDING", "INIT", filename, session)
+                fullFileName = Constant.CACHE_FOLDER + filename
+                fullFileName = fullFileName[0: fullFileName.find(".txt")]
+                logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("START - Processing index file " + fullFileName)   
+                if(self.validateIfSomeFilesNotExits(fullFileName)):
+                    url = "https://www.sec.gov/Archives/" + filename
+                    logging.getLogger(Constant.LOGGER_GENERAL).debug("URL " + url)
+                    response = requests.get(url, timeout = 30) 
+                    fileText = response.text
+                    if not os.path.exists(fullFileName):
+                        os.makedirs(fullFileName)
+                    self.saveFile(fileText,"TYPE", Constant.DOCUMENT_SCH, "XBRL",fullFileName, True)
+                    self.saveFile(fileText,"TYPE", Constant.DOCUMENT_PRE, "XBRL",fullFileName)
+                    self.saveFile(fileText,"TYPE", Constant.DOCUMENT_INS, "XBRL",fullFileName)
+                    self.saveFile2(fileText,"FILENAME", Constant.DOCUMENT_SUMMARY, ["XML", "XBRL"], fullFileName)
+                    logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - SUCCESSFULLY " + fullFileName)
+                    addOrModifyFileData("PENDING", "OK", filename)
+                else:
+                    logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - EXISTS " + fullFileName)
+                    addOrModifyFileData("PENDING", "OK", filename)  
+        except FileNotFoundException as e:
+            logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR FileNotFoundException " + url + " " + e.fileName)
+            addOrModifyFileData("PENDING", "IMP FNF", filename)
         except Exception as e:
-                print(e)
+            logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + url)
+            logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).exception(e)
+            addOrModifyFileData("PENDING", "IMP ERROR", filename)
+        finally:
+            session.close()
            
     def validateIfSomeFilesNotExits(self, folder):
         if not os.path.exists(folder + "//" + Constant.DOCUMENT_INS + ".gz"):
@@ -99,7 +115,7 @@ class ImportVO():
             
              
     def saveFile(self, fileText, tagKey, key, mainTag, fullFileName, skipIfNotExists = False):
-        xmlFile= self.getXMLFromText(fileText, tagKey, key, mainTag, skipIfNotExists)
+        xmlFile= getXMLFromText(fileText, tagKey, key, mainTag, skipIfNotExists)
         if(xmlFile is not None):
             with gzip.open(fullFileName + "//" + key + ".gz", 'wb') as f:
                 f.write(xmlFile.encode())
@@ -111,28 +127,12 @@ class ImportVO():
             except Exception as e:
                 print(e)
 
-
-    def getXMLFromText(self, fileText, tagKey, key, mainTag, skipIfNotExists):
-        point1 = fileText.find("<" + tagKey + ">" + key, 0, len(fileText))
-        if(point1 == -1 and skipIfNotExists == False):
-            raise Exception("Key " + key + " wasn't found")
-        elif(point1 == -1):
-            return None
-        point2 = fileText.find("<" + mainTag +">", point1, len(fileText)) + len("<" + mainTag + ">")+1
-        
-        if (0 < point2 - point1 < 150 ):
-            point3 = fileText.find("</" + mainTag + ">", point2, len(fileText))
-            xmlText = fileText[point2:point3]
-            return xmlText
-        else:
-            return None
-        
 if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
-    periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 1)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
-    #periodList = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2015)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+    #periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 1)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+    periodList = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2012)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
     logging.info("START")
-    createLog('general', logging.DEBUG)
+    createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)
     for period in periodList:
         ImportFIlesFromSEC().importMasterIndexFor(period, False, session)

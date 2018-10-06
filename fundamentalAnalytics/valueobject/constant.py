@@ -40,3 +40,4 @@ class Constant:
     LOGGER_NONEFACTVALUE = "NoneFactValue"
     LOGGER_GENERAL = "general"
     LOGGER_ADDTODB = "addToDB"
+    LOGGER_IMPORT_GENERAL = "importGeneral"

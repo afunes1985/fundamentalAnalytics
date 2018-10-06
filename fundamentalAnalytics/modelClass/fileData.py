@@ -20,4 +20,5 @@ class FileData(PersistenObject):
     documentFiscalPeriodFocus = Column(String(45), nullable=False)
     entityCentralIndexKey = Column(String(45), nullable=False)
     factList = relationship("Fact", back_populates="fileData")
-    status = Column(String(4), nullable=False)
+    status = Column(String(15), nullable=False)
+    importStatus = Column(String(15), nullable=False)

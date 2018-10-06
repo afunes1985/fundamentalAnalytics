@@ -54,12 +54,13 @@ class GenericDao():
 class DaoCompanyResult():
     
     @staticmethod
-    def getFactValues(CIK = None, ticker = None, conceptName = None):
+    def getFactValues(CIK = None, ticker = None, conceptName = None, periodType = None):
         dbconnector = DBConnector()
         with dbconnector.engine.connect() as con:
             params = { 'conceptName' : conceptName,
                        'CIK' : CIK,
-                       'ticker' : ticker}
+                       'ticker' : ticker,
+                       'periodType' : periodType}
             query = text("""select distinct concept.conceptName, factValue.value, IFNULL(period.endDate, period.instant) date_
                                     FROM fa_fact fact
                                     left join fa_company company on fact.companyOID = company.OID
@@ -71,6 +72,7 @@ class DaoCompanyResult():
                                     and concept.conceptName = :conceptName
                                     and (company.CIK = :CIK or :CIK is null)
                                     and (company.ticker = :ticker or :ticker is null)
+                                    and (period.type= :periodType or :periodType is null)
                                 order by IFNULL(period.endDate, period.instant)""")
             rs = con.execute(query, params)
             return rs 
@@ -90,9 +92,7 @@ class Dao():
         except NoResultFound:
             concept = Concept()
             concept.conceptName = conceptName
-            session.add(concept)
-            session.flush()
-            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added concept" + conceptName)
+            Dao.addObject(objectToAdd = concept, session = session, doCommit = False)
             return concept
     
     @staticmethod
@@ -109,9 +109,7 @@ class Dao():
         except NoResultFound:
             report = Report()
             report.shortName = reportShortName
-            session.add(report)
-            session.flush()
-            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added report " + reportShortName)
+            Dao.addObject(objectToAdd = report, session = session, doCommit = False)
             return report
     
     @staticmethod   
@@ -163,22 +161,7 @@ class Dao():
         except NoResultFound:
             abstractConcept = AbstractConcept()
             abstractConcept.conceptName = factVO.conceptName
-            session.add(abstractConcept)
-            session.flush()
-            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added abstractConcept " + abstractConcept.conceptName)
+            Dao.addObject(objectToAdd = abstractConcept, session = session, doCommit = False)
         factVO.abstractConcept = abstractConcept
         return factVO
     
-    @staticmethod
-    def addAbstractFactRelation(factVO, session):
-        try:
-            abstractFactRelation =  GenericDao.getOneResult(AbstractFactRelation, and_(AbstractFactRelation.OID == 99), session)
-        except NoResultFound:
-            abstractFactRelation = AbstractFactRelation()
-            abstractFactRelation.abstractFromOID = factVO.abstractFromOID
-            session.add(abstractFactRelation)
-            session.flush()
-            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added abstractFactRelation " + abstractFactRelation.conceptName)
-        factVO.abstractConcept = abstractFactRelation
-        return factVO
-
