@@ -9,6 +9,7 @@ import gzip
 import logging
 
 import pandas
+from pandas.core.series import Series
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import and_
 import xmltodict
@@ -16,11 +17,11 @@ import xmltodict
 from dao.dao import GenericDao, Dao
 from modelClass.company import Company
 from modelClass.period import Period
-from tools.tools import getDaysBetweenDates, getXSDFileFromCache, getBinaryFileFromCache,\
+from modelClass.report import Report
+from tools.tools import getDaysBetweenDates, getXSDFileFromCache, getBinaryFileFromCache, \
     FileNotFoundException
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
-from pandas.core.series import Series
 
 
 class AbstractFileImporter():
@@ -83,6 +84,7 @@ class AbstractFileImporter():
         
     def initProcessCache(self, filename, session):
         processCache = {}
+        processCache.update(self.mainCache)
         schDF = pandas.DataFrame(self.getListFromElement(Constant.ELEMENT, self.getElementFromElement(Constant.SCHEMA, self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
         schDF.set_index("@id", inplace=True)
         schDF.head()
@@ -114,17 +116,30 @@ class AbstractFileImporter():
             Dao.addObject(objectToAdd = self.company, session = session, doCommit = True)
         return processCache
     
+    def isReportAllowed(self, reportRole):
+        keyList = ["INCOME", "balance", "CASH", "CONSOLIDATED", "OPERATION"]
+        for key in keyList:
+            if key.upper() in reportRole.upper(): 
+                return True
+        return False
     
     def getReportDict(self, processCache, session):
         #Obtengo reportes statements
         xmlDict= processCache[Constant.DOCUMENT_SUMMARY]
         reportDict = {}
         for report in xmlDict["FilingSummary"]["MyReports"]["Report"]:
-            if(report.get("MenuCategory", -1) == "Statements"):
-                reportRole = report["Role"]
-                reportShortName = report["ShortName"]
-                report = Dao.getReport(reportShortName, session)
-                reportDict[reportRole] = report
+            if(report.get("MenuCategory", None) is None or report.get("MenuCategory", -1) == "Statements"):
+                try:
+                    reportRole = report["Role"]
+                    #if(self.isReportAllowed(reportRole)):
+                    reportShortName = report["ShortName"]
+                    report = Dao.getReport(reportShortName, session)
+                    if(report is None):
+                        report = Report()
+                        report.shortName = reportShortName
+                    reportDict[reportRole] = report
+                except Exception:
+                    pass
         logging.getLogger(Constant.LOGGER_GENERAL).debug("REPORT LIST " + str(reportDict))
         return reportDict
     
@@ -136,15 +151,17 @@ class AbstractFileImporter():
                 unitDict[item['@id']]
     
     def getFactByReport(self, reportDict, processCache, session):
-        factToAddList = []
+        factVOList = []
         #Obtengo para cada reporte sus conceptos
         xmlDictPre = processCache[Constant.DOCUMENT_PRE]
         for item in self.getListFromElement(Constant.PRESENTATON_LINK, self.getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
+            tempFactVOList = []
             reportRole = item['@xlink:role']
-            if (reportDict.get(reportRole, None) is not None):
+            isReportAllowed = False 
+            if(reportDict.get(reportRole, None) is not None):
                 presentationDF = pandas.DataFrame(self.getListFromElement(Constant.PRESENTATIONARC, item))
                 presentationDF.set_index("@xlink:to", inplace=True)
-                presentationDF.head() 
+                presentationDF.head()
                 for item2 in self.getListFromElement(Constant.LOC, item):
                     factVO = FactVO()
                     factVO.xlink_href = item2["@xlink:href"]
@@ -154,11 +171,28 @@ class AbstractFileImporter():
                     if factVO.abstract != "true":
                         try:
                             factVO.order = self.getValueFromElement( ["@order"], presentationDF.loc[factVO.labelID], True) 
-                            factToAddList.append(factVO)
+                            tempFactVOList.append(factVO)
                         except Exception as e:
                             logging.getLogger(Constant.LOGGER_ERROR).debug("Error " + str(e))
-                        
-        return factToAddList
+                    if(self.isReportAllowed2(factVO.xlink_href)):
+                        isReportAllowed = True
+                
+            if(not isReportAllowed):
+                try:
+                    del reportDict[reportRole]
+                except KeyError as e:
+                    pass
+            else:
+                factVOList = factVOList + tempFactVOList
+        for report in reportDict.values():
+            Dao.addObject(objectToAdd = report, session = session, doFlush = True)
+        return factVOList
+    
+    def isReportAllowed2(self, xlink_href):
+        for conceptAllowed in Constant.ALLOWED_ABSTRACT_CONCEPT:
+            if(xlink_href.find(conceptAllowed) != -1):
+                return True
+        return False
     
     def setXsdAttr(self, factVO, xsdDF, conceptID):
         try:
@@ -176,19 +210,15 @@ class AbstractFileImporter():
         conceptID = factVO.getConceptID()
         if(xsdURL[0:4] == "http"):
             xsdFileName = xsdURL[xsdURL.rfind("/") + 1: len(xsdURL)]
-            if(processCache.get(xsdFileName, None) is None):
-                xsdFile = getXSDFileFromCache(Constant.CACHE_FOLDER + "xsd//" + xsdFileName, xsdURL)
-                xsdDict = xmltodict.parse(xsdFile)
-                xsdDF = pandas.DataFrame(xsdDict["xs:schema"]["xs:element"])
-                xsdDF.set_index("@id", inplace=True)
-                xsdDF.head()
-                processCache[xsdFileName] = xsdDF
-            else:
+            if(processCache.get(xsdFileName, None) is not None):
                 xsdDF = processCache.get(xsdFileName, None)
+            else:
+                raise Exception("XSD DICTIONARY NOT FOUND IN CACHE")
             factVO = self.setXsdAttr(factVO, xsdDF, conceptID)
         else:
             xsdDF = processCache[Constant.DOCUMENT_SCH]
             factVO = self.setXsdAttr(factVO, xsdDF, conceptID)
+            
         return factVO
     
     def getFactValue(self, periodDict, element):
@@ -204,7 +234,7 @@ class AbstractFileImporter():
         insXMLDict = processCache[Constant.DOCUMENT_INS]
         periodDict = processCache[Constant.PERIOD_DICT]
         logging.getLogger(Constant.LOGGER_GENERAL).debug("periodDict " + str(periodDict))
-        
+        objectToDelete = []
         for factVO in factToAddList:
             conceptID = factVO.xlink_href[factVO.xlink_href.find("#", 0) + 1:len(factVO.xlink_href)]
             try:
@@ -218,8 +248,12 @@ class AbstractFileImporter():
                     factValue = self.getFactValue(periodDict, element)
                     if (factValue is not None):
                         factVO.factValueList.append(factValue)
+                if(len(factVO.factValueList) == 0):
+                    objectToDelete.append(factVO)
             except KeyError as e:
-                logging.getLogger(Constant.LOGGER_ERROR).debug("KeyError " + str(e) + " " + conceptID )
+                a = 1
+        factToAddList = [x for x in factToAddList if x not in objectToDelete]
+                #logging.getLogger(Constant.LOGGER_ERROR).debug("KeyError " + str(e) + " " + conceptID )
         return factToAddList
     
     def getXMLDictFromGZCache(self, filename, documentName):
@@ -288,8 +322,13 @@ class AbstractFileImporter():
         if (obj is None):
             if (raiseException):
                 raise Exception("Element for elementID not found "  + str(elementIDList) + " " +  str(element)[0:50])
+            else:
+                return None
         elif(not isinstance(obj, dict)):
-            raise Exception("Element for elementID is not dict "  + str(elementIDList) + " " +  str(element)[0:50])
+            if (raiseException):
+                raise Exception("Element for elementID is not dict "  + str(elementIDList) + " " +  str(element)[0:50])
+            else:
+                return None
         else:
             return obj
     

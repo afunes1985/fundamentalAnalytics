@@ -39,7 +39,7 @@ class ImportFIlesFromSEC():
             df.head()
             #row = df.loc[1711736]
             threads = []
-            s = Semaphore(10)
+            s = Semaphore(5)
             for row in df.iterrows():
                 filename = row[1]["Filename"]
                 formType = row[1]["Form Type"]
@@ -88,10 +88,10 @@ class ImportVO():
                     self.saveFile(fileText,"TYPE", Constant.DOCUMENT_INS, "XBRL",fullFileName)
                     self.saveFile2(fileText,"FILENAME", Constant.DOCUMENT_SUMMARY, ["XML", "XBRL"], fullFileName)
                     logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - SUCCESSFULLY " + fullFileName)
-                    addOrModifyFileData("PENDING", "OK", filename)
+                    addOrModifyFileData("PENDING", "OK", filename, session)
                 else:
                     logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - EXISTS " + fullFileName)
-                    addOrModifyFileData("PENDING", "OK", filename)  
+                    addOrModifyFileData("PENDING", "OK", filename, session)  
         except FileNotFoundException as e:
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR FileNotFoundException " + url + " " + e.fileName)
             addOrModifyFileData("PENDING", "IMP FNF", filename)

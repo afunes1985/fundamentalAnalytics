@@ -3,6 +3,7 @@ Created on 20 ago. 2018
 
 @author: afunes
 '''
+from datetime import datetime
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
@@ -48,7 +49,7 @@ class GenericDao():
             session = dbconnector.getNewSession()
         objectResult = session.query(objectClazz)\
         .filter(condition)\
-        .all()
+        .all()#.limit(100)\
         return objectResult
 
 class DaoCompanyResult():
@@ -86,31 +87,28 @@ class Dao():
             return FactValue()
 
     @staticmethod
-    def getConcept(conceptName, session):
+    def getConceptOID(conceptName, session = None):
         try:
-            return GenericDao.getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session)
+            return GenericDao.getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session).OID
         except NoResultFound:
             concept = Concept()
             concept.conceptName = conceptName
-            Dao.addObject(objectToAdd = concept, session = session, doCommit = False)
-            return concept
+            Dao.addObject(objectToAdd = concept, session = session, doFlush = True)
+            return concept.OID
     
     @staticmethod
     def getFact(company, concept, report, fileData, session):
         try:
             return GenericDao.getOneResult(Fact, and_(Fact.company == company, Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session)
         except NoResultFound:
-            return Fact()
+            return None
         
     @staticmethod  
     def getReport(reportShortName, session):
         try:
             return GenericDao.getOneResult(Report, and_(Report.shortName == reportShortName), session)
         except NoResultFound:
-            report = Report()
-            report.shortName = reportShortName
-            Dao.addObject(objectToAdd = report, session = session, doCommit = False)
-            return report
+            return None
     
     @staticmethod   
     def getFileData(filename, session = None):
@@ -120,39 +118,58 @@ class Dao():
             return None
         
     @staticmethod   
-    def addObject(objectToAdd, session = None, doCommit = False):
+    def addObject(objectToAdd, session = None, doCommit = False, doFlush = False):
         if(session is None):
-            session = DBConnector().getNewSession()
-        session.add(objectToAdd)
-        if(doCommit):
-            session.commit()
+            internalSession = DBConnector().getNewSession()
         else:
-            session.flush()
+            internalSession = session
+        internalSession.add(objectToAdd)
+        if(doCommit):
+            internalSession.commit()
+        elif(doFlush):
+            internalSession.flush()
+        if(session is None):
+            internalSession.close()
         logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added to DB " + str(objectToAdd))
 
         
     @staticmethod   
     def addFact(factVOList, company, fileData, session):
+        objectAlreadyAdded = {}
         for factVO in factVOList:
-            concept = Dao.getConcept(factVO.conceptName, session)
-            fact = Dao.getFact(company, concept, factVO.report, fileData, session)
-            fact.company = company
-            fact.concept = concept
-            fact.report = factVO.report
-            fact.order = factVO.order
-            fact.fileData = fileData
-            if (len(factVO.factValueList) > 0): 
-                for factValueVO in factVO.factValueList:
-                    factValue = Dao.getFactValue(fact, factValueVO.period, session)
-                    factValue.value = factValueVO.value
-                    factValue.period = factValueVO.period
-                    factValue.fact = fact
-                    fact.factValueList.append(factValue)
-            elif(len(factVO.factValueList) == 0):
-                logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + fact.concept.conceptName + " " +  fileData.fileName)
-            session.add(fact)
-            logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added fact" + str(factVO.conceptName))
-        session.commit()
+            if (len(factVO.factValueList) > 0):
+                #time1 = datetime.now()
+                conceptOID = Dao.getConceptOID(factVO.conceptName, session = session)
+                factKey = str(company.OID) + "-" + str(conceptOID) + "-" + str(factVO.report.OID) + "-" + str(fileData.OID)
+                if(objectAlreadyAdded.get(factKey, None) is None):
+                    #fact = Dao.getFact(company, concept, factVO.report, fileData, session)
+                    #fact = None
+                    #if(fact is None):
+                    fact = Fact()
+                    fact.companyOID = company.OID
+                    fact.conceptOID = conceptOID
+                    fact.reportOID = factVO.report.OID
+                    fact.fileDataOID = fileData.OID
+                    fact.order = factVO.order
+                    session.add(fact) 
+                    session.flush()
+                    for factValueVO in factVO.factValueList:
+                        #factValue = Dao.getFactValue(fact, factValueVO.period, session)
+                        factValuekey =  str(factValueVO.period.OID) + "-" + str(fact.OID)
+                        if(objectAlreadyAdded.get(factValuekey, None) is None):
+                            factValue = FactValue()
+                            factValue.value = factValueVO.value
+                            factValue.period = factValueVO.period
+                            #factValue.fact = fact
+                            fact.factValueList.append(factValue)
+                            objectAlreadyAdded[factValuekey] = ""
+                    objectAlreadyAdded[factKey] = "" 
+                    logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added fact" + str(factVO.conceptName))
+                    #print("STEP 3.1 " + str(datetime.now() - time1))
+                    #elif(len(factVO.factValueList) == 0):
+                        #logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + fact.concept.conceptName + " " +  fileData.fileName)
+        #session.commit()
+        
         
     @staticmethod     
     def addAbstractConcept(factVO, session):
