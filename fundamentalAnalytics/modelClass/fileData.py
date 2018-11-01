@@ -22,3 +22,4 @@ class FileData(PersistenObject):
     factList = relationship("Fact", back_populates="fileData")
     status = Column(String(15), nullable=False)
     importStatus = Column(String(15), nullable=False)
+    errorMessage = Column(String(100), nullable=True)

@@ -69,8 +69,7 @@ class DaoCompanyResult():
                                     left join fa_file_data fileData on fact.fileDataOID = fileData.OID
                                     left join fa_fact_value factValue on factValue.factOID = fact.OID
                                     left join fa_period period on factValue.periodOID = period.OID
-                                where company.ticker = 'TSLA'
-                                    and concept.conceptName = :conceptName
+                                where concept.conceptName = :conceptName
                                     and (company.CIK = :CIK or :CIK is null)
                                     and (company.ticker = :ticker or :ticker is null)
                                     and (period.type= :periodType or :periodType is null)
@@ -134,13 +133,13 @@ class Dao():
 
         
     @staticmethod   
-    def addFact(factVOList, company, fileData, session):
+    def addFact(factVOList, company, fileData, reportDict, session):
         objectAlreadyAdded = {}
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
                 #time1 = datetime.now()
                 conceptOID = Dao.getConceptOID(factVO.conceptName, session = session)
-                factKey = str(company.OID) + "-" + str(conceptOID) + "-" + str(factVO.report.OID) + "-" + str(fileData.OID)
+                factKey = str(company.OID) + "-" + str(conceptOID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
                 if(objectAlreadyAdded.get(factKey, None) is None):
                     #fact = Dao.getFact(company, concept, factVO.report, fileData, session)
                     #fact = None
@@ -148,7 +147,7 @@ class Dao():
                     fact = Fact()
                     fact.companyOID = company.OID
                     fact.conceptOID = conceptOID
-                    fact.reportOID = factVO.report.OID
+                    fact.reportOID = reportDict[factVO.reportRole].OID
                     fact.fileDataOID = fileData.OID
                     fact.order = factVO.order
                     session.add(fact) 

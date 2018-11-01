@@ -136,7 +136,7 @@ class AbstractFileImporter():
                     report = Dao.getReport(reportShortName, session)
                     if(report is None):
                         report = Report()
-                        report.shortName = reportShortName
+                        report.shortName = reportShortName[0:299]
                     reportDict[reportRole] = report
                 except Exception:
                     pass
@@ -165,7 +165,7 @@ class AbstractFileImporter():
                 for item2 in self.getListFromElement(Constant.LOC, item):
                     factVO = FactVO()
                     factVO.xlink_href = item2["@xlink:href"]
-                    factVO.report = reportDict[reportRole]
+                    factVO.reportRole = reportRole
                     factVO.labelID = item2["@xlink:label"]
                     factVO = self.setXsdValue(factVO, processCache)
                     if factVO.abstract != "true":
@@ -349,3 +349,32 @@ class AbstractFileImporter():
             raise Exception("Value for elementID is not str "  + str(attrIDList) + " " +  str(element)[0:50])
         else:
             return obj
+
+    def completeFileData(self, fileData, processCache, filename, session):
+        insXMLDict = processCache[Constant.DOCUMENT_INS]
+        documentType = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentType'])
+        #logging.getLogger(Constant.LOGGER_GENERAL).debug("documentType " + documentType)
+        amendmentFlag = self.getValueFromElement(['#text'], insXMLDict['dei:AmendmentFlag'])
+        amendmentFlag = amendmentFlag.lower() in ("true")
+        documentPeriodEndDate = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentPeriodEndDate'])
+        #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentPeriodEndDate " + documentPeriodEndDate)
+        documentFiscalYearFocus = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentFiscalYearFocus'])
+        #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalYearFocus " + documentFiscalYearFocus)
+        documentFiscalPeriodFocus = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentFiscalPeriodFocus'])
+        #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalPeriodFocus " + documentFiscalPeriodFocus)
+        entityCentralIndexKey = self.getValueFromElement(['#text'], insXMLDict['dei:EntityCentralIndexKey'])
+        #logging.getLogger(Constant.LOGGER_GENERAL).debug("EntityCentralIndexKey " + entityCentralIndexKey)
+        #tradingSymbol = self.getValueFromElement(['#text'], insXMLDict['dei:TradingSymbol'], False)
+        #logging.getLogger(Constant.LOGGER_GENERAL).debug("TradingSymbol " + tradingSymbol)
+        #entityRegistrantName = insXMLDict['dei:EntityRegistrantName']['#text']
+        fileData.documentType = documentType
+        fileData.amendmentFlag = amendmentFlag
+        fileData.documentPeriodEndDate = documentPeriodEndDate
+        if(len(documentFiscalYearFocus) <= 4):
+            fileData.documentFiscalYearFocus = documentFiscalYearFocus
+        fileData.documentFiscalPeriodFocus = documentFiscalPeriodFocus
+        fileData.entityCentralIndexKey = entityCentralIndexKey
+        #fileData.tradingSymbol = tradingSymbol
+        #fileData.entityRegistrantName = entityRegistrantName
+        #Dao.addObject(objectToAdd = fileData, session = session, doCommit = True)
+        return fileData

@@ -25,22 +25,22 @@ def getTraceData(ticker, concept, periodType):
             name = concept.conceptName)
         return trace
     else:
-        raise Exception("No data found " + concept.conceptID)
+        raise Exception("No data found " + concept.conceptName)
 
 data = []   
-ticker = 'TSLA'
+ticker = 'INTC'
 filename = ticker
 periodType = "QTD"
 Initializer()
 #listConceptID = ['NetIncomeLoss']
 #BALANCE
-#listConceptID = ['CashAndCashEquivalentsAtCarryingValue', 'AssetsCurrent', 'Assets', 'LiabilitiesCurrent', 'StockholdersEquity']
+listConceptID = ['CashAndCashEquivalentsAtCarryingValue', 'AssetsCurrent', 'Assets', 'LiabilitiesCurrent', 'StockholdersEquity']
 #listConceptID = ['OperatingExpenses', 'OperatingIncomeLoss', 'NetIncomeLoss', 'CashAndCashEquivalentsAtCarryingValue', 'IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest']
 #CASH FLOW
 #listConceptID = ['NetCashProvidedByUsedInOperatingActivitiesContinuingOperations', 'NetCashProvidedByUsedInInvestingActivitiesContinuingOperations','NetCashProvidedByUsedInFinancingActivitiesContinuingOperations']
 
 #listConceptID = ['NetCashProvidedByUsedInOperatingActivities', 'NetCashProvidedByUsedInInvestingActivities','NetCashProvidedByUsedInFinancingActivities']
-listConceptID = ['Revenues', 'CostOfRevenue','GrossProfit', 'OperatingExpenses', 'ProfitLoss', 'NetIncomeLoss']
+#listConceptID = ['Revenues', 'CostOfRevenue','GrossProfit', 'OperatingExpenses', 'ProfitLoss', 'NetIncomeLoss']
 
 for conceptName in listConceptID:
     concept = GenericDao.getFirstResult(Concept, Concept.conceptName == conceptName)

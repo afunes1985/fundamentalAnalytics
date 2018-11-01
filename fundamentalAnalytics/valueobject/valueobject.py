@@ -20,7 +20,7 @@ class FactVO():
         self.xlink_href = None
         self.conceptName = None
         self.factValueList = []
-        self.report = None
+        self.reportRole = None
         self.order = None
     
     def getXsdURL(self):

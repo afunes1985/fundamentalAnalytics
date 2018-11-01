@@ -41,7 +41,7 @@ def initMainCache():
 
 if __name__ == "__main__":
     COMPANY_TICKER = None
-    replace = False
+    replace = True
     userMasterIndex = False
     Initializer()
     session = DBConnector().getNewSession()
@@ -64,7 +64,7 @@ if __name__ == "__main__":
             fileMasterImporter.doImport(period, company, replace, session)
     else:    
         fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("PENDING")), session)
-        #fileDataList = GenericDao.getAllResult(FileData, and_(FileData.fileName == "edgar/data/1049521/0001049521-14-000005.txt"), session)
+        #fileDataList = GenericDao.getAllResult(FileData, and_(FileData.fileName == "edgar/data/1016708/0001477932-18-002398.txt"), session)
         threads = []    
         s = Semaphore(1)
         mainCache = initMainCache()

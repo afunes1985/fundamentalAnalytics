@@ -33,18 +33,21 @@ class FileImporter(AbstractFileImporter):
                 addOrModifyFileData(status = "INIT", filename = self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
                 self.processCache = self.initProcessCache(self.filename, self.session)
-                print("STEP 1 " + str(datetime.now() - time1))
+                #print("STEP 1 " + str(datetime.now() - time1))
                 fileData = self.completeFileData(fileData, self.processCache, self.filename, self.session)
-                print("STEP 2 " + str(datetime.now() - time1))
+                #print("STEP 2 " + str(datetime.now() - time1))
                 reportDict = self.getReportDict(self.processCache, self.session)
-                print("STEP 3 " + str(datetime.now() - time1))
+                #print("STEP 3 " + str(datetime.now() - time1))
                 factVOList = self.getFactByReport(reportDict, self.processCache, self.session)
-                print("STEP 4 " + str(datetime.now() - time1))
+                #print("STEP 4 " + str(datetime.now() - time1))
                 factVOList = self.setFactValues(factVOList, self.processCache)
-                print("STEP 5 " + str(datetime.now() - time1))
-                Dao.addFact(factVOList, self.company, fileData, self.session)
-                print("STEP 6 " + str(datetime.now() - time1))
-                fileData.status = "OK"
+                #print("STEP 5 " + str(datetime.now() - time1))
+                Dao.addFact(factVOList, self.company, fileData, reportDict, self.session)
+                #print("STEP 6 " + str(datetime.now() - time1))
+                if(len(factVOList) != 0):
+                    fileData.status = "OK"
+                else:
+                    fileData.status = "NO_DATA"
                 Dao.addObject(objectToAdd = fileData, session = self.session, doCommit = True)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).info("FINISH AT " + str(datetime.now() - time1))
@@ -53,40 +56,10 @@ class FileImporter(AbstractFileImporter):
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         except Exception as e:
-            addOrModifyFileData(status = "ERROR", filename = self.filename)
+            self.session.rollback()
+            addOrModifyFileData(status = "ERROR", filename = self.filename, errorMessage = str(e)[0:99])
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         finally:
             self.session.close()
             self.semaphore.release()
-        
-    
-    def completeFileData(self, fileData, processCache, filename, session):
-        insXMLDict = processCache[Constant.DOCUMENT_INS]
-        documentType = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentType'])
-        #logging.getLogger(Constant.LOGGER_GENERAL).debug("documentType " + documentType)
-        amendmentFlag = self.getValueFromElement(['#text'], insXMLDict['dei:AmendmentFlag'])
-        amendmentFlag = amendmentFlag.lower() in ("true")
-        documentPeriodEndDate = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentPeriodEndDate'])
-        #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentPeriodEndDate " + documentPeriodEndDate)
-        documentFiscalYearFocus = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentFiscalYearFocus'])
-        #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalYearFocus " + documentFiscalYearFocus)
-        documentFiscalPeriodFocus = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentFiscalPeriodFocus'])
-        #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalPeriodFocus " + documentFiscalPeriodFocus)
-        entityCentralIndexKey = self.getValueFromElement(['#text'], insXMLDict['dei:EntityCentralIndexKey'])
-        #logging.getLogger(Constant.LOGGER_GENERAL).debug("EntityCentralIndexKey " + entityCentralIndexKey)
-        #tradingSymbol = insXMLDict['dei:TradingSymbol']['#text']
-        #logging.getLogger(Constant.LOGGER_GENERAL).debug("TradingSymbol " + tradingSymbol)
-        #entityRegistrantName = insXMLDict['dei:EntityRegistrantName']['#text']
-        fileData.documentType = documentType
-        fileData.amendmentFlag = amendmentFlag
-        fileData.documentPeriodEndDate = documentPeriodEndDate
-        fileData.documentFiscalYearFocus = documentFiscalYearFocus
-        fileData.documentFiscalPeriodFocus = documentFiscalPeriodFocus
-        fileData.entityCentralIndexKey = entityCentralIndexKey
-        #fileData.tradingSymbol = tradingSymbol
-        #fileData.entityRegistrantName = entityRegistrantName
-        #Dao.addObject(objectToAdd = fileData, session = session, doCommit = True)
-        return fileData
-        
-

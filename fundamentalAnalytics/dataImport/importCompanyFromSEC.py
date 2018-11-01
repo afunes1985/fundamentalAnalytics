@@ -13,7 +13,6 @@ from sqlalchemy.sql.expression import and_
 
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
-from dataImport.importCompanyResultFromSEC import getFileData, initProcessCache
 from modelClass.company import Company
 from modelClass.period import QuarterPeriod
 from tools.tools import getBinaryFileFromCache, getTxtFileFromCache, \

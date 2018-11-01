@@ -125,7 +125,7 @@ class FileNotFoundException(Exception):
     def __init__(self, fileName):
         self.fileName = fileName
         
-def addOrModifyFileData(status, importStatus = None, filename = None, externalSession = None):
+def addOrModifyFileData(status, importStatus = None, filename = None, externalSession = None, errorMessage = None):
     if (externalSession is None):
         session = DBConnector().getNewSession()
     else:
@@ -135,6 +135,7 @@ def addOrModifyFileData(status, importStatus = None, filename = None, externalSe
         fileData = FileData()
         fileData.fileName = filename
     fileData.status = status
+    fileData.errorMessage = errorMessage
     if importStatus is not None:
         fileData.importStatus = importStatus
     Dao.addObject(objectToAdd = fileData, session = session, doCommit = True)
