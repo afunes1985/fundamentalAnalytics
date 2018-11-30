@@ -27,28 +27,30 @@ def getTraceData(ticker, concept, periodType):
     else:
         raise Exception("No data found " + concept.conceptName)
 
-data = []   
-ticker = 'INTC'
-filename = ticker
-periodType = "QTD"
-Initializer()
-#listConceptID = ['NetIncomeLoss']
-#BALANCE
-listConceptID = ['CashAndCashEquivalentsAtCarryingValue', 'AssetsCurrent', 'Assets', 'LiabilitiesCurrent', 'StockholdersEquity']
-#listConceptID = ['OperatingExpenses', 'OperatingIncomeLoss', 'NetIncomeLoss', 'CashAndCashEquivalentsAtCarryingValue', 'IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest']
-#CASH FLOW
-#listConceptID = ['NetCashProvidedByUsedInOperatingActivitiesContinuingOperations', 'NetCashProvidedByUsedInInvestingActivitiesContinuingOperations','NetCashProvidedByUsedInFinancingActivitiesContinuingOperations']
 
-#listConceptID = ['NetCashProvidedByUsedInOperatingActivities', 'NetCashProvidedByUsedInInvestingActivities','NetCashProvidedByUsedInFinancingActivities']
-#listConceptID = ['Revenues', 'CostOfRevenue','GrossProfit', 'OperatingExpenses', 'ProfitLoss', 'NetIncomeLoss']
-
-for conceptName in listConceptID:
-    concept = GenericDao.getFirstResult(Concept, Concept.conceptName == conceptName)
-    data.append(getTraceData(ticker, concept, periodType))
-    filename = filename + " " + concept.conceptName
-print(filename)   
-layout = go.Layout(
-    title=filename[0:100]
-)
-fig = go.Figure(data=data, layout=layout)
-py.iplot(fig, filename = filename[0:100])
+def testPlot(ticker, listConceptID):
+    data = []   
+    #ticker = 'INTC'
+    filename = ticker
+    periodType = "QTD"
+    Initializer()
+    #listConceptID = ['CashAndCashEquivalentsAtCarryingValue']
+    #BALANCE
+    #listConceptID = ['CashAndCashEquivalentsAtCarryingValue', 'AssetsCurrent', 'Assets', 'LiabilitiesCurrent', 'StockholdersEquity']
+    #listConceptID = ['OperatingExpenses', 'OperatingIncomeLoss', 'NetIncomeLoss', 'CashAndCashEquivalentsAtCarryingValue', 'IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest']
+    #CASH FLOW
+    #listConceptID = ['NetCashProvidedByUsedInOperatingActivitiesContinuingOperations', 'NetCashProvidedByUsedInInvestingActivitiesContinuingOperations','NetCashProvidedByUsedInFinancingActivitiesContinuingOperations']
+    
+    #listConceptID = ['NetCashProvidedByUsedInOperatingActivities', 'NetCashProvidedByUsedInInvestingActivities','NetCashProvidedByUsedInFinancingActivities']
+    #listConceptID = ['Revenues', 'CostOfRevenue','GrossProfit', 'OperatingExpenses', 'ProfitLoss', 'NetIncomeLoss']
+    
+    for conceptName in listConceptID:
+        concept = GenericDao.getFirstResult(Concept, Concept.conceptName == conceptName)
+        data.append(getTraceData(ticker, concept, periodType))
+        filename = filename + " " + concept.conceptName
+    print(filename)   
+    layout = go.Layout(
+        title=filename[0:100]
+    )
+    fig = go.Figure(data=data, layout=layout)
+    py.iplot(fig, filename = filename[0:100])

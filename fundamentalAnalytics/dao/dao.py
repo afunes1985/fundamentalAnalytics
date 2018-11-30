@@ -12,6 +12,7 @@ from sqlalchemy.sql.expression import text, and_
 from base.dbConnector import DBConnector
 from modelClass.abstractConcept import AbstractConcept
 from modelClass.abstractFactRelation import AbstractFactRelation
+from modelClass.company import Company
 from modelClass.concept import Concept
 from modelClass.fact import Fact
 from modelClass.factValue import FactValue
@@ -33,7 +34,7 @@ class GenericDao():
         return objectResult
     
     @staticmethod
-    def getOneResult(objectClazz, condition, session = None):
+    def getOneResult(objectClazz, condition = "", session = None):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
@@ -43,7 +44,7 @@ class GenericDao():
         return objectResult
     
     @staticmethod
-    def getAllResult(objectClazz, condition, session = None):
+    def getAllResult(objectClazz, condition = (1 == 1), session = None):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
@@ -76,8 +77,77 @@ class DaoCompanyResult():
                                 order by IFNULL(period.endDate, period.instant)""")
             rs = con.execute(query, params)
             return rs 
+        
+    @staticmethod
+    def getFactValues2(CIK = None, ticker = None, conceptName = None, periodType = None):
+        dbconnector = DBConnector()
+        with dbconnector.engine.connect() as con:
+            params = { 'conceptName' : conceptName,
+                       'CIK' : CIK,
+                       'ticker' : ticker,
+                       'periodType' : periodType}
+#             query = text("""select report.shortName, concept.conceptName, concept.label, factValue.value, IFNULL(period.endDate, period.instant), period.type
+#                                 FROM fa_fact fact
+#                                     join fa_company company on fact.companyOID = company.OID
+#                                     join fa_concept concept on fact.conceptOID = concept.OID
+#                                     join fa_report report on fact.reportOID = report.OID
+#                                     join fa_fact_value factValue on factValue.factOID = fact.OID
+#                                     join fa_period period on factValue.periodOID = period.OID
+#                                 where (concept.conceptName = :conceptName or :conceptName is null) 
+#                                     and (company.CIK = :CIK or :CIK is null)
+#                                     and (company.ticker = :ticker or :ticker is null)
+#                                     and (period.type= :periodType or :periodType is null or period.type is null)
+#                                 order by concept.conceptName, IFNULL(period.endDate, period.instant),  report.shortName,  fact.order""")
+            query = text("""
+                        CREATE TEMPORARY TABLE fact_report 
+                        select report.shortName, concept.conceptName, concept.label, factValue.value, IFNULL(period.endDate, period.instant) date_, period.type
+                            FROM fa_fact fact
+                                join fa_company company on fact.companyOID = company.OID
+                                join fa_concept concept on fact.conceptOID = concept.OID
+                                join fa_report report on fact.reportOID = report.OID
+                                join fa_fact_value factValue on factValue.factOID = fact.OID
+                                join fa_period period on factValue.periodOID = period.OID
+                            where 
+                                 (company.ticker = "MSFT" )
+                                    and (period.type is null or period.type = 'QTD');
+                        
+                        CREATE TEMPORARY TABLE fact_report2 select * from  fact_report;
+                                                        
+                        insert into fact_report
+                        select temp.shortName, temp.conceptName, temp.label, temp.value, temp.date_, temp.type 
+                            from(
+                            select report.shortName, concept.conceptName, concept.label, factValue.value, IFNULL(period.endDate, period.instant) date_, period.type
+                                FROM fa_fact fact
+                                    join fa_company company on fact.companyOID = company.OID
+                                    join fa_concept concept on fact.conceptOID = concept.OID
+                                    join fa_report report on fact.reportOID = report.OID
+                                    join fa_fact_value factValue on factValue.factOID = fact.OID
+                                    join fa_period period on factValue.periodOID = period.OID
+                                    left join fact_report2 freport on freport.conceptName = concept.conceptName and freport.date_ = IFNULL(period.endDate, period.instant)
+                                where 
+                                     company.ticker = "MSFT" 
+                                        and period.type = 'YTD'
+                                        and freport.conceptName is null) as temp;                    
+                        
+                        select * from fact_report
+                        order by conceptName, date_, shortName;
+                """)
+            rs = con.execute(query, params)
+            return rs 
     
 class Dao():
+    @staticmethod
+    def getCompanyList(session = None):
+        dbconnector = DBConnector()
+        with dbconnector.engine.connect() as con:
+            query = text("""select distinct company.CIK, company.entityRegistrantName, company.ticker
+                                FROM fa_company company
+                                    join fa_fact fact on fact.companyOID = company.OID
+                                order by company.entityRegistrantName""")
+            rs = con.execute(query, [])
+            return rs 
+    
+    
     @staticmethod
     def getFactValue(fact, period, session):
         try:
