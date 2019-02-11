@@ -9,7 +9,7 @@ from sqlalchemy.orm.session import sessionmaker
 class DBConnector():
     
     def __init__(self):
-        self.engine = create_engine('mysql+mysqlconnector://root:root@localhost/fundamenalanalytics')
+        self.engine = create_engine('mysql+mysqlconnector://root:root@localhost/fundamentalanalytics')
         self.Session = sessionmaker(bind=self.engine, autoflush=False)
         self.Session.trust_env = False
         
