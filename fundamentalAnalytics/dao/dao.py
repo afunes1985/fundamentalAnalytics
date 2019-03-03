@@ -73,65 +73,47 @@ class DaoCompanyResult():
                                 where concept.conceptName = :conceptName
                                     and (company.CIK = :CIK or :CIK is null)
                                     and (company.ticker = :ticker or :ticker is null)
-                                    and (period.type= :periodType or :periodType is null)
+                                    and (period.type= :periodType or :periodType is null or period.type is null)
                                 order by IFNULL(period.endDate, period.instant)""")
             rs = con.execute(query, params)
             return rs 
         
     @staticmethod
-    def getFactValues2(CIK = None, ticker = None, conceptName = None, periodType = None):
+    def getFactValues2(reportShortName = None, CIK = None, ticker = None, conceptName = None):
         dbconnector = DBConnector()
         with dbconnector.engine.connect() as con:
             params = { 'conceptName' : conceptName,
                        'CIK' : CIK,
                        'ticker' : ticker,
-                       'periodType' : periodType}
-#             query = text("""select report.shortName, concept.conceptName, concept.label, factValue.value, IFNULL(period.endDate, period.instant), period.type
-#                                 FROM fa_fact fact
-#                                     join fa_company company on fact.companyOID = company.OID
-#                                     join fa_concept concept on fact.conceptOID = concept.OID
-#                                     join fa_report report on fact.reportOID = report.OID
-#                                     join fa_fact_value factValue on factValue.factOID = fact.OID
-#                                     join fa_period period on factValue.periodOID = period.OID
-#                                 where (concept.conceptName = :conceptName or :conceptName is null) 
-#                                     and (company.CIK = :CIK or :CIK is null)
-#                                     and (company.ticker = :ticker or :ticker is null)
-#                                     and (period.type= :periodType or :periodType is null or period.type is null)
-#                                 order by concept.conceptName, IFNULL(period.endDate, period.instant),  report.shortName,  fact.order""")
-            query = text("""
-                        CREATE TEMPORARY TABLE fact_report 
-                        select report.shortName, concept.conceptName, concept.label, factValue.value, IFNULL(period.endDate, period.instant) date_, period.type
-                            FROM fa_fact fact
-                                join fa_company company on fact.companyOID = company.OID
-                                join fa_concept concept on fact.conceptOID = concept.OID
-                                join fa_report report on fact.reportOID = report.OID
-                                join fa_fact_value factValue on factValue.factOID = fact.OID
-                                join fa_period period on factValue.periodOID = period.OID
-                            where 
-                                 (company.ticker = "MSFT" )
-                                    and (period.type is null or period.type = 'QTD');
-                        
-                        CREATE TEMPORARY TABLE fact_report2 select * from  fact_report;
-                                                        
-                        insert into fact_report
-                        select temp.shortName, temp.conceptName, temp.label, temp.value, temp.date_, temp.type 
-                            from(
+                       'reportShortName' : reportShortName}
+            
+            query = text("""select * from(
                             select report.shortName, concept.conceptName, concept.label, factValue.value, IFNULL(period.endDate, period.instant) date_, period.type
-                                FROM fa_fact fact
-                                    join fa_company company on fact.companyOID = company.OID
-                                    join fa_concept concept on fact.conceptOID = concept.OID
-                                    join fa_report report on fact.reportOID = report.OID
-                                    join fa_fact_value factValue on factValue.factOID = fact.OID
-                                    join fa_period period on factValue.periodOID = period.OID
-                                    left join fact_report2 freport on freport.conceptName = concept.conceptName and freport.date_ = IFNULL(period.endDate, period.instant)
-                                where 
-                                     company.ticker = "MSFT" 
-                                        and period.type = 'YTD'
-                                        and freport.conceptName is null) as temp;                    
-                        
-                        select * from fact_report
-                        order by conceptName, date_, shortName;
-                """)
+                                 FROM fa_fact fact
+                                     join fa_company company on fact.companyOID = company.OID
+                                     join fa_concept concept on fact.conceptOID = concept.OID
+                                     join fa_report report on fact.reportOID = report.OID
+                                     join fa_fact_value factValue on factValue.factOID = fact.OID
+                                     join fa_period period on factValue.periodOID = period.OID
+                                 where 
+                                    (:conceptName is null or concept.conceptName = :conceptName)
+                                    and (:ticker is null or company.ticker = :ticker )
+                                    and (:reportShortName is null or report.shortName = :reportShortName )
+                                    and (period.type = 'QTD' or period.type = 'YTD' or period.type is null)  
+                            union
+                            select report.shortName, concept.conceptName, concept.label, factValue.value, IFNULL(period.endDate, period.instant) date_, period.type
+                                 FROM fa_custom_fact fact
+                                     join fa_company company on fact.companyOID = company.OID
+                                     join fa_custom_concept concept on fact.customConceptOID = concept.OID
+                                     join fa_custom_report report on fact.customReportOID = report.OID
+                                     join fa_custom_fact_value factValue on factValue.customFactOID = fact.OID
+                                     join fa_period period on factValue.periodOID = period.OID
+                                 where
+                                    (:conceptName is null or concept.conceptName = :conceptName)
+                                    and (:ticker is null or company.ticker = :ticker)
+                                    and (:reportShortName is null or report.shortName = :reportShortName )
+                                    and (period.type = 'QTD')) as rs
+                                        order by shortName, conceptName, type, date_""")
             rs = con.execute(query, params)
             return rs 
     

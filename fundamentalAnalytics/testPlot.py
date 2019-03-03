@@ -13,8 +13,8 @@ import plotly.graph_objs as go
 import plotly.plotly as py
 
 
-def getTraceData(ticker, concept, periodType):
-    rs = DaoCompanyResult.getFactValues(ticker = ticker, conceptName = concept.conceptName, periodType = periodType)
+def getTraceData(reportShortName, ticker, conceptName, periodType):
+    rs = DaoCompanyResult.getFactValues2(reportShortName = reportShortName, ticker = ticker, conceptName = conceptName)
     rows = rs.fetchall()
     if (len(rows) != 0):
         df = DataFrame(rows)
@@ -22,17 +22,16 @@ def getTraceData(ticker, concept, periodType):
         trace = go.Scatter(
             x=df["date_"],
             y=df["value"],
-            name = concept.conceptName)
+            name = conceptName)
         return trace
     else:
-        raise Exception("No data found " + concept.conceptName)
+        raise Exception("No data found " + conceptName)
 
 
-def testPlot(ticker, listConceptID):
+def testPlot(filterFactVOList):
     data = []   
     #ticker = 'INTC'
-    filename = ticker
-    periodType = "QTD"
+    filename = filterFactVOList[0].ticker
     Initializer()
     #listConceptID = ['CashAndCashEquivalentsAtCarryingValue']
     #BALANCE
@@ -44,13 +43,12 @@ def testPlot(ticker, listConceptID):
     #listConceptID = ['NetCashProvidedByUsedInOperatingActivities', 'NetCashProvidedByUsedInInvestingActivities','NetCashProvidedByUsedInFinancingActivities']
     #listConceptID = ['Revenues', 'CostOfRevenue','GrossProfit', 'OperatingExpenses', 'ProfitLoss', 'NetIncomeLoss']
     
-    for conceptName in listConceptID:
-        concept = GenericDao.getFirstResult(Concept, Concept.conceptName == conceptName)
-        data.append(getTraceData(ticker, concept, periodType))
-        filename = filename + " " + concept.conceptName
+    for filterFactVO in filterFactVOList:
+        data.append(getTraceData(filterFactVO.reportShortName, filterFactVO.ticker, filterFactVO.conceptName, None))
+        filename = filename + " " + filterFactVO.conceptName
     print(filename)   
     layout = go.Layout(
         title=filename[0:100]
     )
     fig = go.Figure(data=data, layout=layout)
-    py.iplot(fig, filename = filename[0:100])
+    py.plot(fig, filename = filename[0:100])

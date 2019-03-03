@@ -33,3 +33,10 @@ class CompanyVO():
     def __init__(self):
         self.CIK = None
         
+class FilterFactVO():
+    def __init__(self):
+        self.CIK = None
+        self.conceptName = None
+        self.reportShortName = None
+        self.ticker = None
+        

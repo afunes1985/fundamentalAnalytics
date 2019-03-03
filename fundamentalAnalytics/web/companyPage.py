@@ -85,7 +85,7 @@ def getTableValues(CIK, ticker, conceptName2):
     df = df.sort_values(["reportName", "conceptName"], ascending=[True,True])
  
 def initPage2(selectedCompanies):
-    df = getTableValues(selectedCompanies["CIK"], None, None)
+    df = getTableValues(selectedCompanies["CIK"], selectedCompanies["ticker"], None)
     app.layout2 = html.Div([
         # embed `dcc` input in initial layout (https://github.com/plotly/dash-renderer/issues/46)
         html.Div(dcc.Input(), style={'display': 'none'}),

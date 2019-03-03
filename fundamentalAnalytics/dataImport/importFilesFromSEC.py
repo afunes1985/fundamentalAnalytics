@@ -22,7 +22,7 @@ from tools.tools import getBinaryFileFromCache, createLog, getXMLFromText, \
     FileNotFoundException, addOrModifyFileData
 from valueobject.constant import Constant
 
-
+#Import fileData in PENDING state (OK, ERROR, FileNotFount (FNF))
 class ImportFIlesFromSEC():
     def importMasterIndexFor(self, period, replace, session):
         file = getBinaryFileFromCache(Constant.CACHE_FOLDER + 'master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
@@ -39,7 +39,7 @@ class ImportFIlesFromSEC():
             df.head()
             #row = df.loc[1711736]
             threads = []
-            s = Semaphore(5)
+            s = Semaphore(1)
             for row in df.iterrows():
                 filename = row[1]["Filename"]
                 formType = row[1]["Form Type"]
@@ -130,8 +130,8 @@ class ImportVO():
 if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
-    #periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 1)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
-    periodList = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2012)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+    periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 3)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+    #periodList = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2020, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter > 3)), QuarterPeriod.year > 2017)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
     logging.info("START")
     createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)
     for period in periodList:

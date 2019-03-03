@@ -12,6 +12,7 @@ from dao.dao import Dao, DaoCompanyResult
 import dash_html_components as html
 import dash_table_experiments as dt
 from testPlot import testPlot
+from valueobject.valueobject import FilterFactVO
 
 
 Initializer()
@@ -51,7 +52,7 @@ def doSubmit(n_clicks, rows, selected_row_indices):
     if (selected_row_indices is not None and len(selected_row_indices) != 0):
         for selected_row in selected_row_indices:
             print(rows[selected_row]) 
-            df2 = getTableValues(rows[selected_row]["CIK"], None, None)
+            df2 = getTableValues(rows[selected_row]["CIK"], rows[selected_row]["ticker"], None)
             print(df2)
             dt2 = dt.DataTable(
                 rows=df2.to_dict("rows"),
@@ -68,7 +69,7 @@ def doSubmit(n_clicks, rows, selected_row_indices):
 
  
 def getTableValues(CIK, ticker, conceptName2):
-    rs = DaoCompanyResult.getFactValues2(CIK = CIK, ticker = ticker, conceptName = None, periodType = "QTD")
+    rs = DaoCompanyResult.getFactValues2(CIK = CIK, ticker = ticker, conceptName = None)
     rows = rs.fetchall()
     df = DataFrame(columns=['reportName', 'conceptName'])
     rows_list = []
@@ -78,17 +79,20 @@ def getTableValues(CIK, ticker, conceptName2):
     for row in rows:
         reportName = row[0]
         conceptName = row[1]
+        periodType = row[5]
         if(rowDict is None):
             rowDict = {}
             rowDict['reportName'] = reportName
             rowDict['conceptName'] = conceptName
-        if(rowDict.get('conceptName', None) != conceptName):
+            rowDict['periodType'] = periodType
+        if(rowDict.get('conceptName', None) != conceptName or rowDict.get('periodType', None) != periodType):
             rows_list.append(rowDict)
             rowDict = {} 
             rowDict['reportName'] = reportName
             rowDict['conceptName'] = conceptName
+            rowDict['periodType'] = periodType
         reportDate = row[4].strftime('%d-%m-%Y')
-        rowDict[reportDate] = row[3]
+        rowDict[reportDate] = str(int(row[3]/1000000)) + " M"
         if(len(rowDict.keys()) > columnCount):
             columnCount = len(rowDict.keys())
             columnKeys = rowDict.keys()
@@ -108,11 +112,15 @@ def doSubmit2(n_clicks, rows, selected_row_indices):
     print(rows)
     print(selected_row_indices)
     if (len(selected_row_indices) != 0):
-        conceptNameList = []
+        filterFactVOList = []
         for selected_row in selected_row_indices:
             print(rows[selected_row]) 
-            conceptNameList.append(rows[selected_row]["conceptName"])
-        testPlot("MSFT", conceptNameList)
+            filterFactVO = FilterFactVO()
+            filterFactVO.conceptName = rows[selected_row]["conceptName"]
+            filterFactVO.reportShortName = rows[selected_row]["reportName"]
+            filterFactVO.ticker = "MSFT"
+            filterFactVOList.append(filterFactVO)
+        testPlot(filterFactVOList)
   
 
 if __name__ == '__main__':
