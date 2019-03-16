@@ -92,7 +92,7 @@ def getTableValues(CIK, ticker, conceptName2):
             rowDict['conceptName'] = conceptName
             rowDict['periodType'] = periodType
         reportDate = row[4].strftime('%d-%m-%Y')
-        rowDict[reportDate] = str(int(row[3]/1000000)) + " M"
+        rowDict[reportDate] = getNumberValueAsString(row[3])
         if(len(rowDict.keys()) > columnCount):
             columnCount = len(rowDict.keys())
             columnKeys = rowDict.keys()
@@ -122,6 +122,11 @@ def doSubmit2(n_clicks, rows, selected_row_indices):
             filterFactVOList.append(filterFactVO)
         testPlot(filterFactVOList)
   
+def getNumberValueAsString(value):
+    if(value % 1):
+        return value
+    else:
+        return str(int(value/1000000)) + " M" 
 
 if __name__ == '__main__':
     app.run_server(debug=True)

@@ -17,6 +17,7 @@ class Period(PersistenObject):
     instant = Column(DateTime, nullable=False)
     type = Column(String(4), nullable=False)
     factValueList = relationship("FactValue", back_populates="period")
+    customFactValueList = relationship("CustomFactValue", back_populates="period")
 
 class QuarterPeriod(PersistenObject):
     __tablename__ = 'fa_quarter_period'

@@ -10,10 +10,13 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import text, and_
 
 from base.dbConnector import DBConnector
+from modelClass.customReport import CustomReport
 from modelClass.abstractConcept import AbstractConcept
 from modelClass.abstractFactRelation import AbstractFactRelation
 from modelClass.company import Company
 from modelClass.concept import Concept
+from modelClass.customConcept import CustomConcept
+from modelClass.customFact import CustomFact
 from modelClass.fact import Fact
 from modelClass.factValue import FactValue
 from modelClass.fileData import FileData
@@ -88,7 +91,8 @@ class DaoCompanyResult():
                        'reportShortName' : reportShortName}
             
             query = text("""select * from(
-                            select report.shortName, concept.conceptName, concept.label, factValue.value, IFNULL(period.endDate, period.instant) date_, period.type
+                            select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
+                                    IFNULL(period.endDate, period.instant) date_, period.type as periodType, null as order_
                                  FROM fa_fact fact
                                      join fa_company company on fact.companyOID = company.OID
                                      join fa_concept concept on fact.conceptOID = concept.OID
@@ -101,7 +105,8 @@ class DaoCompanyResult():
                                     and (:reportShortName is null or report.shortName = :reportShortName )
                                     and (period.type = 'QTD' or period.type = 'YTD' or period.type is null)  
                             union
-                            select report.shortName, concept.conceptName, concept.label, factValue.value, IFNULL(period.endDate, period.instant) date_, period.type
+                            select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
+                                    IFNULL(period.endDate, period.instant) date_, period.type as periodType, concept.defaultOrder as order_
                                  FROM fa_custom_fact fact
                                      join fa_company company on fact.companyOID = company.OID
                                      join fa_custom_concept concept on fact.customConceptOID = concept.OID
@@ -113,7 +118,7 @@ class DaoCompanyResult():
                                     and (:ticker is null or company.ticker = :ticker)
                                     and (:reportShortName is null or report.shortName = :reportShortName )
                                     and (period.type = 'QTD')) as rs
-                                        order by shortName, conceptName, type, date_""")
+                                        order by reportShortName, conceptName, periodType, order_, date_""")
             rs = con.execute(query, params)
             return rs 
     
@@ -136,6 +141,13 @@ class Dao():
             return GenericDao.getOneResult(FactValue, and_(FactValue.fact.__eq__(fact), FactValue.period.__eq__(period)), session)
         except NoResultFound:
             return FactValue()
+        
+    @staticmethod
+    def getCompany(ticker, session):
+        try:
+            return GenericDao.getOneResult(Company, and_(Company.ticker.__eq__(ticker)), session)
+        except NoResultFound:
+            return None
 
     @staticmethod
     def getConceptOID(conceptName, session = None):
@@ -233,3 +245,44 @@ class Dao():
         factVO.abstractConcept = abstractConcept
         return factVO
     
+    @staticmethod 
+    def getFactValuesFromConcept(ticker = None, periodType = None, conceptNames = None):
+        try:
+            dbconnector = DBConnector()
+            cursor = dbconnector.engine.connect().connection.cursor()
+            query = "fa_getCustomValuesFromConcepts"
+            params = [ticker, periodType, conceptNames, 2]
+            cursor.callproc(query, params)
+            rs = cursor.stored_results()
+            for row in rs:
+                return (row.fetchall())
+        except NoResultFound:
+            return None
+    
+    @staticmethod 
+    def test():
+        dbconnector = DBConnector()
+        cursor = dbconnector.engine.connect().connection.cursor()
+        args = (5, 6, 0) # 0 is to hold value of the OUT parameter sum
+        cursor.callproc('add', args)
+        
+    @staticmethod
+    def getCustomConcept(conceptName, session = None):
+        try:
+            return GenericDao.getOneResult(CustomConcept, CustomConcept.conceptName.__eq__(conceptName), session)
+        except NoResultFound:
+            return None
+
+    @staticmethod  
+    def getCustomReport(reportShortName, session = None):
+        try:
+            return GenericDao.getOneResult(CustomReport, and_(CustomReport.shortName == reportShortName), session)
+        except NoResultFound:
+            return None
+    
+    @staticmethod
+    def getCustomFact(company, concept, report, session):
+        try:
+            return GenericDao.getOneResult(CustomFact, and_(CustomFact.company == company, CustomFact.customConcept == concept, CustomFact.customReport == report), session)
+        except NoResultFound:
+            return None

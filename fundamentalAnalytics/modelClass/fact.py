@@ -3,7 +3,7 @@ Created on 20 ago. 2018
 
 @author: afunes
 '''
-from sqlalchemy import Column, Integer, Float
+from sqlalchemy import Column, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import ForeignKey
 
