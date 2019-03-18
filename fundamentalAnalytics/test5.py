@@ -14,10 +14,11 @@ from dao.dao import Dao
 Initializer()
 session = DBConnector().getNewSession()
 
-concept = Dao.getCustomConcept('CUSTOM_GROSS_PROFIT', session)
+expressionName = 'GROSS_PROFIT_MARGIN'
+concept = Dao.getCustomConcept(expressionName, session)
 if concept is None:
     concept = CustomConcept()
-    concept.conceptName = 'CUSTOM_GROSS_PROFIT'
+    concept.conceptName = expressionName
     concept.defaultOrder = 1
     report = Dao.getCustomReport('CUSTOM_RATIOS', session)
     if report is None:
@@ -36,8 +37,7 @@ if fact is None:
     fact.customConcept = concept
     fact.company = company
 
-factValueList = Calculator.solveRule(company.ticker, None);
-fact.customFactValueList = factValueList
+fact.customFactValueList = Calculator.solveRule(company.ticker, expressionName);
 
 Dao.addObject(objectToAdd = fact, session = session, doCommit = True)
 

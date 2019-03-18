@@ -7,16 +7,18 @@ from datetime import datetime
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import text, and_
+from sqlalchemy.sql.expression import text, and_, join
 
 from base.dbConnector import DBConnector
-from modelClass.customReport import CustomReport
 from modelClass.abstractConcept import AbstractConcept
 from modelClass.abstractFactRelation import AbstractFactRelation
 from modelClass.company import Company
 from modelClass.concept import Concept
 from modelClass.customConcept import CustomConcept
 from modelClass.customFact import CustomFact
+from modelClass.customFactValue import CustomFactValue
+from modelClass.customReport import CustomReport
+from modelClass.expression import Expression
 from modelClass.fact import Fact
 from modelClass.factValue import FactValue
 from modelClass.fileData import FileData
@@ -246,7 +248,7 @@ class Dao():
         return factVO
     
     @staticmethod 
-    def getFactValuesFromConcept(ticker = None, periodType = None, conceptNames = None):
+    def getCustomFactValuesFromConcept(ticker = None, periodType = None, conceptNames = None):
         try:
             dbconnector = DBConnector()
             cursor = dbconnector.engine.connect().connection.cursor()
@@ -286,3 +288,26 @@ class Dao():
             return GenericDao.getOneResult(CustomFact, and_(CustomFact.company == company, CustomFact.customConcept == concept, CustomFact.customReport == report), session)
         except NoResultFound:
             return None
+    
+    @staticmethod
+    def getExpression(expressionName, session = None):
+        try:
+            return GenericDao.getOneResult(Expression, Expression.name == expressionName, session)
+        except NoResultFound:
+            return None
+        
+    @staticmethod
+    def getCustomFactValue(ticker, customConceptName, periodType = None, session = None):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            objectResult = session.query(CustomFactValue)\
+                .join(CustomFactValue.customFact)\
+                .join(CustomFact.customConcept)\
+                .join(CustomFact.company)\
+                .filter(and_(Company.ticker.__eq__(ticker), (CustomConcept.conceptName.__eq__(customConceptName))))\
+                .all()
+            return objectResult
+        except NoResultFound:
+            return FactValue()
