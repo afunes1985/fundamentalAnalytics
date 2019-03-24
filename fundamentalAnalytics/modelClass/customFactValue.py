@@ -6,7 +6,7 @@ Created on 20 ago. 2018
 from sqlalchemy import Column, Integer, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import ForeignKey
-
+from sqlalchemy.sql.sqltypes import String
 from modelClass import PersistenObject
 
 class CustomFactValue(PersistenObject):
@@ -16,3 +16,4 @@ class CustomFactValue(PersistenObject):
     customFactOID = Column(Integer, ForeignKey('fa_custom_fact.OID'))
     customFact = relationship("CustomFact", back_populates="customFactValueList")
     value = Column(Float(), nullable=False)
+    origin = Column(String(45), nullable=False)

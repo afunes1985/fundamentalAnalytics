@@ -3,19 +3,15 @@ Created on 18 ago. 2018
 
 @author: afunes
 '''
-from sympy.core.symbol import symbols
-from sympy.solvers.solveset import linsolve
 
 from dao.dao import Dao
 from modelClass.customFactValue import CustomFactValue
 from sympy.parsing.sympy_parser import parse_expr
 
 
-class Calculator(object):
-
-    
+class ExpressionEngine(object):
     @staticmethod
-    def solveRule(ticker, expressionName):
+    def solveExpression(ticker, expressionName):
         expression = Dao.getExpression(expressionName)
         expr = parse_expr(expression.expression)
         periodDict = {}

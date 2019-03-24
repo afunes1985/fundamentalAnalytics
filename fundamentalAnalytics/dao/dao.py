@@ -3,15 +3,15 @@ Created on 20 ago. 2018
 
 @author: afunes
 '''
-from datetime import datetime
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import text, and_, join
+from sqlalchemy.sql.elements import or_
+from sqlalchemy.sql.expression import text, and_
+from sqlalchemy.sql.operators import in_op
 
 from base.dbConnector import DBConnector
 from modelClass.abstractConcept import AbstractConcept
-from modelClass.abstractFactRelation import AbstractFactRelation
 from modelClass.company import Company
 from modelClass.concept import Concept
 from modelClass.customConcept import CustomConcept
@@ -22,6 +22,7 @@ from modelClass.expression import Expression
 from modelClass.fact import Fact
 from modelClass.factValue import FactValue
 from modelClass.fileData import FileData
+from modelClass.period import Period
 from modelClass.report import Report
 from valueobject.constant import Constant
 
@@ -119,7 +120,7 @@ class DaoCompanyResult():
                                     (:conceptName is null or concept.conceptName = :conceptName)
                                     and (:ticker is null or company.ticker = :ticker)
                                     and (:reportShortName is null or report.shortName = :reportShortName )
-                                    and (period.type = 'QTD')) as rs
+                                    and (period.type = 'QTD' or period.type = 'YTD')) as rs
                                         order by reportShortName, conceptName, periodType, order_, date_""")
             rs = con.execute(query, params)
             return rs 
@@ -152,14 +153,12 @@ class Dao():
             return None
 
     @staticmethod
-    def getConceptOID(conceptName, session = None):
+    def getConcept(conceptName, session = None):
         try:
-            return GenericDao.getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session).OID
+            return GenericDao.getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session)
         except NoResultFound:
-            concept = Concept()
-            concept.conceptName = conceptName
-            Dao.addObject(objectToAdd = concept, session = session, doFlush = True)
-            return concept.OID
+            
+            return None
     
     @staticmethod
     def getFact(company, concept, report, fileData, session):
@@ -204,15 +203,19 @@ class Dao():
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
                 #time1 = datetime.now()
-                conceptOID = Dao.getConceptOID(factVO.conceptName, session = session)
-                factKey = str(company.OID) + "-" + str(conceptOID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
+                concept = Dao.getConceptOID(factVO.conceptName, session = session)
+                if(concept == None):
+                    concept = Concept()
+                    concept.conceptName = factVO.conceptName
+                    Dao.addObject(objectToAdd = concept, session = session, doFlush = True)
+                factKey = str(company.OID) + "-" + str(concept.OID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
                 if(objectAlreadyAdded.get(factKey, None) is None):
                     #fact = Dao.getFact(company, concept, factVO.report, fileData, session)
                     #fact = None
                     #if(fact is None):
                     fact = Fact()
                     fact.companyOID = company.OID
-                    fact.conceptOID = conceptOID
+                    fact.conceptOID = concept.OID
                     fact.reportOID = reportDict[factVO.reportRole].OID
                     fact.fileDataOID = fileData.OID
                     fact.order = factVO.order
@@ -306,7 +309,50 @@ class Dao():
                 .join(CustomFactValue.customFact)\
                 .join(CustomFact.customConcept)\
                 .join(CustomFact.company)\
-                .filter(and_(Company.ticker.__eq__(ticker), (CustomConcept.conceptName.__eq__(customConceptName))))\
+                .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName.__eq__(customConceptName), Period.type.__eq__(periodType)))\
+                .all()
+            return objectResult
+        except NoResultFound:
+            return FactValue()
+    
+    @staticmethod
+    def getFactValue2(ticker, periodType = None, documentType = None, conceptList = None, session = None):
+        list = (c.conceptName for c in conceptList)
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            objectResult = session.query(FactValue)\
+                .join(FactValue.fact)\
+                .join(Fact.concept)\
+                .join(Fact.company)\
+                .join(Fact.report)\
+                .join(FactValue.period)\
+                .join(Fact.fileData)\
+                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), \
+                             or_(FileData.documentType.__eq__(documentType), documentType == None), \
+                             in_op(Concept.conceptName, list)))\
+                .order_by(Period.endDate)\
+                .with_entities(FactValue.value, FactValue.periodOID)\
+                .distinct()\
+                .all()
+            return objectResult
+        except NoResultFound:
+            return FactValue()
+    
+    @staticmethod    
+    def getPeriodByFact(ticker, conceptName, periodType = None, session = None):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            objectResult = session.query(Period)\
+                .join(Period.factValueList)\
+                .join(FactValue.fact)\
+                .join(Fact.concept)\
+                .join(Fact.company)\
+                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType)))\
+                .order_by(Period.endDate)\
                 .all()
             return objectResult
         except NoResultFound:
