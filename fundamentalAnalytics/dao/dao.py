@@ -7,7 +7,7 @@ import logging
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.elements import or_
-from sqlalchemy.sql.expression import text, and_
+from sqlalchemy.sql.expression import text, and_, distinct
 from sqlalchemy.sql.operators import in_op
 
 from base.dbConnector import DBConnector
@@ -286,6 +286,20 @@ class Dao():
             return None
     
     @staticmethod
+    def getCustomFact2(ticker, customConceptName, session):
+        try:
+            company = Dao.getCompany(ticker, session)
+            if (company is None):
+                raise Exception('Company not found ' + ticker )
+            customConcept = Dao.getCustomConcept(customConceptName, session)
+            if (customConcept is None):
+                raise Exception('CustomConcept not found ' + ticker )
+            return Dao.getCustomFact(company, customConcept, customConcept.defaultCustomReport, session)
+        except NoResultFound:
+            return None
+    
+    
+    @staticmethod
     def getCustomFact(company, concept, report, session):
         try:
             return GenericDao.getOneResult(CustomFact, and_(CustomFact.company == company, CustomFact.customConcept == concept, CustomFact.customReport == report), session)
@@ -317,7 +331,7 @@ class Dao():
     
     @staticmethod
     def getFactValue2(ticker, periodType = None, documentType = None, conceptList = None, session = None):
-        list = (c.conceptName for c in conceptList)
+        list_ = (c.conceptName for c in conceptList)
         try:
             dbconnector = DBConnector()
             if (session is None): 
@@ -331,9 +345,9 @@ class Dao():
                 .join(Fact.fileData)\
                 .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), \
                              or_(FileData.documentType.__eq__(documentType), documentType == None), \
-                             in_op(Concept.conceptName, list)))\
+                             in_op(Concept.conceptName, list_)))\
                 .order_by(Period.endDate)\
-                .with_entities(FactValue.value, FactValue.periodOID)\
+                .with_entities(FactValue.value, FactValue.periodOID, Period.endDate)\
                 .distinct()\
                 .all()
             return objectResult
@@ -351,9 +365,32 @@ class Dao():
                 .join(FactValue.fact)\
                 .join(Fact.concept)\
                 .join(Fact.company)\
-                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType)))\
+                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), \
+                             or_(Concept.conceptName.__eq__(conceptName), conceptName == None)))\
                 .order_by(Period.endDate)\
+                .with_entities(Period.OID, Period.endDate)\
+                .distinct()\
                 .all()
+            return objectResult
+        except NoResultFound:
+            return FactValue()
+        
+    @staticmethod    
+    def getPeriodByCustomFact(ticker, conceptName, periodType = None, session = None):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            query = session.query(Period)\
+                .join(Period.customFactValueList)\
+                .join(CustomFactValue.customFact)\
+                .join(CustomFact.customConcept)\
+                .join(CustomFact.company)\
+                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), CustomConcept.conceptName.__eq__(conceptName)))\
+                .order_by(Period.endDate)\
+                .with_entities(Period.OID, Period.endDate)
+            #print(str(query))
+            objectResult = query.all()
             return objectResult
         except NoResultFound:
             return FactValue()
