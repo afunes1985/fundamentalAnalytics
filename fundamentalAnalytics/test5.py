@@ -14,12 +14,12 @@ Initializer()
 session = DBConnector().getNewSession()
 
 #customConceptName = 'COST_OF_REVENUE' 
-ticker = 'MSFT'
+ticker = 'INTC'
 customConceptList = GenericDao.getAllResult(objectClazz = CustomConcept, session = session)
 
 for customConcept in customConceptList:
-   # CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConcept.conceptName, 
-    #                                 customReportName = 'CUSTOM_INCOME', defaultOrder = 99, session = session)
+    CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConcept.conceptName, 
+                                     customReportName = 'CUSTOM_INCOME', defaultOrder = 99, session = session)
     
-    CustomFactEngine.completeMissingQTDValues(ticker, customConcept.conceptList, customConcept.conceptName, session)
+    #CustomFactEngine.completeMissingQTDValues(ticker, customConcept.conceptList, customConcept.conceptName, session)
 

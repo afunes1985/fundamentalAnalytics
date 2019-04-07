@@ -47,9 +47,10 @@ class CustomFactEngine():
         return fact
     
     @staticmethod
-    def createCustomFactValueFromExpression(fact, customConceptName, session):
-        fact.customFactValueList = ExpressionEngine.solveExpression(fact.company.ticker, customConceptName);
-        Dao.addObject(objectToAdd = fact, session = session, doCommit = True)
+    def createCustomFactFromExpression(ticker, customConceptName, session = None, customReportName = None, defaultOrder = None):
+        customFact = CustomFactEngine.createCustomFact(ticker, customConceptName, customReportName, defaultOrder, session)
+        customFact.customFactValueList = ExpressionEngine.solveExpression(ticker, customConceptName);
+        Dao.addObject(objectToAdd = customFact, session = session, doCommit = True)
         
     @staticmethod    
     def copyToCustomFact(ticker, customConceptName, customReportName, defaultOrder, session):

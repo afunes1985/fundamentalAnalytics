@@ -26,7 +26,11 @@ class ExpressionEngine(object):
             try:
                 customFactValue = CustomFactValue()
                 customFactValue.periodOID = item
-                customFactValue.value = expr.subs([(symbolList[0], value[symbolList[0]]), (symbolList[1], value[symbolList[1]])])
+                if(len(symbolList) == 2):
+                    customFactValue.value = expr.subs([(symbolList[0], value[symbolList[0]]), (symbolList[1], value[symbolList[1]])])
+                elif(len(symbolList) == 3):
+                    customFactValue.value = expr.subs([(symbolList[0], value[symbolList[0]]), (symbolList[1], value[symbolList[1]]), (symbolList[2], value[symbolList[2]])])
+                customFactValue.origin = 'CALCULATED_BY_RULE'
                 returnList.append(customFactValue)
             except Exception as e:
                 print("Error in period " + str(item) + " " + str(e))
