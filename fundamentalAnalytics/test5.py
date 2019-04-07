@@ -15,11 +15,13 @@ session = DBConnector().getNewSession()
 
 #customConceptName = 'COST_OF_REVENUE' 
 ticker = 'INTC'
+copy = False
 customConceptList = GenericDao.getAllResult(objectClazz = CustomConcept, session = session)
 
+valuedCopied = 0
 for customConcept in customConceptList:
-    CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConcept.conceptName, 
-                                     customReportName = 'CUSTOM_INCOME', defaultOrder = 99, session = session)
+    if(copy):
+        valuedCopied += CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConcept.conceptName, session = session)
     
-    #CustomFactEngine.completeMissingQTDValues(ticker, customConcept.conceptList, customConcept.conceptName, session)
+    CustomFactEngine.completeMissingQTDValues(ticker, customConcept.conceptList, customConcept.conceptName, session)
 

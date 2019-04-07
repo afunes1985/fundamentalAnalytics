@@ -95,7 +95,7 @@ class DaoCompanyResult():
             
             query = text("""select * from(
                             select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
-                                    IFNULL(period.endDate, period.instant) date_, period.type as periodType, null as order_
+                                    IFNULL(period.endDate, period.instant) date_, IFNULL(period.type, 'INST') as periodType, null as order_
                                  FROM fa_fact fact
                                      join fa_company company on fact.companyOID = company.OID
                                      join fa_concept concept on fact.conceptOID = concept.OID
@@ -121,7 +121,7 @@ class DaoCompanyResult():
                                     and (:ticker is null or company.ticker = :ticker)
                                     and (:reportShortName is null or report.shortName = :reportShortName )
                                     and (period.type = 'QTD' or period.type = 'YTD')) as rs
-                                        order by reportShortName, conceptName, periodType, order_, date_""")
+                                        order by reportShortName, conceptName, periodType, date_""")
             rs = con.execute(query, params)
             return rs 
     
@@ -330,8 +330,7 @@ class Dao():
             return FactValue()
     
     @staticmethod
-    def getFactValue2(ticker, periodType = None, documentType = None, conceptList = None, session = None):
-        list_ = (c.conceptName for c in conceptList)
+    def getFactValue2(ticker, periodType = None, documentType = None, concept = None, session = None):
         try:
             dbconnector = DBConnector()
             if (session is None): 
@@ -345,7 +344,7 @@ class Dao():
                 .join(Fact.fileData)\
                 .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), \
                              or_(FileData.documentType.__eq__(documentType), documentType == None), \
-                             in_op(Concept.conceptName, list_)))\
+                             Concept.conceptName.__eq__(concept.conceptName)))\
                 .order_by(Period.endDate)\
                 .with_entities(FactValue.value, FactValue.periodOID, Period.endDate)\
                 .distinct()\

@@ -53,17 +53,30 @@ class CustomFactEngine():
         Dao.addObject(objectToAdd = customFact, session = session, doCommit = True)
         
     @staticmethod    
-    def copyToCustomFact(ticker, customConceptName, customReportName, defaultOrder, session):
-        customFact = CustomFactEngine.createCustomFact(ticker, customConceptName, customReportName, defaultOrder, session)
-        factValueList = Dao.getFactValue2(ticker = ticker, periodType = "QTD", conceptList = customFact.customConcept.conceptList ,session = session)
-        for row in factValueList:
-            customFactValue = CustomFactValue()
-            customFactValue.periodOID = row.periodOID
-            customFactValue.value = row.value
-            customFactValue.origin = 'COPY'
-            customFact.customFactValueList.append(customFactValue)
-        print("Copy to " + customConceptName + " " + str(len(factValueList)))    
-        Dao.addObject(objectToAdd = customFact, session = session, doCommit = True)    
+    def copyToCustomFact(ticker, customConceptName, customReportName = None, defaultOrder = None, session = None):
+        customFact = CustomFactEngine.createCustomFact(ticker = ticker, customConceptName = customConceptName, customReportName = customReportName, defaultOrder = defaultOrder, session = session)
+        newFactValueDict = {}
+        periodsCompleted = [x.periodOID for x in customFact.customFactValueList]
+        for concept in customFact.customConcept.conceptList:
+            factValueList = Dao.getFactValue2(ticker = ticker, periodType = "QTD", concept = concept ,session = session)
+            for row in factValueList:
+                if (row.periodOID not in periodsCompleted):#Si el periodo de ese customConcept ya no se encuentra resuelto
+                    if (row.periodOID not in newFactValueDict.keys()):#Si el periodo de ese customConcept no se encuentra duplicado desde los conceptos origen
+                        newFactValueDict[row.periodOID] = row.value
+                    else:
+                        raise Exception('Duplicated period between concepts, periodOID =  ' + str(row.periodOID) + ' Concept = ' + concept.conceptName)
+        newFactValues = []
+        for periodOID, value in newFactValueDict.items():
+                customFactValue = CustomFactValue()
+                customFactValue.periodOID = periodOID
+                customFactValue.value = value
+                customFactValue.origin = 'COPY'
+                newFactValues.append(customFactValue)
+        print("Copy to " + customConceptName + " " + str(len(newFactValues)))   
+        if(len(newFactValues) > 0):
+            newFactValues.append(newFactValues)
+            Dao.addObject(objectToAdd = customFact, session = session, doCommit = True) 
+        return len(newFactValues)  
     
     @staticmethod       
     def completeMissingQTDValues(ticker, conceptList, customConceptName, session):
@@ -74,15 +87,16 @@ class CustomFactEngine():
             customFact = Dao.getCustomFact2(ticker, customConceptName, session)
             periodToResolve = [x for x in periodFactYTDList if x[1] not in (itemYTD[1] for itemYTD in periodCustomFactQTDList)]
             if(len(periodToResolve) > 0):
-                print(customConceptName + " " + concept.conceptName)
+                print('CustomConceptToCalculate ' + customConceptName + " " + concept.conceptName)
                 print(periodToResolve)
-                listYTD = Dao.getFactValue2(ticker, 'YTD', None, [concept], session)
+                listYTD = Dao.getFactValue2(ticker, 'YTD', None, concept, session)
                 print(listYTD)
                 prevRow = None
                 sumValue = 0
                 for itemYTD in listYTD:
                     if(itemYTD.endDate in (itemYTD[1] for itemYTD in periodToResolve)):
                         if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100:
+                            print(itemYTD.endDate)
                             for defaultPeriodRow in periodDefaultQTDList:
                                 if(defaultPeriodRow.endDate == itemYTD.endDate):
                                     periodOID = defaultPeriodRow[0]
