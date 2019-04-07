@@ -80,24 +80,21 @@ def getTableValues(CIK, ticker, conceptName2):
         reportName = row[0]
         conceptName = row[1]
         periodType = row[5]
-        if(rowDict is None):
-            rowDict = {}
-            rowDict['reportName'] = reportName
-            rowDict['conceptName'] = conceptName
-            rowDict['periodType'] = periodType
-        if(rowDict.get('conceptName', None) != conceptName or rowDict.get('periodType', None) != periodType):
-            rows_list.append(rowDict)
+        order = row[6]
+        if(rowDict is None or rowDict.get('conceptName', None) != conceptName or rowDict.get('periodType', None) != periodType):
+            if(rowDict is not None):
+                rows_list.append(rowDict)
             rowDict = {} 
             rowDict['reportName'] = reportName
             rowDict['conceptName'] = conceptName
             rowDict['periodType'] = periodType
+            rowDict['order'] = order
         reportDate = row[4].strftime('%d-%m-%Y')
         rowDict[reportDate] = getNumberValueAsString(row[3])
         if(len(rowDict.keys()) > columnCount):
             columnCount = len(rowDict.keys())
             columnKeys = rowDict.keys()
-    if(len(rows_list) == 0):
-        rows_list.append(rowDict)     
+    rows_list.append(rowDict)     
     df = DataFrame(rows_list, columns=columnKeys)
     df = df.sort_values(["reportName", "conceptName"], ascending=[True,True])
     return df
