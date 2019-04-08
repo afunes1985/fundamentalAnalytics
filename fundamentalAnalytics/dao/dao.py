@@ -6,8 +6,7 @@ Created on 20 ago. 2018
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.elements import or_
-from sqlalchemy.sql.expression import text, and_, distinct
+from sqlalchemy.sql.expression import text, and_, distinct, or_
 from sqlalchemy.sql.operators import in_op
 
 from base.dbConnector import DBConnector
@@ -359,21 +358,41 @@ class Dao():
             dbconnector = DBConnector()
             if (session is None): 
                 session = dbconnector.getNewSession()
-            objectResult = session.query(Period)\
+            query = session.query(Period)\
                 .join(Period.factValueList)\
                 .join(FactValue.fact)\
                 .join(Fact.concept)\
                 .join(Fact.company)\
                 .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), \
-                             or_(Concept.conceptName.__eq__(conceptName), conceptName == None)))\
+                             Concept.conceptName.__eq__(conceptName)))\
                 .order_by(Period.endDate)\
                 .with_entities(Period.OID, Period.endDate)\
-                .distinct()\
-                .all()
+                .distinct()
+            objectResult = query.all()
             return objectResult
         except NoResultFound:
-            return FactValue()
+            return None
         
+        
+    @staticmethod    
+    def getPeriodByFact2(ticker, periodType = None, session = None):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            query = session.query(Period)\
+                .join(Period.factValueList)\
+                .join(FactValue.fact)\
+                .join(Fact.concept)\
+                .join(Fact.company)\
+                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType)))\
+                .order_by(Period.endDate)\
+                .with_entities(Period.OID, Period.endDate)\
+                .distinct()
+            objectResult = query.all()
+            return objectResult
+        except NoResultFound:
+            return None
     @staticmethod    
     def getPeriodByCustomFact(ticker, conceptName, periodType = None, session = None):
         try:
