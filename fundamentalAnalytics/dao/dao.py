@@ -202,7 +202,7 @@ class Dao():
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
                 #time1 = datetime.now()
-                concept = Dao.getConceptOID(factVO.conceptName, session = session)
+                concept = Dao.getConcept(factVO.conceptName, session = session)
                 if(concept == None):
                     concept = Concept()
                     concept.conceptName = factVO.conceptName
@@ -217,7 +217,7 @@ class Dao():
                     fact.conceptOID = concept.OID
                     fact.reportOID = reportDict[factVO.reportRole].OID
                     fact.fileDataOID = fileData.OID
-                    fact.order = factVO.order
+                    fact.order_ = factVO.order
                     session.add(fact) 
                     session.flush()
                     for factValueVO in factVO.factValueList:
@@ -412,3 +412,17 @@ class Dao():
             return objectResult
         except NoResultFound:
             return FactValue()
+        
+class FileDataDao():
+    @staticmethod   
+    def getFileDataList(session = None):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            query = session.query(FileData)\
+            .with_entities(FileData.fileName, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status)
+            objectResult = query.all()
+            return objectResult
+        except NoResultFound:
+            return None

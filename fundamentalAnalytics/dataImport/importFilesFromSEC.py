@@ -130,7 +130,7 @@ class ImportVO():
 if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
-    periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 3)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+    periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2019, QuarterPeriod.quarter == 1)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
     #periodList = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2020, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter > 3)), QuarterPeriod.year > 2017)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
     logging.info("START")
     createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)

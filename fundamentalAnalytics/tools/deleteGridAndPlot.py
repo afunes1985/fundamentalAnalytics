@@ -8,14 +8,15 @@ import logging
 import requests
 from requests.auth import HTTPBasicAuth
 
-
-auth = HTTPBasicAuth("agustin22", "7dKNV4AiICFRnYyLwR2b")
+#C:\Users\afunes\.plotly
+auth = HTTPBasicAuth("agustin22", "Kk6ao97pHZPQaduistI0")
 headers = {'Plotly-Client-Platform': 'python'}
 
 def get_pages(username, page_size):
     url = 'https://api.plot.ly/v2/folders/all?user='+username+'&page_size='+str(page_size)
     response = requests.get(url, auth=auth, headers=headers)
     if response.status_code != 200:
+        print(response.status_code)
         return
     page = json.loads(response.content)
     yield page
@@ -25,6 +26,7 @@ def get_pages(username, page_size):
             break
         response = requests.get(resource, auth=auth, headers=headers)
         if response.status_code != 200:
+            print(response.status_code)
             break
         page = json.loads(response.content)
         yield page

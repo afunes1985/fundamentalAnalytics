@@ -8,12 +8,12 @@ from operator import and_
 
 from dao.dao import Dao, GenericDao
 from engine.expressionEngine import ExpressionEngine
+from modelClass import period
 from modelClass.customConcept import CustomConcept
 from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
 from modelClass.customReport import CustomReport
 from modelClass.period import Period
-from modelClass import period
 
 
 class CustomFactEngine():
@@ -33,7 +33,7 @@ class CustomFactEngine():
         return concept
     
     @staticmethod
-    def createCustomFact(ticker, customConceptName, customReportName, defaultOrder, session):
+    def createCustomFact(ticker, customConceptName, customReportName = None, defaultOrder = None, session = None):
         customConcept = CustomFactEngine.createCustomConcept(customConceptName, customReportName, defaultOrder, session)
         company = Dao.getCompany(ticker, session)
         if (company is None):
@@ -65,7 +65,7 @@ class CustomFactEngine():
                     if (row.periodOID not in newFactValueDict.keys()):#Si el periodo de ese customConcept no se encuentra duplicado desde los conceptos origen
                         newFactValueDict[row.periodOID] = row.value
                     else:
-                        raise Exception('Duplicated period between concepts, periodOID =  ' + str(row.periodOID) + ' Concept = ' + concept.conceptName)
+                        print('Duplicated period between concepts, periodOID =  ' + str(row.periodOID) + " " + str(row.endDate)+ ' Concept = ' + concept.conceptName)
         newFactValues = []
         for periodOID, value in newFactValueDict.items():
                 customFactValue = CustomFactValue()
@@ -80,57 +80,33 @@ class CustomFactEngine():
         return len(newFactValues)  
     
     @staticmethod       
-    def completeMissingQTDValues(ticker, conceptList, customConceptName, session):
-        for concept in conceptList:
-            periodFactYTDList = Dao.getPeriodByFact(ticker, concept.conceptName, 'YTD', session)
-            periodDefaultQTDList = Dao.getPeriodByFact2(ticker, 'QTD', session)
-            periodCustomFactQTDList = Dao.getPeriodByCustomFact(ticker, customConceptName, 'QTD', session)
-            customFact = Dao.getCustomFact2(ticker, customConceptName, session)
-            periodToResolve = [x for x in periodFactYTDList if x[1] not in (itemYTD[1] for itemYTD in periodCustomFactQTDList)]
-            if(len(periodToResolve) > 0):
-                print('CustomConceptToCalculate ' + customConceptName + " " + concept.conceptName)
-                print('Period to resolve ' + str(periodToResolve))
-                listYTD = Dao.getFactValue2(ticker, 'YTD', None, concept, session)
-                #print(listYTD)
-                prevRow = None
-                for itemYTD in listYTD: # itero todos los YTD y cuando corresponde con un faltante busco el YTD anterior y se lo resto o busco los 3 QTD anteriores
-                    newFactValue = None
-                    sumValue = 0
-                    if(itemYTD.endDate in (itemYTD[1] for itemYTD in periodToResolve)):
-                        if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100:
-                            #estrategia de calculo usando el YTD
-                            periodOID = None
-                            for defaultPeriodRow in periodDefaultQTDList:
-                                if(defaultPeriodRow.endDate == itemYTD.endDate):
-                                    periodOID = defaultPeriodRow[0]
-                                    break
-                            customFactValue = CustomFactValue()
-                            customFactValue.value = itemYTD.value - prevRow.value
-                            if(periodOID is None):
-                                newPeriod = Period()
-                                newPeriod.endDate = itemYTD.endDate
-                                newPeriod.type = 'QTD'
-                                customFactValue.period = newPeriod
-                            else:
-                                customFactValue.periodOID = periodOID
-                            customFactValue.origin = 'CALCULATED'
-                            newFactValue = customFactValue
-                            periodOID = None
-                        else:
-                            #estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
-                            listQTD = Dao.getCustomFactValue(ticker, customConceptName, 'QTD', session)
-                            listQTD_2 = []
-                            for itemQTD in listQTD:
-                                if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285:
-                                    sumValue += itemQTD.value
-                                    listQTD_2.append(itemQTD)
-                            if(len(listQTD_2) == 3):
+    def completeMissingQTDValues(ticker, customConceptName, session):
+        customFact = Dao.getCustomFact2(ticker, customConceptName, session)
+        if(customFact is not None):
+            for concept in customFact.customConcept.conceptList:
+                periodFactYTDList = Dao.getPeriodByFact(ticker, concept.conceptName, 'YTD', session)
+                periodDefaultQTDList = Dao.getPeriodByFact2(ticker, 'QTD', session)
+                periodCustomFactQTDList = Dao.getPeriodByCustomFact(ticker, customConceptName, 'QTD', session)
+                periodToResolve = [x for x in periodFactYTDList if x[1] not in (itemYTD[1] for itemYTD in periodCustomFactQTDList)]
+                if(len(periodToResolve) > 0):
+                    print('CustomConceptToCalculate ' + customConceptName + " " + concept.conceptName)
+                    print('Period to resolve ' + str(periodToResolve))
+                    listYTD = Dao.getFactValue2(ticker, 'YTD', None, concept, session)
+                    #print(listYTD)
+                    prevRow = None
+                    for itemYTD in listYTD: # itero todos los YTD y cuando corresponde con un faltante busco el YTD anterior y se lo resto o busco los 3 QTD anteriores
+                        newFactValue = None
+                        sumValue = 0
+                        if(itemYTD.endDate in (itemYTD[1] for itemYTD in periodToResolve)):
+                            if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100:
+                                #estrategia de calculo usando el YTD
+                                periodOID = None
                                 for defaultPeriodRow in periodDefaultQTDList:
                                     if(defaultPeriodRow.endDate == itemYTD.endDate):
                                         periodOID = defaultPeriodRow[0]
                                         break
                                 customFactValue = CustomFactValue()
-                                customFactValue.value = itemYTD.value - sumValue
+                                customFactValue.value = itemYTD.value - prevRow.value
                                 if(periodOID is None):
                                     newPeriod = Period()
                                     newPeriod.endDate = itemYTD.endDate
@@ -138,17 +114,43 @@ class CustomFactEngine():
                                     customFactValue.period = newPeriod
                                 else:
                                     customFactValue.periodOID = periodOID
+                                    customFactValue.period = GenericDao.getOneResult(Period, (Period.OID == periodOID), session)
                                 customFactValue.origin = 'CALCULATED'
                                 newFactValue = customFactValue
                             else:
-                                print('COULDNT CALCULATE PERIOD ' + str(itemYTD.endDate))
-                                for itemQTD in listQTD_2:
-                                    print('ITEMS FOUND ' + str(itemQTD.period.endDate))
-                        
-                        if(newFactValue is not None):
-                            print('NEW CALCULATED FACT VALUES FOR ' + str(newFactValue.period.endDate))
-                            customFact.customFactValueList.append(newFactValue)
-                            Dao.addObject(objectToAdd = customFact, session = session, doCommit = True)
-                    else:
-                        prevRow = itemYTD
+                                #estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
+                                listQTD = Dao.getCustomFactValue(ticker, customConceptName, 'QTD', session)
+                                listQTD_2 = []
+                                for itemQTD in listQTD:
+                                    if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285:
+                                        sumValue += itemQTD.value
+                                        listQTD_2.append(itemQTD)
+                                if(len(listQTD_2) == 3):
+                                    for defaultPeriodRow in periodDefaultQTDList:
+                                        if(defaultPeriodRow.endDate == itemYTD.endDate):
+                                            periodOID = defaultPeriodRow[0]
+                                            break
+                                    customFactValue = CustomFactValue()
+                                    customFactValue.value = itemYTD.value - sumValue
+                                    if(periodOID is None):
+                                        newPeriod = Period()
+                                        newPeriod.endDate = itemYTD.endDate
+                                        newPeriod.type = 'QTD'
+                                        customFactValue.period = newPeriod
+                                    else:
+                                        customFactValue.periodOID = periodOID
+                                        customFactValue.period = GenericDao.getOneResult(Period, and_(Period.OID == periodOID), session)
+                                    customFactValue.origin = 'CALCULATED'
+                                    newFactValue = customFactValue
+                                else:
+                                    print('COULDNT CALCULATE PERIOD ' + str(itemYTD.endDate))
+                                    for itemQTD in listQTD_2:
+                                        print('ITEMS FOUND ' + str(itemQTD.period.endDate))
+                            
+                            if(newFactValue is not None):
+                                print('NEW CALCULATED FACT VALUES FOR ' + str(newFactValue.period.endDate))
+                                customFact.customFactValueList.append(newFactValue)
+                                Dao.addObject(objectToAdd = customFact, session = session, doCommit = True)
+                        else:
+                            prevRow = itemYTD
                 

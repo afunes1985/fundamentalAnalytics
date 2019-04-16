@@ -20,4 +20,4 @@ class Fact(PersistenObject):
     fileDataOID = Column(Integer, ForeignKey('fa_file_data.OID'))
     fileData = relationship("FileData", back_populates="factList")
     factValueList = relationship("FactValue", back_populates="fact")
-    order = Column(Integer, nullable=False)
+    order_ = Column(Integer, nullable=False)
