@@ -17,7 +17,7 @@ from valueobject.constant import Constant
 
 class FileImporter(AbstractFileImporter):
 
-    def __init__(self, filename, replace, mainCache, s):
+    def __init__(self, filename, replace, mainCache, s = None):
         self.processCache = None
         self.session = DBConnector().getNewSession()
         self.filename = filename
@@ -42,7 +42,9 @@ class FileImporter(AbstractFileImporter):
                 #print("STEP 4 " + str(datetime.now() - time1))
                 factVOList = self.setFactValues(factVOList, self.processCache)
                 #print("STEP 5 " + str(datetime.now() - time1))
-                Dao.addFact(factVOList, self.company, fileData, reportDict, self.session)
+                #if(self.replace):
+                #    self.session.delete()
+                Dao.addFact(factVOList, self.company, fileData, reportDict, self.session, self.replace)
                 #print("STEP 6 " + str(datetime.now() - time1))
                 if(len(factVOList) != 0):
                     fileData.status = "OK"
@@ -62,4 +64,5 @@ class FileImporter(AbstractFileImporter):
             raise e
         finally:
             self.session.close()
-            self.semaphore.release()
+            if self.semaphore is not None:
+                self.semaphore.release()

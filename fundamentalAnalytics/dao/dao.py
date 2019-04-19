@@ -39,13 +39,18 @@ class GenericDao():
         return objectResult
     
     @staticmethod
-    def getOneResult(objectClazz, condition = "", session = None):
+    def getOneResult(objectClazz, condition = "", session = None, raiseError = True):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
-        objectResult = session.query(objectClazz)\
-        .filter(condition)\
-        .one()
+        try:
+            objectResult = session.query(objectClazz)\
+            .filter(condition)\
+            .one()
+        except NoResultFound as e:
+            if(raiseError):
+                raise e
+            return None
         return objectResult
     
     @staticmethod
@@ -94,7 +99,7 @@ class DaoCompanyResult():
             
             query = text("""select * from(
                             select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
-                                    IFNULL(period.endDate, period.instant) date_, IFNULL(period.type, 'INST') as periodType, null as order_
+                                    IFNULL(period.endDate, period.instant) date_, period.type as periodType, null as order_
                                  FROM fa_fact fact
                                      join fa_company company on fact.companyOID = company.OID
                                      join fa_concept concept on fact.conceptOID = concept.OID
@@ -197,7 +202,7 @@ class Dao():
 
         
     @staticmethod   
-    def addFact(factVOList, company, fileData, reportDict, session):
+    def addFact(factVOList, company, fileData, reportDict, session, replace):
         objectAlreadyAdded = {}
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
@@ -209,17 +214,20 @@ class Dao():
                     Dao.addObject(objectToAdd = concept, session = session, doFlush = True)
                 factKey = str(company.OID) + "-" + str(concept.OID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
                 if(objectAlreadyAdded.get(factKey, None) is None):
-                    #fact = Dao.getFact(company, concept, factVO.report, fileData, session)
+                    fact = Dao.getFact(company, concept, reportDict[factVO.reportRole], fileData, session)
                     #fact = None
-                    #if(fact is None):
-                    fact = Fact()
-                    fact.companyOID = company.OID
-                    fact.conceptOID = concept.OID
-                    fact.reportOID = reportDict[factVO.reportRole].OID
-                    fact.fileDataOID = fileData.OID
-                    fact.order_ = factVO.order
-                    session.add(fact) 
-                    session.flush()
+                    if(fact is None):
+                        fact = Fact()
+                        fact.companyOID = company.OID
+                        fact.conceptOID = concept.OID
+                        fact.reportOID = reportDict[factVO.reportRole].OID
+                        fact.fileDataOID = fileData.OID
+                        fact.order_ = factVO.order
+#                     if(replace):
+#                         for itemToDelete in fact.factValueList:
+#                             session.delete(itemToDelete)
+                    Dao.addObject(objectToAdd = fact, session = session, doFlush = True)
+                    
                     for factValueVO in factVO.factValueList:
                         #factValue = Dao.getFactValue(fact, factValueVO.period, session)
                         factValuekey =  str(factValueVO.period.OID) + "-" + str(fact.OID)
@@ -415,14 +423,51 @@ class Dao():
         
 class FileDataDao():
     @staticmethod   
-    def getFileDataList(session = None):
+    def getFileDataList(status = [], session = None):
         try:
             dbconnector = DBConnector()
             if (session is None): 
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
-            .with_entities(FileData.fileName, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status)
+            .with_entities(FileData.fileName,FileData.status, FileData.importStatus)\
+            .filter(FileData.status.in_(status))
+            #.with_entities(FileData.fileName, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status)\
             objectResult = query.all()
             return objectResult
         except NoResultFound:
             return None
+        
+    @staticmethod   
+    def getFileDataList2(status = [], session = None):
+        dbconnector = DBConnector()
+        with dbconnector.engine.connect() as con:
+            params = { 'status' : status}
+            
+            query = text("""SELECT fd.fileName, fd.documentType, 
+                            fd.documentFiscalYearFocus AS fa_file_data_documentFiscalYearFocus, 
+                            fd.documentFiscalPeriodFocus AS fa_file_data_documentFiscalPeriodFocus, 
+                            fd.entityCentralIndexKey AS fa_file_data_entityCentralIndexKey, c.ticker AS fa_company_ticker, 
+                            fd.status AS fa_file_data_status 
+                        from fa_file_data fd
+                        inner join (select f.fileDataOID, f.companyOID
+                            from fa_fact f
+                            group by f.fileDataOID, f.companyOID) as b on b.fileDataOID = fd.oid
+                        inner join fa_company c on c.oid = b.companyOID 
+                        WHERE fd.status NOT IN ('PENDING')""")
+            rs = con.execute(query, params)
+            return rs 
+        
+    @staticmethod   
+    def getFileDataList3(filename = None, session = None):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            query = session.query(FileData)\
+            .with_entities(FileData.fileName, FileData.documentPeriodEndDate,  FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status)\
+            .filter(FileData.fileName.like('%' + filename + '%'))
+            objectResult = query.all()
+            return objectResult
+        except NoResultFound:
+            return None
+    

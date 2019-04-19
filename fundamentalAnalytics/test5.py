@@ -15,8 +15,8 @@ session = DBConnector().getNewSession()
 
 #customConceptName = 'COST_OF_REVENUE' 
 ticker = 'CSCO'
-masive = True
-copy = True
+masive = False
+copy = False
 calculate = True
 if (masive):
     customConceptList = GenericDao.getAllResult(objectClazz = CustomConcept, session = session)
@@ -27,7 +27,7 @@ if (masive):
         if(calculate):
             CustomFactEngine.completeMissingQTDValues(ticker, customConcept.conceptName, session)
 else:
-    customConceptName = "GAIN_LOSS_SALE_ASSETS"
+    customConceptName = "OPERATING_INCOME_LOSS"
     if(copy):
         CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
     if(calculate):

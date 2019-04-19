@@ -70,16 +70,16 @@ class AbstractFileImporter():
                     except NoResultFound:
                         period = Period()
                         period.instant = instant
-                        period.periodType = "INST"
+                        period.type = "INST"
                         Dao.addObject(objectToAdd = period, session = session, doCommit = False)
                     periodDict[item['@id']] = period
         return periodDict
     
     def getPeriodType(self, startDate, endDate):
         days = getDaysBetweenDates(startDate, endDate)
-        if(85 < days < 95):
+        if(70 < days < 110):
             return "QTD"
-        elif(days > 95):
+        elif(days > 130):
             return "YTD"
         
     def initProcessCache(self, filename, session):

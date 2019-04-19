@@ -19,5 +19,5 @@ class Fact(PersistenObject):
     report = relationship("Report", back_populates="factList")
     fileDataOID = Column(Integer, ForeignKey('fa_file_data.OID'))
     fileData = relationship("FileData", back_populates="factList")
-    factValueList = relationship("FactValue", back_populates="fact")
+    factValueList = relationship("FactValue", back_populates="fact", cascade="all, delete-orphan")
     order_ = Column(Integer, nullable=False)

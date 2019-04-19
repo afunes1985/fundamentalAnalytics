@@ -108,10 +108,13 @@ class CustomFactEngine():
                                 customFactValue = CustomFactValue()
                                 customFactValue.value = itemYTD.value - prevRow.value
                                 if(periodOID is None):
-                                    newPeriod = Period()
-                                    newPeriod.endDate = itemYTD.endDate
-                                    newPeriod.type = 'QTD'
-                                    customFactValue.period = newPeriod
+                                    period = GenericDao.getOneResult(Period, and_(Period.endDate == itemYTD.endDate, Period.startDate == None), session)
+                                    customFactValue.period = period
+                                    if(period is None):
+                                        newPeriod = Period()
+                                        newPeriod.endDate = itemYTD.endDate
+                                        newPeriod.type = 'QTD'
+                                        customFactValue.period = newPeriod
                                 else:
                                     customFactValue.periodOID = periodOID
                                     customFactValue.period = GenericDao.getOneResult(Period, (Period.OID == periodOID), session)

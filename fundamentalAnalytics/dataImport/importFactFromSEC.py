@@ -56,7 +56,7 @@ if __name__ == "__main__":
     createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
     
-    if(userMasterIndex):
+    if(userMasterIndex):#NO FUNCIONAAAAAAAAAAAAAAAAAA
         #periodList =  session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2018, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter <= 3)), QuarterPeriod.year > 2015)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
         periodList =  session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2018, QuarterPeriod.quarter == 4)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
         for period in periodList:

@@ -22,7 +22,7 @@ from tools.tools import getBinaryFileFromCache, createLog, getXMLFromText, \
     FileNotFoundException, addOrModifyFileData
 from valueobject.constant import Constant
 
-#Import fileData in PENDING state (OK, ERROR, FileNotFount (FNF))
+#Import fileData to PENDING state (OK, ERROR, FileNotFount (FNF))
 class ImportFIlesFromSEC():
     def importMasterIndexFor(self, period, replace, session):
         file = getBinaryFileFromCache(Constant.CACHE_FOLDER + 'master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
