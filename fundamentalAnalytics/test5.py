@@ -7,6 +7,7 @@ from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from dao.dao import GenericDao
 from engine.customFactEngine import CustomFactEngine
+from modelClass.company import Company
 from modelClass.customConcept import CustomConcept
 
 
@@ -14,11 +15,14 @@ Initializer()
 session = DBConnector().getNewSession()
 
 #customConceptName = 'COST_OF_REVENUE' 
-ticker = 'CSCO'
-masive = False
-copy = False
+ticker = 'PYPL'
+masive = True
+copy = True
 calculate = True
+delete = True
 if (masive):
+    if(delete):
+        CustomFactEngine.deleteCustomFactByCompany(ticker, session)
     customConceptList = GenericDao.getAllResult(objectClazz = CustomConcept, session = session)
     valuedCopied = 0
     for customConcept in customConceptList:

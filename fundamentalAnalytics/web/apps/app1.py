@@ -1,18 +1,15 @@
-'''
-Created on 4 nov. 2018
-
-@author: afunes
-'''
-import dash
-from dash.dependencies import Output, Input, State
+from dash import dash
+from dash.dependencies import Input, Output, State
 from pandas.core.frame import DataFrame
 
 from base.initializer import Initializer
 from dao.dao import Dao, DaoCompanyResult
+import dash_core_components as dcc
 import dash_html_components as html
-import dash_table_experiments as dt
+from testPlot import testPlot
+from valueobject.valueobject import FilterFactVO
 from web.app import app
-
+import dash_table_experiments as dt
 
 Initializer()
 rs = Dao.getCompanyList()
@@ -20,10 +17,7 @@ rows = rs.fetchall()
 if (len(rows) != 0):
     df = DataFrame(rows)
     df.columns = rs.keys()
-#app = dash.Dash(__name__)
-#app.config.suppress_callback_exceptions = True
 layout = html.Div([
-    html.Button(id='submit-button1', n_clicks=0, children='Submit'),
     dt.DataTable(
             rows=df.to_dict("rows"),
             row_selectable=True,
@@ -31,20 +25,27 @@ layout = html.Div([
             sortable=True,
             selected_row_indices=[],
             editable = False,
+            min_height = 200,
             id='datatable-companyList'
     ),
-    html.Div(id='datatable-companyList-container')
+    html.Div(id='datatable-companyList-container'),
+    html.Button(id='btn-submit-showFact', n_clicks=0, children='Submit'),
+    html.Div(dt.DataTable(rows=[{}], id='datatable-factList'), style={'display': 'none'}),
+    html.Div(id='datatable-factList-container'),
+    html.Button(id='btn-submit-sendPlotlyData', n_clicks=0, children='Submit'),
+    dcc.Link('Go to Fact Import', href='/apps/app2'),
+    html.Div(id='hidden-div', style={'display':'none'})
 ])
 
 @app.callback(
-    Output('datatable-companyList', "children"),
-    [Input('submit-button1', 'n_clicks')],
+    Output('datatable-factList-container', "children"),
+    [Input('btn-submit-showFact', 'n_clicks')],
     [State('datatable-companyList', "rows"),
      State('datatable-companyList', "selected_row_indices")])
-def doSubmit(n_clicks, rows, selected_row_indices):
+def doSubmitShowFact(n_clicks, rows, selected_row_indices):
     if (selected_row_indices is not None and len(selected_row_indices) != 0):
         for selected_row in selected_row_indices:
-            df2 = getTableValues(rows[selected_row]["CIK"], rows[selected_row]["ticker"], None)
+            df2 = getFactValues(rows[selected_row]["CIK"], rows[selected_row]["ticker"], None)
             dt2 = dt.DataTable(
                 rows=df2.to_dict("rows"),
                 row_selectable=True,
@@ -52,12 +53,13 @@ def doSubmit(n_clicks, rows, selected_row_indices):
                 sortable=True,
                 selected_row_indices=[],
                 id='datatable-factList',
-                min_width = 3000,
+                min_width = 3500,
+                min_height = 500,
                 editable = False,
                 column_widths = {0 : 300, 1 : 300})
             return dt2
-        
-def getTableValues(CIK, ticker, conceptName2):
+ 
+def getFactValues(CIK, ticker, conceptName2):
     rs = DaoCompanyResult.getFactValues2(CIK = CIK, ticker = ticker, conceptName = None)
     rows = rs.fetchall()
     df = DataFrame(columns=['reportName', 'conceptName'])
@@ -90,8 +92,29 @@ def getTableValues(CIK, ticker, conceptName2):
     
     df = DataFrame(rows_list, columns=columnKeys)
     df = df.sort_values(["reportName", "conceptName"], ascending=[True,True])
+    app.ticker = ticker
     return df
  
+  
+@app.callback(
+    Output('hidden-div', "children"),
+    [Input('btn-submit-sendPlotlyData', 'n_clicks')],
+    [State('datatable-factList', "rows"),
+     State('datatable-factList', "selected_row_indices")])
+def doSubmitSendPlotlyData(n_clicks, rows, selected_row_indices):
+    print(rows)
+    print(selected_row_indices)
+    if (selected_row_indices != None and len(selected_row_indices) != 0):
+        filterFactVOList = []
+        for selected_row in selected_row_indices:
+            print(rows[selected_row]) 
+            filterFactVO = FilterFactVO()
+            filterFactVO.conceptName = rows[selected_row]["conceptName"]
+            filterFactVO.reportShortName = rows[selected_row]["reportName"]
+            filterFactVO.ticker = app.ticker
+            filterFactVOList.append(filterFactVO)
+        testPlot(filterFactVOList)
+  
 def getNumberValueAsString(value):
     if(value % 1):
         return value

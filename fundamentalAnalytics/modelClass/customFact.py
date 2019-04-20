@@ -17,4 +17,4 @@ class CustomFact(PersistenObject):
     customConcept = relationship("CustomConcept", back_populates="customFactList")
     customReportOID = Column(Integer, ForeignKey('fa_custom_report.OID'))
     customReport = relationship("CustomReport", back_populates="customFactList")
-    customFactValueList = relationship("CustomFactValue", back_populates="customFact")
+    customFactValueList = relationship("CustomFactValue", back_populates="customFact", cascade="all, delete-orphan")

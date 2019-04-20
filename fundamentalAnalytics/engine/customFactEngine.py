@@ -9,6 +9,7 @@ from operator import and_
 from dao.dao import Dao, GenericDao
 from engine.expressionEngine import ExpressionEngine
 from modelClass import period
+from modelClass.company import Company
 from modelClass.customConcept import CustomConcept
 from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
@@ -87,7 +88,7 @@ class CustomFactEngine():
                 periodFactYTDList = Dao.getPeriodByFact(ticker, concept.conceptName, 'YTD', session)
                 periodDefaultQTDList = Dao.getPeriodByFact2(ticker, 'QTD', session)
                 periodCustomFactQTDList = Dao.getPeriodByCustomFact(ticker, customConceptName, 'QTD', session)
-                periodToResolve = [x for x in periodFactYTDList if x[1] not in (itemYTD[1] for itemYTD in periodCustomFactQTDList)]
+                periodToResolve = [x for x in periodFactYTDList if x[1] not in (y[1] for y in periodCustomFactQTDList)]
                 if(len(periodToResolve) > 0):
                     print('CustomConceptToCalculate ' + customConceptName + " " + concept.conceptName)
                     print('Period to resolve ' + str(periodToResolve))
@@ -98,7 +99,7 @@ class CustomFactEngine():
                         newFactValue = None
                         sumValue = 0
                         if(itemYTD.endDate in (itemYTD[1] for itemYTD in periodToResolve)):
-                            if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100:
+                            if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100 and itemYTD.documentFiscalYearFocus == prevRow.documentFiscalYearFocus:
                                 #estrategia de calculo usando el YTD
                                 periodOID = None
                                 for defaultPeriodRow in periodDefaultQTDList:
@@ -108,7 +109,7 @@ class CustomFactEngine():
                                 customFactValue = CustomFactValue()
                                 customFactValue.value = itemYTD.value - prevRow.value
                                 if(periodOID is None):
-                                    period = GenericDao.getOneResult(Period, and_(Period.endDate == itemYTD.endDate, Period.startDate == None), session)
+                                    period = GenericDao.getOneResult(Period, and_(Period.endDate == itemYTD.endDate, Period.startDate == None), session, raiseError = False)
                                     customFactValue.period = period
                                     if(period is None):
                                         newPeriod = Period()
@@ -142,7 +143,7 @@ class CustomFactEngine():
                                         customFactValue.period = newPeriod
                                     else:
                                         customFactValue.periodOID = periodOID
-                                        customFactValue.period = GenericDao.getOneResult(Period, and_(Period.OID == periodOID), session)
+                                        customFactValue.period = GenericDao.getOneResult(Period, Period.OID == periodOID, session)
                                     customFactValue.origin = 'CALCULATED'
                                     newFactValue = customFactValue
                                 else:
@@ -157,3 +158,15 @@ class CustomFactEngine():
                         else:
                             prevRow = itemYTD
                 
+    @staticmethod       
+    def deleteCustomFactByCompany(ticker, session):
+        company = GenericDao.getOneResult(objectClazz = Company, condition = (Company.ticker == ticker),session = session)
+        for itemToDelete in company.customFactList:
+            session.delete(itemToDelete)
+        session.commit()
+            
+#         @staticmethod       
+#         def deleteCustomFact(ticker, customConceptName, session):
+#             customFact = GenericDao.getOneResult(objectClazz = CustomFact, condition = and_(CustomFact.customConcept.conceptName == customConceptName, customFact.company.ticker == ticker),session = session)
+#             session.delete(customFact)
+#             session.commit()

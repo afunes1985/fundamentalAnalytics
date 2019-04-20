@@ -54,7 +54,7 @@ def doSubmit(n_clicks, value):
             return dt2
 
 @app.callback(
-    Output('btn-reprocess', "children"),
+    Output('hidden-div', "children"),
     [Input('btn-reprocess', 'n_clicks')],
     [State('dt-fd2', "rows"),
      State('dt-fd2', "selected_row_indices")])

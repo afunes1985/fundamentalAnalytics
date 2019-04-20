@@ -353,7 +353,7 @@ class Dao():
                              or_(FileData.documentType.__eq__(documentType), documentType == None), \
                              Concept.conceptName.__eq__(concept.conceptName)))\
                 .order_by(Period.endDate)\
-                .with_entities(FactValue.value, FactValue.periodOID, Period.endDate)\
+                .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus)\
                 .distinct()\
                 .all()
             return objectResult
