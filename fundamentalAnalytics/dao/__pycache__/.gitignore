@@ -1,2 +1,5 @@
 /__init__.cpython-37.pyc
 /dao.cpython-37.pyc
+/customFactDao.cpython-37.pyc
+/factDao.cpython-37.pyc
+/fileDataDao.cpython-37.pyc
