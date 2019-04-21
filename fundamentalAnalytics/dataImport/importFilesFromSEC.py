@@ -16,11 +16,13 @@ from sqlalchemy.sql.expression import and_, or_
 
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
-from dao.dao import Dao
+from dao.fileDataDao import FileDataDao
+from modelClass.fileData import FileData
 from modelClass.period import QuarterPeriod
 from tools.tools import getBinaryFileFromCache, createLog, getXMLFromText, \
-    FileNotFoundException, addOrModifyFileData
+    FileNotFoundException
 from valueobject.constant import Constant
+
 
 #Import fileData to PENDING state (OK, ERROR, FileNotFount (FNF))
 class ImportFIlesFromSEC():
@@ -70,9 +72,9 @@ class ImportVO():
     def importFiles(self, filename):
         try:
             session = DBConnector().getNewSession()
-            fileData = Dao.getFileData(filename, session)
+            fileData = FileDataDao.getFileData(filename, session)
             if(fileData is None or fileData.importStatus != "OK" and fileData.importStatus != "IMP FNF" ):
-                addOrModifyFileData("PENDING", "INIT", filename, session)
+                FileDataDao.addOrModifyFileData("PENDING", "INIT", filename, session)
                 fullFileName = Constant.CACHE_FOLDER + filename
                 fullFileName = fullFileName[0: fullFileName.find(".txt")]
                 logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("START - Processing index file " + fullFileName)   
@@ -88,17 +90,17 @@ class ImportVO():
                     self.saveFile(fileText,"TYPE", Constant.DOCUMENT_INS, "XBRL",fullFileName)
                     self.saveFile2(fileText,"FILENAME", Constant.DOCUMENT_SUMMARY, ["XML", "XBRL"], fullFileName)
                     logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - SUCCESSFULLY " + fullFileName)
-                    addOrModifyFileData("PENDING", "OK", filename, session)
+                    FileDataDao.addOrModifyFileData("PENDING", "OK", filename, session)
                 else:
                     logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - EXISTS " + fullFileName)
-                    addOrModifyFileData("PENDING", "OK", filename, session)  
+                    FileDataDao.addOrModifyFileData("PENDING", "OK", filename, session)  
         except FileNotFoundException as e:
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR FileNotFoundException " + url + " " + e.fileName)
-            addOrModifyFileData("PENDING", "IMP FNF", filename)
+            FileDataDao.addOrModifyFileData("PENDING", "IMP FNF", filename)
         except Exception as e:
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + url)
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).exception(e)
-            addOrModifyFileData("PENDING", "IMP ERROR", filename)
+            FileDataDao.addOrModifyFileData("PENDING", "IMP ERROR", filename)
         finally:
             session.close()
            

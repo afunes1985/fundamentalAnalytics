@@ -15,27 +15,33 @@ from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
 from modelClass.customReport import CustomReport
 from modelClass.period import Period
+from dao.customFactDao import CustomFactDao
+from dao.factDao import FactDao
 
 
 class CustomFactEngine():
     
     @staticmethod
-    def createCustomConcept(customConceptName, customReportName, defaultOrder, session):
+    def createCustomConcept(customConceptName, customReportName, defaultOrder, periodType, session):
         concept = Dao.getCustomConcept(customConceptName, session)
         if concept is None:
             concept = CustomConcept()
             concept.conceptName = customConceptName
             concept.defaultOrder = defaultOrder
+            concept.periodType = periodType
             report = Dao.getCustomReport(customReportName, session)
             if report is None:
                 report = CustomReport()
                 report.shortName = customReportName
             concept.defaultCustomReport = report
+        else:
+            concept.defaultOrder = defaultOrder
+            concept.periodType = periodType
         return concept
     
     @staticmethod
     def createCustomFact(ticker, customConceptName, customReportName = None, defaultOrder = None, session = None):
-        customConcept = CustomFactEngine.createCustomConcept(customConceptName, customReportName, defaultOrder, session)
+        customConcept = Dao.getCustomConcept(customConceptName, session)
         company = Dao.getCompany(ticker, session)
         if (company is None):
             raise Exception('Company not found ' + ticker )
@@ -55,12 +61,12 @@ class CustomFactEngine():
         Dao.addObject(objectToAdd = customFact, session = session, doCommit = True)
         
     @staticmethod    
-    def copyToCustomFact(ticker, customConceptName, customReportName = None, defaultOrder = None, session = None):
-        customFact = CustomFactEngine.createCustomFact(ticker = ticker, customConceptName = customConceptName, customReportName = customReportName, defaultOrder = defaultOrder, session = session)
+    def copyToCustomFact(ticker, customConceptName, session = None):
+        customFact = CustomFactEngine.createCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
         newFactValueDict = {}
         periodsCompleted = [x.periodOID for x in customFact.customFactValueList]
         for concept in customFact.customConcept.conceptList:
-            factValueList = Dao.getFactValue2(ticker = ticker, periodType = "QTD", concept = concept ,session = session)
+            factValueList = FactDao.getFactValue2(ticker = ticker, periodType = customFact.customConcept.periodType, concept = concept, session = session)
             for row in factValueList:
                 if (row.periodOID not in periodsCompleted):#Si el periodo de ese customConcept ya no se encuentra resuelto
                     if (row.periodOID not in newFactValueDict.keys()):#Si el periodo de ese customConcept no se encuentra duplicado desde los conceptos origen
@@ -82,7 +88,7 @@ class CustomFactEngine():
     
     @staticmethod       
     def completeMissingQTDValues(ticker, customConceptName, session):
-        customFact = Dao.getCustomFact2(ticker, customConceptName, session)
+        customFact = CustomFactDao.getCustomFact2(ticker, customConceptName, session)
         if(customFact is not None):
             for concept in customFact.customConcept.conceptList:
                 periodFactYTDList = Dao.getPeriodByFact(ticker, concept.conceptName, 'YTD', session)
@@ -92,7 +98,7 @@ class CustomFactEngine():
                 if(len(periodToResolve) > 0):
                     print('CustomConceptToCalculate ' + customConceptName + " " + concept.conceptName)
                     print('Period to resolve ' + str(periodToResolve))
-                    listYTD = Dao.getFactValue2(ticker, 'YTD', None, concept, session)
+                    listYTD = FactDao.getFactValue2(ticker, 'YTD', None, concept, session)
                     #print(listYTD)
                     prevRow = None
                     for itemYTD in listYTD: # itero todos los YTD y cuando corresponde con un faltante busco el YTD anterior y se lo resto o busco los 3 QTD anteriores
@@ -123,7 +129,7 @@ class CustomFactEngine():
                                 newFactValue = customFactValue
                             else:
                                 #estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
-                                listQTD = Dao.getCustomFactValue(ticker, customConceptName, 'QTD', session)
+                                listQTD = CustomFactDao.getCustomFactValue(ticker, customConceptName, 'QTD', session)
                                 listQTD_2 = []
                                 for itemQTD in listQTD:
                                     if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285:

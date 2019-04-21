@@ -8,16 +8,17 @@ from dash.dependencies import Output, Input, State
 from pandas.core.frame import DataFrame
 
 from base.initializer import Initializer
-from dao.dao import Dao, DaoCompanyResult, FileDataDao
+from dao.fileDataDao import FileDataDao
+import dash_core_components as dcc
 import dash_html_components as html
 import dash_table_experiments as dt
 from dataImport.importFactFromSEC import initMainCache
+from engine.factEngine import FactEngine
 from engine.fileImporter import FileImporter
 from testPlot import testPlot
 from valueobject.valueobject import FilterFactVO
-import dash_core_components as dcc
-from engine.factEngine import FactEngine
 from web.app import app
+
 
 Initializer()
 

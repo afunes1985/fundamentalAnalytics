@@ -7,6 +7,7 @@ Created on 18 ago. 2018
 from dao.dao import Dao
 from modelClass.customFactValue import CustomFactValue
 from sympy.parsing.sympy_parser import parse_expr
+from dao.customFactDao import CustomFactDao
 
 
 class ExpressionEngine(object):
@@ -17,7 +18,7 @@ class ExpressionEngine(object):
         periodDict = {}
         symbolList = list(expr.free_symbols)
         for var in symbolList:
-            itemList = Dao.getCustomFactValue(ticker, str(var), 'QTD')
+            itemList = CustomFactDao.getCustomFactValue(ticker, str(var), 'QTD')
             for item in itemList:
                 periodDict.setdefault(item.periodOID, {})[var] = item.value
                 

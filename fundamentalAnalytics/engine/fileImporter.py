@@ -8,11 +8,12 @@ import logging
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao
+from dao.fileDataDao import FileDataDao
 from engine.abstractFileImporter import AbstractFileImporter
 from modelClass.fileData import FileData
-from tools.tools import FileNotFoundException, \
-    addOrModifyFileData
+from tools.tools import FileNotFoundException
 from valueobject.constant import Constant
+from dao.factDao import FactDao
 
 
 class FileImporter(AbstractFileImporter):
@@ -27,10 +28,10 @@ class FileImporter(AbstractFileImporter):
             
     def doImport(self):
         try:
-            fileData = Dao.getFileData(self.filename, self.session)
+            fileData = FileDataDao.getFileData(self.filename, self.session)
             if((fileData.status != "FNF" and fileData.status != "OK") or self.replace == True):
                 time1 = datetime.now()
-                addOrModifyFileData(status = "INIT", filename = self.filename)
+                FileDataDao.addOrModifyFileData(status = "INIT", filename = self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
                 self.processCache = self.initProcessCache(self.filename, self.session)
                 #print("STEP 1 " + str(datetime.now() - time1))
@@ -44,7 +45,7 @@ class FileImporter(AbstractFileImporter):
                 #print("STEP 5 " + str(datetime.now() - time1))
                 #if(self.replace):
                 #    self.session.delete()
-                Dao.addFact(factVOList, self.company, fileData, reportDict, self.session, self.replace)
+                FactDao.addFact(factVOList, self.company, fileData, reportDict, self.session, self.replace)
                 #print("STEP 6 " + str(datetime.now() - time1))
                 if(len(factVOList) != 0):
                     fileData.status = "OK"
@@ -54,12 +55,12 @@ class FileImporter(AbstractFileImporter):
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).info("FINISH AT " + str(datetime.now() - time1))
         except FileNotFoundException as e:
-            addOrModifyFileData(status = "FNF", filename = self.filename)
+            FileDataDao.addOrModifyFileData(status = "FNF", filename = self.filename)
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         except Exception as e:
             self.session.rollback()
-            addOrModifyFileData(status = "ERROR", filename = self.filename, errorMessage = str(e)[0:99])
+            FileDataDao.addOrModifyFileData(status = "ERROR", filename = self.filename, errorMessage = str(e)[0:99])
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         finally:

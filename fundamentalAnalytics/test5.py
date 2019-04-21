@@ -15,11 +15,11 @@ Initializer()
 session = DBConnector().getNewSession()
 
 #customConceptName = 'COST_OF_REVENUE' 
-ticker = 'PYPL'
+ticker = 'NFLX'
 masive = True
 copy = True
 calculate = True
-delete = True
+delete = False
 if (masive):
     if(delete):
         CustomFactEngine.deleteCustomFactByCompany(ticker, session)
@@ -31,7 +31,7 @@ if (masive):
         if(calculate):
             CustomFactEngine.completeMissingQTDValues(ticker, customConcept.conceptName, session)
 else:
-    customConceptName = "OPERATING_INCOME_LOSS"
+    customConceptName = "LONG_TERM_INVESTMENTS"
     if(copy):
         CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
     if(calculate):

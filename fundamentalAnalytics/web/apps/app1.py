@@ -3,13 +3,16 @@ from dash.dependencies import Input, Output, State
 from pandas.core.frame import DataFrame
 
 from base.initializer import Initializer
-from dao.dao import Dao, DaoCompanyResult
+from dao.dao import Dao
+from dao.factDao import FactDao
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_table_experiments as dt
+from engine.plotlyEngineInterface import PlotlyEngineInterface
 from testPlot import testPlot
 from valueobject.valueobject import FilterFactVO
 from web.app import app
-import dash_table_experiments as dt
+
 
 Initializer()
 rs = Dao.getCompanyList()
@@ -60,7 +63,7 @@ def doSubmitShowFact(n_clicks, rows, selected_row_indices):
             return dt2
  
 def getFactValues(CIK, ticker, conceptName2):
-    rs = DaoCompanyResult.getFactValues2(CIK = CIK, ticker = ticker, conceptName = None)
+    rs = FactDao.getFactValues2(CIK = CIK, ticker = ticker, conceptName = None)
     rows = rs.fetchall()
     df = DataFrame(columns=['reportName', 'conceptName'])
     rows_list = []
@@ -102,18 +105,16 @@ def getFactValues(CIK, ticker, conceptName2):
     [State('datatable-factList', "rows"),
      State('datatable-factList', "selected_row_indices")])
 def doSubmitSendPlotlyData(n_clicks, rows, selected_row_indices):
-    print(rows)
-    print(selected_row_indices)
     if (selected_row_indices != None and len(selected_row_indices) != 0):
         filterFactVOList = []
         for selected_row in selected_row_indices:
-            print(rows[selected_row]) 
             filterFactVO = FilterFactVO()
             filterFactVO.conceptName = rows[selected_row]["conceptName"]
             filterFactVO.reportShortName = rows[selected_row]["reportName"]
             filterFactVO.ticker = app.ticker
+            filterFactVO.periodType = rows[selected_row]["periodType"]
             filterFactVOList.append(filterFactVO)
-        testPlot(filterFactVOList)
+        PlotlyEngineInterface.sendToPlotly(filterFactVOList)
   
 def getNumberValueAsString(value):
     if(value % 1):
