@@ -55,11 +55,11 @@ class FileImporter(AbstractFileImporter):
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).info("FINISH AT " + str(datetime.now() - time1))
         except FileNotFoundException as e:
-            FileDataDao.addOrModifyFileData(status = "FNF", filename = self.filename)
+            FileDataDao.addOrModifyFileData(status = "FNF", filename = self.filename, errorMessage=str(e))
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         except XSDNotFoundException as e:
-            FileDataDao.addOrModifyFileData(status = "XSD_FNF", filename = self.filename)
+            FileDataDao.addOrModifyFileData(status = "XSD_FNF", filename = self.filename, errorMessage=str(e))
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         except Exception as e:
