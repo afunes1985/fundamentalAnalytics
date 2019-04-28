@@ -8,12 +8,12 @@ import logging
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao
+from dao.factDao import FactDao
 from dao.fileDataDao import FileDataDao
 from engine.abstractFileImporter import AbstractFileImporter
 from modelClass.fileData import FileData
-from tools.tools import FileNotFoundException
+from tools.tools import FileNotFoundException, XSDNotFoundException
 from valueobject.constant import Constant
-from dao.factDao import FactDao
 
 
 class FileImporter(AbstractFileImporter):
@@ -56,6 +56,10 @@ class FileImporter(AbstractFileImporter):
                 logging.getLogger(Constant.LOGGER_GENERAL).info("FINISH AT " + str(datetime.now() - time1))
         except FileNotFoundException as e:
             FileDataDao.addOrModifyFileData(status = "FNF", filename = self.filename)
+            logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
+            raise e
+        except XSDNotFoundException as e:
+            FileDataDao.addOrModifyFileData(status = "XSD_FNF", filename = self.filename)
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         except Exception as e:

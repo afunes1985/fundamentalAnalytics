@@ -26,9 +26,9 @@ from valueobject.constant import Constant
 
 #Import fileData to PENDING state (OK, ERROR, FileNotFount (FNF))
 class ImportFIlesFromSEC():
-    def importMasterIndexFor(self, period, replace, session):
+    def importMasterIndexFor(self, period, replaceMasterFile, session):
         file = getBinaryFileFromCache(Constant.CACHE_FOLDER + 'master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
-                                    "https://www.sec.gov/Archives/edgar/full-index/" + str(period.year) + "/QTR" + str(period.quarter)+ "/master.gz")
+                                    "https://www.sec.gov/Archives/edgar/full-index/" + str(period.year) + "/QTR" + str(period.quarter)+ "/master.gz", replaceMasterFile)
         with gzip.open(BytesIO(file), 'rb') as f:
             file_content = f.read()
             text = file_content.decode("ISO-8859-1")
@@ -130,11 +130,12 @@ class ImportVO():
                 print(e)
 
 if __name__ == "__main__":
+    replaceMasterFile = True
     Initializer()
     session = DBConnector().getNewSession()
-    periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2019, QuarterPeriod.quarter == 1)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+    periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2019, QuarterPeriod.quarter == 2)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
     #periodList = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2020, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter > 3)), QuarterPeriod.year > 2017)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
     logging.info("START")
     createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)
     for period in periodList:
-        ImportFIlesFromSEC().importMasterIndexFor(period, False, session)
+        ImportFIlesFromSEC().importMasterIndexFor(period, replaceMasterFile, session)

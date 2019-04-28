@@ -24,11 +24,11 @@ from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
 
 
-def getBinaryFileFromCache(filename, url = None):
+def getBinaryFileFromCache(filename, url = None, replaceMasterFile = False):
     #logging.getLogger(Constant.LOGGER_GENERAL).debug("BIN - Processing filename " + filename.replace("//", "/"))
     xbrlFile = Path(filename)
     file = None
-    if xbrlFile.exists():
+    if xbrlFile.exists() and not replaceMasterFile:
         with open(filename, mode='rb') as file: 
             file = file.read()
     elif (url is not None):
@@ -122,6 +122,10 @@ class LoggingException(Exception):
         logging.getLogger(self.loggerName).debug(self.message)
         
 class FileNotFoundException(Exception):
+    def __init__(self, fileName):
+        self.fileName = fileName
+
+class XSDNotFoundException(Exception):
     def __init__(self, fileName):
         self.fileName = fileName
         

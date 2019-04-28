@@ -19,7 +19,7 @@ from modelClass.company import Company
 from modelClass.period import Period
 from modelClass.report import Report
 from tools.tools import getDaysBetweenDates, getXSDFileFromCache, getBinaryFileFromCache, \
-    FileNotFoundException
+    FileNotFoundException, XSDNotFoundException
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
 
@@ -213,7 +213,7 @@ class AbstractFileImporter():
             if(processCache.get(xsdFileName, None) is not None):
                 xsdDF = processCache.get(xsdFileName, None)
             else:
-                raise Exception("XSD DICTIONARY NOT FOUND IN CACHE")
+                raise XSDNotFoundException("XSD DICTIONARY NOT FOUND IN CACHE " + xsdFileName)
             factVO = self.setXsdAttr(factVO, xsdDF, conceptID)
         else:
             xsdDF = processCache[Constant.DOCUMENT_SCH]
