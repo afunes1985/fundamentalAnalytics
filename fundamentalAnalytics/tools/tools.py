@@ -3,6 +3,8 @@ Created on 8 sep. 2018
 
 @author: afunes
 '''
+from _io import BytesIO
+import gzip
 import logging
 import os
 from pathlib import Path
@@ -117,6 +119,19 @@ class FileNotFoundException(Exception):
 class XSDNotFoundException(Exception):
     def __init__(self, fileName):
         self.fileName = fileName
+        
+def getXMLDictFromGZCache(filename, documentName):
+    finalFileName = Constant.CACHE_FOLDER + filename[0: filename.find(".txt")] + "/" + documentName + ".gz"
+    logging.getLogger(Constant.LOGGER_GENERAL).debug("XML - Processing filename " + finalFileName.replace("//", "/"))
+    file = getBinaryFileFromCache(finalFileName)
+    if (file is not None):
+        with gzip.open(BytesIO(file), 'rb') as f:
+            file_content = f.read()
+            text = file_content.decode("ISO-8859-1")
+            xmlDict = xmltodict.parse(text)
+            return xmlDict
+    else:
+        raise FileNotFoundException("File not found " + finalFileName.replace("//", "/"))
         
 
 

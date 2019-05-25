@@ -16,7 +16,7 @@ import requests
 from base.dbConnector import DBConnector
 from dao.fileDataDao import FileDataDao
 from tools.tools import getBinaryFileFromCache, getXMLFromText, \
-    FileNotFoundException
+    FileNotFoundException, getXMLDictFromGZCache
 from valueobject.constant import Constant
 from valueobject.valueobject import ImportFileVO
 
@@ -59,22 +59,33 @@ class ImportFileEngine():
                 semaphore.acquire()
             session = DBConnector().getNewSession()
             fileData = FileDataDao.getFileData(filename, session)
-            if(fileData is None or (fileData.importStatus != "OK" and fileData.importStatus != "IMP FNF") or reimport == True ):
+            if(fileData is None or (fileData.importStatus != "OK" and fileData.importStatus != "IMP FNF") or reimport):
                 FileDataDao.addOrModifyFileData("PENDING", "INIT", filename, session)
                 fullFileName = Constant.CACHE_FOLDER + filename
                 fullFileName = fullFileName[0: fullFileName.find(".txt")]
                 logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("START - Processing index file " + fullFileName)   
-                if(ImportFileEngine.validateIfSomeFilesNotExits(fullFileName)):
+                if(ImportFileEngine.validateIfSomeFilesNotExits(fullFileName) or reimport):
                     url = "https://www.sec.gov/Archives/" + filename
                     logging.getLogger(Constant.LOGGER_GENERAL).debug("URL " + url)
                     response = requests.get(url, timeout = 30) 
                     fileText = response.text
                     if not os.path.exists(fullFileName): 
                         os.makedirs(fullFileName)
-                    ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_SCH, "XBRL",fullFileName, True)
-                    ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_PRE, "XBRL",fullFileName)
-                    #ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_INS, "XBRL",fullFileName)
                     ImportFileEngine.saveFile2(fileText,"FILENAME", Constant.DOCUMENT_SUMMARY, ["XML", "XBRL"], fullFileName)
+                    try:
+                        ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_INS, "XBRL",fullFileName)
+                    except FileNotFoundException:#TODO mejorar esto
+                        summaryDict = getXMLDictFromGZCache(filename, Constant.DOCUMENT_SUMMARY)
+                        for file in summaryDict["FilingSummary"]["InputFiles"]['File']:
+                            print(file)
+                            if isinstance(file, dict):
+                                if(file["@doctype"] == "10-Q"):
+                                    instFilename = file["#text"]
+                                    instFilename = instFilename.replace(".", "_") + ".xml"
+                                    ImportFileEngine.saveFile(fileText,"FILENAME", instFilename, "XML",fullFileName, hardKey=Constant.DOCUMENT_INS)
+                                    break
+                    ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_SCH, "XBRL",fullFileName, True)
+                    ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_PRE, "XBRL",fullFileName) 
                     logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - SUCCESSFULLY " + fullFileName)
                     FileDataDao.addOrModifyFileData("PENDING", "OK", filename, session)
                 else:
@@ -82,7 +93,7 @@ class ImportFileEngine():
                     FileDataDao.addOrModifyFileData("PENDING", "OK", filename, session)  
         except FileNotFoundException as e:
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR FileNotFoundException " + url + " " + e.fileName)
-            FileDataDao.addOrModifyFileData("PENDING", "IMP FNF", filename)
+            FileDataDao.addOrModifyFileData("PENDING", "IMP FNF", filename, errorMessage=str(e))
         except Exception as e:
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + url)
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).exception(e)
@@ -104,10 +115,12 @@ class ImportFileEngine():
             return True
     
     @staticmethod         
-    def saveFile(fileText, tagKey, key, mainTag, fullFileName, skipIfNotExists = False):
+    def saveFile(fileText, tagKey, key, mainTag, fullFileName, skipIfNotExists = False, hardKey = None):
+        if(hardKey is None):
+            hardKey = key
         xmlFile= getXMLFromText(fileText, tagKey, key, mainTag, skipIfNotExists)
         if(xmlFile is not None):
-            with gzip.open(fullFileName + "//" + key + ".gz", 'wb') as f:
+            with gzip.open(fullFileName + "//" + hardKey + ".gz", 'wb') as f:
                 f.write(xmlFile.encode())
     
     @staticmethod        

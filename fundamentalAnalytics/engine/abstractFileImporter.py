@@ -19,7 +19,7 @@ from modelClass.company import Company
 from modelClass.period import Period
 from modelClass.report import Report
 from tools.tools import getDaysBetweenDates, getXSDFileFromCache, getBinaryFileFromCache, \
-    FileNotFoundException, XSDNotFoundException
+    FileNotFoundException, XSDNotFoundException, getXMLDictFromGZCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
 
@@ -85,19 +85,19 @@ class AbstractFileImporter():
     def initProcessCache(self, filename, session):
         processCache = {}
         processCache.update(self.mainCache)
-        schDF = pandas.DataFrame(self.getListFromElement(Constant.ELEMENT, self.getElementFromElement(Constant.SCHEMA, self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
+        schDF = pandas.DataFrame(self.getListFromElement(Constant.ELEMENT, self.getElementFromElement(Constant.SCHEMA, getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
         schDF.set_index("@id", inplace=True)
         schDF.head()
         processCache[Constant.DOCUMENT_SCH] = schDF
         #XML INSTANCE
-        insDict = self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_INS)
+        insDict = getXMLDictFromGZCache(filename, Constant.DOCUMENT_INS)
         insDict = self.getElementFromElement(Constant.XBRL_ROOT, insDict)
         processCache[Constant.DOCUMENT_INS] = insDict
         #XML SUMMARY
-        sumDict= self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_SUMMARY)
+        sumDict= getXMLDictFromGZCache(filename, Constant.DOCUMENT_SUMMARY)
         processCache[Constant.DOCUMENT_SUMMARY] = sumDict
         #XML PRESENTATION
-        preDict = self.getXMLDictFromGZCache(filename, Constant.DOCUMENT_PRE)
+        preDict = getXMLDictFromGZCache(filename, Constant.DOCUMENT_PRE)
         processCache[Constant.DOCUMENT_PRE] = preDict 
         #PERIOD
         periodDict = self.getPeriodDict(insDict, session)
@@ -256,19 +256,6 @@ class AbstractFileImporter():
                 #logging.getLogger(Constant.LOGGER_ERROR).debug("KeyError " + str(e) + " " + conceptID )
         return factToAddList
     
-    def getXMLDictFromGZCache(self, filename, documentName):
-        finalFileName = Constant.CACHE_FOLDER + filename[0: filename.find(".txt")] + "/" + documentName + ".gz"
-        logging.getLogger(Constant.LOGGER_GENERAL).debug("XML - Processing filename " + finalFileName.replace("//", "/"))
-        file = getBinaryFileFromCache(finalFileName)
-        if (file is not None):
-            with gzip.open(BytesIO(file), 'rb') as f:
-                file_content = f.read()
-                text = file_content.decode("ISO-8859-1")
-                xmlDict = xmltodict.parse(text)
-                return xmlDict
-        else:
-            raise FileNotFoundException("File not found " + finalFileName.replace("//", "/"))
-        
     def getValueAsDate(self, attrID, element):
         value = self.getValueFromElement(attrID, element, False)
         if(value is not None):
