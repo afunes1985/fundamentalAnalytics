@@ -6,7 +6,11 @@ Created on Mar 17, 2019
 from datetime import timedelta
 from operator import and_
 
+from sqlalchemy.orm.exc import NoResultFound
+
+from dao.customFactDao import CustomFactDao
 from dao.dao import Dao, GenericDao
+from dao.factDao import FactDao
 from engine.expressionEngine import ExpressionEngine
 from modelClass import period
 from modelClass.company import Company
@@ -15,8 +19,6 @@ from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
 from modelClass.customReport import CustomReport
 from modelClass.period import Period
-from dao.customFactDao import CustomFactDao
-from dao.factDao import FactDao
 
 
 class CustomFactEngine():
@@ -131,6 +133,7 @@ class CustomFactEngine():
                                 #estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
                                 listQTD = CustomFactDao.getCustomFactValue(ticker, customConceptName, 'QTD', session)
                                 listQTD_2 = []
+                                periodOID = None
                                 for itemQTD in listQTD:
                                     if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285:
                                         sumValue += itemQTD.value
@@ -166,7 +169,10 @@ class CustomFactEngine():
                 
     @staticmethod       
     def deleteCustomFactByCompany(ticker, session):
-        company = GenericDao.getOneResult(objectClazz = Company, condition = (Company.ticker == ticker),session = session)
+        try:
+            company = GenericDao.getOneResult(objectClazz = Company, condition = (Company.ticker == ticker),session = session)
+        except NoResultFound:
+            return None
         for itemToDelete in company.customFactList:
             session.delete(itemToDelete)
         session.commit()

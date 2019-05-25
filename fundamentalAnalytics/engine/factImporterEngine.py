@@ -11,12 +11,11 @@ from dao.dao import Dao
 from dao.factDao import FactDao
 from dao.fileDataDao import FileDataDao
 from engine.abstractFileImporter import AbstractFileImporter
-from modelClass.fileData import FileData
 from tools.tools import FileNotFoundException, XSDNotFoundException
 from valueobject.constant import Constant
 
 
-class FileImporter(AbstractFileImporter):
+class FactImporterEngine(AbstractFileImporter):
 
     def __init__(self, filename, replace, mainCache, s = None):
         self.processCache = None

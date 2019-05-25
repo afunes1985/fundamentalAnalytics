@@ -14,8 +14,8 @@ import dash_html_components as html
 import dash_table_experiments as dt
 from dataImport.importFactFromSEC import initMainCache
 from engine.factEngine import FactEngine
-from engine.fileImporter import FileImporter
-from testPlot import testPlot
+from engine.factImporterEngine import FactImporterEngine
+from engine.importFileEngine import ImportFileEngine
 from valueobject.valueobject import FilterFactVO
 from web.app import app
 
@@ -27,10 +27,13 @@ layout = html.Div([
     html.Button(id='btn-submit', n_clicks=0, children='Submit'),
     html.Div(dt.DataTable(rows=[{}], id='dt-fd2'), style={'display': 'none'}),
     html.Div(id='dt-fd2-container'),
+    html.Button(id='btn-reimport', n_clicks=0, children='Reimport'),
     html.Button(id='btn-reprocess', n_clicks=0, children='Reprocess'),
     html.Button(id='btn-delete', n_clicks=0, children='Delete'),
     dcc.Link('Go to Fact Report', href='/apps/app1'),
-    html.Div(id='hidden-div2', style={'display':'none'})
+    html.Div(id='hidden-div2', style={'display':'none'}),
+    html.Div(id='hidden-div1', style={'display':'none'}),
+    html.Div(id='hidden-div3', style={'display':'none'})
 ])
 
 @app.callback(
@@ -54,18 +57,17 @@ def doSubmit(n_clicks, value):
             return dt2
 
 @app.callback(
-    Output('btn-reprocess', "children"),
+    Output('hidden-div1', "children"),
     [Input('btn-reprocess', 'n_clicks')],
     [State('dt-fd2', "rows"),
      State('dt-fd2', "selected_row_indices")])
 def doReprocess(n_clicks, rows, selected_row_indices):
     print(rows)
     print(selected_row_indices)
-    print ('test')
     if(selected_row_indices is not None and len(selected_row_indices) != 0):
         mainCache = initMainCache()
         fileName = rows[selected_row_indices[0]]["fileName"]
-        fi = FileImporter(fileName, True, mainCache)
+        fi = FactImporterEngine(fileName, True, mainCache)
         fi.doImport()
 
 @app.callback(
@@ -79,6 +81,18 @@ def doDelete(n_clicks, rows, selected_row_indices):
         fileName = rows[selected_row_indices[0]]["fileName"]
         FactEngine.deleteFactByFileData(fileName)
 
+
+@app.callback(
+    Output('hidden-div3', "children"),
+    [Input('btn-reimport', 'n_clicks')],
+    [State('dt-fd2', "rows"),
+     State('dt-fd2', "selected_row_indices")])
+def doReImport(n_clicks, rows, selected_row_indices):
+    print(rows)
+    print(selected_row_indices)
+    if(selected_row_indices is not None and len(selected_row_indices) != 0):
+        fileName = rows[selected_row_indices[0]]["fileName"]
+        ImportFileEngine.importFiles(filename=fileName, reimport=True)
 
 @app.callback(
     Output('app-2-display-value', 'children'),

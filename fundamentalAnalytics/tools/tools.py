@@ -3,25 +3,14 @@ Created on 8 sep. 2018
 
 @author: afunes
 '''
-from _datetime import datetime
-from _io import BytesIO
-import gzip
 import logging
 import os
 from pathlib import Path
 
-import pandas
 import requests
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import and_
 import xmltodict
 
-from base.dbConnector import DBConnector
-from dao.dao import GenericDao, Dao
-from modelClass.fileData import FileData
-from modelClass.period import Period
 from valueobject.constant import Constant
-from valueobject.valueobject import FactVO, FactValueVO
 
 
 def getBinaryFileFromCache(filename, url = None, replaceMasterFile = False):

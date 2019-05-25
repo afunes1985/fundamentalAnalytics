@@ -40,3 +40,14 @@ class FilterFactVO():
         self.reportShortName = None
         self.ticker = None
         
+class ImportFileVO():
+    filenameToImport = None
+    semaphore = None
+    def __init__(self, filename, s):
+        self.filenameToImport = filename
+        self.semaphore = s
+        
+    def importFile(self):
+        from engine.importFileEngine import ImportFileEngine
+        ImportFileEngine.importFiles(self.filenameToImport, self.semaphore)
+        
