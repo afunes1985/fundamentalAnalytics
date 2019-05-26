@@ -78,16 +78,16 @@ def getXmlDictFromText(fileText, tagKey, key, mainTag):
 def getXMLFromText(fileText, tagKey, key, mainTag, skipIfNotExists = False):
     point1 = fileText.find("<" + tagKey + ">" + key, 0, len(fileText))
     if(point1 == -1 and skipIfNotExists == False):
-        raise FileNotFoundException("Key " + key + " not found")
+        raise XMLNotFoundException("XML not found tagkey: " + tagKey + " key: " + key)
     elif(point1 == -1):
-        return None
+        raise XMLNotFoundException("XML not found tagkey: " + tagKey + " key: " + key)
     point2 = fileText.find("<" + mainTag +">", point1, len(fileText)) + len("<" + mainTag + ">")+1
     if (0 < point2 - point1 < 150 ):
         point3 = fileText.find("</" + mainTag + ">", point2, len(fileText))
         xmlText = fileText[point2:point3]
         return xmlText
     else:
-        return None
+        raise XMLNotFoundException("XML not found tagkey: " + tagKey + " key: " + key)
 
 def setDictValue(dict_, conceptID, value):
     if(dict_.get(conceptID, -1) == -1):
@@ -113,13 +113,20 @@ class LoggingException(Exception):
         logging.getLogger(self.loggerName).debug(self.message)
         
 class FileNotFoundException(Exception):
+    importStatus = "FNF"
     def __init__(self, fileName):
         self.fileName = fileName
 
 class XSDNotFoundException(Exception):
+    importStatus = "XSD_FNF"
     def __init__(self, fileName):
         self.fileName = fileName
         
+class XMLNotFoundException(Exception):
+    importStatus = "XML_FNF"
+    def __init__(self, fileName):
+        self.fileName = fileName
+           
 def getXMLDictFromGZCache(filename, documentName):
     finalFileName = Constant.CACHE_FOLDER + filename[0: filename.find(".txt")] + "/" + documentName + ".gz"
     logging.getLogger(Constant.LOGGER_GENERAL).debug("XML - Processing filename " + finalFileName.replace("//", "/"))
