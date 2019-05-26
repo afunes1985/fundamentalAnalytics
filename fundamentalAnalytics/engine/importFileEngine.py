@@ -4,6 +4,8 @@ Created on May 25, 2019
 @author: afunes
 '''
 from _io import BytesIO, StringIO
+import concurrent.futures
+from concurrent.futures.thread import ThreadPoolExecutor
 import gzip
 import logging
 import os
@@ -16,7 +18,8 @@ import requests
 from base.dbConnector import DBConnector
 from dao.fileDataDao import FileDataDao
 from tools.tools import getBinaryFileFromCache, getXMLFromText, \
-    FileNotFoundException, getXMLDictFromGZCache
+    FileNotFoundException, getXMLDictFromGZCache, XSDNotFoundException, \
+    XMLNotFoundException
 from valueobject.constant import Constant
 from valueobject.valueobject import ImportFileVO
 
@@ -24,7 +27,7 @@ from valueobject.valueobject import ImportFileVO
 class ImportFileEngine():
     
     @staticmethod
-    def importMasterIndexFor(self, period, replaceMasterFile, session):
+    def importMasterIndexFor(period, replaceMasterFile, session, threadNumber = 1):
         file = getBinaryFileFromCache(Constant.CACHE_FOLDER + 'master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
                                     "https://www.sec.gov/Archives/edgar/full-index/" + str(period.year) + "/QTR" + str(period.quarter)+ "/master.gz", replaceMasterFile)
         with gzip.open(BytesIO(file), 'rb') as f:
@@ -37,29 +40,22 @@ class ImportFileEngine():
             df = pandas.read_csv(StringIO(text2), sep="|")
             df.set_index("CIK", inplace=True)
             df.head()
-            #row = df.loc[1711736]
-            threads = []
-            s = Semaphore(1)
+            executor = ThreadPoolExecutor(max_workers=threadNumber)
+            print("STARTED")
             for row in df.iterrows():
                 filename = row[1]["Filename"]
                 formType = row[1]["Form Type"]
                 if(formType == "10-Q" or formType == "10-K"):
-                    importVO = ImportFileVO(filename, s)
-                    t = threading.Thread(target=importVO.importFile)
-                    t.start()
-                    threads.append(t)
-            for thread in threads:
-                thread.join()
+                    importVO = ImportFileVO(filename)
+                    executor.submit(importVO.importFile)
             print("FINISHED")
     
     @staticmethod
-    def importFiles(filename, semaphore = None, reimport = False):
+    def importFiles(filename, reimport = False):
         try:
-            if(semaphore is not None):
-                semaphore.acquire()
             session = DBConnector().getNewSession()
             fileData = FileDataDao.getFileData(filename, session)
-            if(fileData is None or (fileData.importStatus != "OK" and fileData.importStatus != "IMP FNF") or reimport):
+            if(fileData is None or (fileData.importStatus != "OK") or reimport):
                 FileDataDao.addOrModifyFileData("PENDING", "INIT", filename, session)
                 fullFileName = Constant.CACHE_FOLDER + filename
                 fullFileName = fullFileName[0: fullFileName.find(".txt")]
@@ -74,12 +70,12 @@ class ImportFileEngine():
                     ImportFileEngine.saveFile2(fileText,"FILENAME", Constant.DOCUMENT_SUMMARY, ["XML", "XBRL"], fullFileName)
                     try:
                         ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_INS, "XBRL",fullFileName)
-                    except FileNotFoundException:#TODO mejorar esto
+                    except XMLNotFoundException:#TODO mejorar esto
                         summaryDict = getXMLDictFromGZCache(filename, Constant.DOCUMENT_SUMMARY)
                         for file in summaryDict["FilingSummary"]["InputFiles"]['File']:
                             print(file)
                             if isinstance(file, dict):
-                                if(file["@doctype"] == "10-Q"):
+                                if(file["@doctype"] == "10-Q") or file["@doctype"] =="10-K":
                                     instFilename = file["#text"]
                                     instFilename = instFilename.replace(".", "_") + ".xml"
                                     ImportFileEngine.saveFile(fileText,"FILENAME", instFilename, "XML",fullFileName, hardKey=Constant.DOCUMENT_INS)
@@ -91,17 +87,15 @@ class ImportFileEngine():
                 else:
                     logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - EXISTS " + fullFileName)
                     FileDataDao.addOrModifyFileData("PENDING", "OK", filename, session)  
-        except FileNotFoundException as e:
-            logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR FileNotFoundException " + url + " " + e.fileName)
-            FileDataDao.addOrModifyFileData("PENDING", "IMP FNF", filename, errorMessage=str(e))
+        except (FileNotFoundException, XSDNotFoundException, XMLNotFoundException) as e:
+            logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + str(e))
+            FileDataDao.addOrModifyFileData("PENDING", e.importStatus, filename, errorMessage=str(e))
         except Exception as e:
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + url)
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).exception(e)
-            FileDataDao.addOrModifyFileData("PENDING", "IMP ERROR", filename)
+            FileDataDao.addOrModifyFileData("PENDING", "IMP ERROR", filename, errorMessage=str(e))
         finally:
             session.close()
-            if(semaphore is not None):
-                semaphore.release()
     
     @staticmethod       
     def validateIfSomeFilesNotExits(folder):
@@ -128,5 +122,9 @@ class ImportFileEngine():
         for mainTag in mainTagList:
             try:
                 ImportFileEngine.saveFile(fileText, tagKey, key, mainTag, fullFileName)
+                break
             except Exception as e:
-                print(e)
+                if(mainTagList[-1] == mainTag):
+                    raise e
+                else:
+                    print(e)

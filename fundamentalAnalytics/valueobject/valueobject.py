@@ -42,12 +42,10 @@ class FilterFactVO():
         
 class ImportFileVO():
     filenameToImport = None
-    semaphore = None
-    def __init__(self, filename, s):
+    def __init__(self, filename):
         self.filenameToImport = filename
-        self.semaphore = s
         
     def importFile(self):
         from engine.importFileEngine import ImportFileEngine
-        ImportFileEngine.importFiles(self.filenameToImport, self.semaphore)
+        ImportFileEngine.importFiles(self.filenameToImport)
         

@@ -1,7 +1,11 @@
-import dash_core_components as dcc
-import dash_html_components as html
+import logging
+
 from dash.dependencies import Input, Output
 
+import dash_core_components as dcc
+import dash_html_components as html
+from tools.tools import createLog
+from valueobject.constant import Constant
 from web.app import app
 from web.apps import app1, app2
 
@@ -23,4 +27,6 @@ def display_page(pathname):
         return app1.layout
 
 if __name__ == '__main__':
+    logging.info("START")
+    createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)
     app.run_server(debug=False)
