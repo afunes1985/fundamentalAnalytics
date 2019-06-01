@@ -3,6 +3,7 @@ Created on 22 ago. 2018
 
 @author: afunes
 '''
+from concurrent.futures.thread import ThreadPoolExecutor
 import logging
 from nt import listdir
 from threading import Semaphore
@@ -40,6 +41,7 @@ def initMainCache():
 if __name__ == "__main__":
     COMPANY_TICKER = None
     replace = False
+    threadNumber = 2
     Initializer()
     session = DBConnector().getNewSession()
     if (COMPANY_TICKER is not None):
@@ -56,20 +58,13 @@ if __name__ == "__main__":
     fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("PENDING")), session)
     #fileDataList = GenericDao.getAllResult(FileData, and_(FileData.fileName == "edgar/data/1016708/0001477932-18-002398.txt"), session)
     threads = []    
-    s = Semaphore(1)
     mainCache = initMainCache()
+    executor = ThreadPoolExecutor(max_workers=threadNumber)
     for fileData in fileDataList:
         try:
-            s.acquire()
-            fi = FactImporterEngine(fileData.fileName, replace, mainCache,  s)
+            fi = FactImporterEngine(fileData.fileName, replace, mainCache)
             #fi.doImport(replace)
-            t = threading.Thread(target=fi.doImport)
-            t.start()
-            threads.append(t)
+            executor.submit(fi.doImport)
         except Exception as e:
                 logging.getLogger(Constant.LOGGER_ERROR).exception("ERROR " + fileData.fileName + " " + str(e))
-    
-    for thread in threads:
-        thread.join()
-            
             

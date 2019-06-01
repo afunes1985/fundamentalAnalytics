@@ -114,11 +114,13 @@ class LoggingException(Exception):
         
 class FileNotFoundException(Exception):
     importStatus = "FNF"
+    status = "FNF"
     def __init__(self, fileName):
         self.fileName = fileName
 
 class XSDNotFoundException(Exception):
     importStatus = "XSD_FNF"
+    status = "XSD_FNF"
     def __init__(self, fileName):
         self.fileName = fileName
         

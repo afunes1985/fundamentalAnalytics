@@ -95,6 +95,7 @@ class ImportFileEngine():
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).exception(e)
             FileDataDao.addOrModifyFileData("PENDING", "IMP ERROR", filename, errorMessage=str(e))
         finally:
+            session.remove()
             session.close()
     
     @staticmethod       

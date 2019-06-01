@@ -17,18 +17,17 @@ from valueobject.constant import Constant
 
 class FactImporterEngine(AbstractFileImporter):
 
-    def __init__(self, filename, replace, mainCache, s = None):
+    def __init__(self, filename, replace, mainCache):
         self.processCache = None
         self.session = DBConnector().getNewSession()
         self.filename = filename
-        self.semaphore = s
         self.replace = replace
         self.mainCache = mainCache
             
     def doImport(self):
         try:
             fileData = FileDataDao.getFileData(self.filename, self.session)
-            if((fileData.status != "FNF" and fileData.status != "OK") or self.replace == True):
+            if((fileData.status != "OK") or self.replace == True):
                 time1 = datetime.now()
                 FileDataDao.addOrModifyFileData(status = "INIT", filename = self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
@@ -53,12 +52,8 @@ class FactImporterEngine(AbstractFileImporter):
                 Dao.addObject(objectToAdd = fileData, session = self.session, doCommit = True)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).info("FINISH AT " + str(datetime.now() - time1))
-        except FileNotFoundException as e:
-            FileDataDao.addOrModifyFileData(status = "FNF", filename = self.filename, errorMessage=str(e))
-            logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
-            raise e
-        except XSDNotFoundException as e:
-            FileDataDao.addOrModifyFileData(status = "XSD_FNF", filename = self.filename, errorMessage=str(e))
+        except (FileNotFoundException, XSDNotFoundException) as e:
+            FileDataDao.addOrModifyFileData(status = e.status, filename = self.filename, errorMessage=str(e))
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         except Exception as e:
@@ -67,6 +62,4 @@ class FactImporterEngine(AbstractFileImporter):
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         finally:
-            self.session.close()
-            if self.semaphore is not None:
-                self.semaphore.release()
+            self.session.remove()
