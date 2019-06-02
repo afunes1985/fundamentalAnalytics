@@ -58,7 +58,47 @@ class CustomFactEngine():
     
     @staticmethod    
     def copyToCustomFact(ticker, customConceptName, session = None):
+        copiedValues = 0
         customFact = CustomFactEngine.createCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
+        copiedValues += CustomFactEngine.copyToCustomFactQTD(customFact, ticker, customConceptName, session)
+        copiedValues += CustomFactEngine.copyToCustomFactYTD(customFact, ticker, customConceptName, session)
+        return copiedValues
+        
+    @staticmethod    
+    def copyToCustomFactYTD(customFact, ticker, customConceptName, session = None):
+        newFactValueDict = {}
+        periodsCompleted = [x.period.getKeyDate() for x in customFact.customFactValueList]            
+        for concept in customFact.customConcept.conceptList:
+            factValueList = FactDao.getFactValue2(ticker = ticker, periodType = 'YTD', concept = concept, session = session)
+            for row in factValueList:
+                if (row.endDate not in periodsCompleted):#Si el periodo de ese customConcept ya no se encuentra resuelto
+                    if (row.endDate not in newFactValueDict.keys()):#Si el periodo de ese customConcept no se encuentra duplicado desde los conceptos origen
+                        if (row.documentFiscalPeriodFocus == 'Q1'):
+                            newFactValueDict[row.endDate] = row.value
+                    else:
+                        print('Duplicated period between concepts, periodOID =  ' + str(row.periodOID) + " " + str(row.endDate)+ ' Concept = ' + concept.conceptName)
+            
+        newFactValues = []
+        for endDate, value in newFactValueDict.items():
+                customFactValue = CustomFactValue()
+                period = GenericDao.getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseError = False)
+                customFactValue.period = period
+                if(period is None):
+                    newPeriod = Period()
+                    newPeriod.endDate = endDate
+                    newPeriod.type = 'QTD'
+                    customFactValue.period = newPeriod
+                customFactValue.value = value
+                customFactValue.origin = 'COPY'
+                newFactValues.append(customFactValue)
+        print("Copy to YTD->QTD " + customConceptName + " " + str(len(newFactValues)))   
+        if(len(newFactValues) > 0):
+            customFact.customFactValueList.extend(newFactValues)
+            Dao.addObject(objectToAdd = customFact, session = session, doCommit = True) 
+        return len(newFactValues)  
+        
+    @staticmethod    
+    def copyToCustomFactQTD(customFact, ticker, customConceptName, session = None):    
         newFactValueDict = {}
         periodsCompleted = [x.periodOID for x in customFact.customFactValueList]
         for concept in customFact.customConcept.conceptList:
@@ -69,6 +109,7 @@ class CustomFactEngine():
                         newFactValueDict[row.periodOID] = row.value
                     else:
                         print('Duplicated period between concepts, periodOID =  ' + str(row.periodOID) + " " + str(row.endDate)+ ' Concept = ' + concept.conceptName)
+            
         newFactValues = []
         for periodOID, value in newFactValueDict.items():
                 customFactValue = CustomFactValue()
@@ -76,14 +117,14 @@ class CustomFactEngine():
                 customFactValue.value = value
                 customFactValue.origin = 'COPY'
                 newFactValues.append(customFactValue)
-        print("Copy to " + customConceptName + " " + str(len(newFactValues)))   
+        print("Copy to QTD " + customConceptName + " " + str(len(newFactValues)))   
         if(len(newFactValues) > 0):
             customFact.customFactValueList.extend(newFactValues)
             Dao.addObject(objectToAdd = customFact, session = session, doCommit = True) 
         return len(newFactValues)  
     
     @staticmethod       
-    def completeMissingQTDValues(ticker, customConceptName, session):
+    def calculateMissingQTDValues(ticker, customConceptName, session):
         customFact = CustomFactDao.getCustomFact2(ticker, customConceptName, session)
         if(customFact is not None):
             for concept in customFact.customConcept.conceptList:

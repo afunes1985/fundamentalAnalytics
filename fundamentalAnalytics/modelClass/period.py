@@ -18,6 +18,13 @@ class Period(PersistenObject):
     type = Column(String(4), nullable=False)
     factValueList = relationship("FactValue", back_populates="period")
     customFactValueList = relationship("CustomFactValue", back_populates="period")
+    
+    def getKeyDate(self):
+        if(self.type == "QTD" or self.type == "YTD"):
+            return self.endDate
+        elif(type == "INST"):
+            return self.instant
+            
 
 class QuarterPeriod(PersistenObject):
     __tablename__ = 'fa_quarter_period'

@@ -17,32 +17,32 @@ session = DBConnector().getNewSession()
 
 #customConceptName = 'COST_OF_REVENUE' 
 ticker = 'AAPL'
-masive = True
-copy = False
-calculate = False
+masive = False
+copy = True
+calculate = True
 deleteCopyCalculate = False
-deleteStrategy = False
-createRatio = True
+deleteExpression = False
+createRatio = False
 if (masive):
     if(deleteCopyCalculate):
         CustomFactEngine.deleteCustomFactByCompany(ticker = ticker, fillStrategy = "COPY_CALCULATE", session = session)
     customConceptList = GenericDao.getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = session)
-    valuedCopied = 0
+    copiedValues = 0
     for customConcept in customConceptList:
         if(copy):
-            valuedCopied += CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConcept.conceptName, session = session)
+            copiedValues += CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConcept.conceptName, session = session)
         if(calculate):
-            CustomFactEngine.completeMissingQTDValues(ticker, customConcept.conceptName, session)
+            CustomFactEngine.calculateMissingQTDValues(ticker, customConcept.conceptName, session)
     
-    if(deleteStrategy):
+    if(deleteExpression):
         CustomFactEngine.deleteCustomFactByCompany(ticker = ticker, fillStrategy = "EXPRESSION", session = session)
     if(createRatio):
         customConceptExpressionList = GenericDao.getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "EXPRESSION"), session = session)
         for customConcept in customConceptExpressionList:
                 ExpressionEngine.solveCustomFactFromExpression(ticker, customConcept.conceptName, session)
 else:
-    customConceptName = "LONG_TERM_INVESTMENTS"
+    customConceptName = "COST_OF_REVENUE"
     if(copy):
         CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
     if(calculate):
-        CustomFactEngine.completeMissingQTDValues(ticker, customConceptName, session)
+        CustomFactEngine.calculateMissingQTDValues(ticker, customConceptName, session)

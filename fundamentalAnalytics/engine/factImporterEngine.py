@@ -6,6 +6,8 @@ Created on 19 sep. 2018
 from datetime import datetime
 import logging
 
+from sqlalchemy.orm.session import Session
+
 from base.dbConnector import DBConnector
 from dao.dao import Dao
 from dao.factDao import FactDao
@@ -26,6 +28,7 @@ class FactImporterEngine(AbstractFileImporter):
             
     def doImport(self):
         try:
+            logging.info("START")
             fileData = FileDataDao.getFileData(self.filename, self.session)
             if((fileData.status != "OK") or self.replace == True):
                 time1 = datetime.now()
@@ -62,4 +65,4 @@ class FactImporterEngine(AbstractFileImporter):
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         finally:
-            self.session.remove()
+            self.session.close()
