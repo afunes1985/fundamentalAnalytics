@@ -150,6 +150,21 @@ class Dao():
             return GenericDao.getOneResult(CustomFact, and_(CustomFact.company == company, CustomFact.customConcept == concept, CustomFact.customReport == report), session)
         except NoResultFound:
             return None
+        
+    @staticmethod
+    def getCustomFact2(ticker, customConcept, session):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            query = session.query(CustomFact)\
+                .join(CustomFact.company)\
+                .join(CustomFact.customConcept)\
+                .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName == customConcept))
+            objectResult = query.all()
+            return objectResult
+        except NoResultFound:
+            return None
     
     @staticmethod
     def getExpression(expressionName, session = None):

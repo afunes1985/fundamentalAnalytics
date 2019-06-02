@@ -25,6 +25,7 @@ class CustomConcept(PersistenObject):
     defaultCustomReportOID = Column(Integer, ForeignKey('fa_custom_report.OID'))
     defaultCustomReport = relationship("CustomReport", back_populates="customConceptList")
     periodType = Column(String(4), nullable=False)
+    fillStrategy = Column(String(45), nullable=False)
     conceptList = relationship("Concept",
                 secondary=association_table,
                 backref="parents")

@@ -42,7 +42,7 @@ class CustomFactEngine():
         return concept
     
     @staticmethod
-    def createCustomFact(ticker, customConceptName, customReportName = None, defaultOrder = None, session = None):
+    def createCustomFact(ticker, customConceptName, session = None):
         customConcept = Dao.getCustomConcept(customConceptName, session)
         company = Dao.getCompany(ticker, session)
         if (company is None):
@@ -56,12 +56,6 @@ class CustomFactEngine():
             fact.company = company
         return fact
     
-    @staticmethod
-    def createCustomFactFromExpression(ticker, customConceptName, session = None, customReportName = None, defaultOrder = None):
-        customFact = CustomFactEngine.createCustomFact(ticker, customConceptName, customReportName, defaultOrder, session)
-        customFact.customFactValueList = ExpressionEngine.solveExpression(ticker, customConceptName);
-        Dao.addObject(objectToAdd = customFact, session = session, doCommit = True)
-        
     @staticmethod    
     def copyToCustomFact(ticker, customConceptName, session = None):
         customFact = CustomFactEngine.createCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
@@ -168,17 +162,12 @@ class CustomFactEngine():
                             prevRow = itemYTD
                 
     @staticmethod       
-    def deleteCustomFactByCompany(ticker, session):
+    def deleteCustomFactByCompany(ticker, fillStrategy, session):
         try:
             company = GenericDao.getOneResult(objectClazz = Company, condition = (Company.ticker == ticker),session = session)
         except NoResultFound:
             return None
         for itemToDelete in company.customFactList:
-            session.delete(itemToDelete)
+            if itemToDelete.customConcept.fillStrategy == fillStrategy:
+                session.delete(itemToDelete)
         session.commit()
-            
-#         @staticmethod       
-#         def deleteCustomFact(ticker, customConceptName, session):
-#             customFact = GenericDao.getOneResult(objectClazz = CustomFact, condition = and_(CustomFact.customConcept.conceptName == customConceptName, customFact.company.ticker == ticker),session = session)
-#             session.delete(customFact)
-#             session.commit()

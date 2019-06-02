@@ -57,6 +57,12 @@ if(createCustomConcept):
     ccList.append(CustomFactEngine.createCustomConcept("THREASURY_STOCK", "CUSTOM_BALANCE", 28, 'INST', session));
     ccList.append(CustomFactEngine.createCustomConcept("TOTAL_SHAREHOLDERS_EQUITY", "CUSTOM_BALANCE", 29, 'INST', session));
     
+    ccList.append(CustomFactEngine.createCustomConcept("GROSS_PROFIT_MARGIN", "CUSTOM_RATIO", 1, 'QTD', session));
+    ccList.append(CustomFactEngine.createCustomConcept("SGA_MARGIN", "CUSTOM_RATIO", 2, 'QTD', session));
+    ccList.append(CustomFactEngine.createCustomConcept("RES_AND_DEV_EXPENSE_MARGIN", "CUSTOM_RATIO", 3, 'QTD', session));
+    ccList.append(CustomFactEngine.createCustomConcept("DEPRECIATION_MARGIN", "CUSTOM_RATIO", 4, 'QTD', session));
+    ccList.append(CustomFactEngine.createCustomConcept("NET_INCOME_MARGIN", "CUSTOM_RATIO", 5, 'QTD', session));
+    
     for itemToAdd in ccList:
         Dao.addObject(objectToAdd = itemToAdd, session = session, doCommit = True) 
 

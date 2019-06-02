@@ -29,4 +29,4 @@ def display_page(pathname):
 if __name__ == '__main__':
     logging.info("START")
     createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)
-    app.run_server(debug=False)
+    app.run_server(debug=True)
