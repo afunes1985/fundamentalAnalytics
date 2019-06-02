@@ -3,6 +3,8 @@ Created on 4 nov. 2018
 
 @author: afunes
 '''
+import webbrowser
+
 import dash
 from dash.dependencies import Output, Input, State
 from pandas.core.frame import DataFrame
@@ -30,10 +32,12 @@ layout = html.Div([
     html.Button(id='btn-reimport', n_clicks=0, children='Reimport'),
     html.Button(id='btn-reprocess', n_clicks=0, children='Reprocess'),
     html.Button(id='btn-delete', n_clicks=0, children='Delete'),
+    html.Button(id='btn-goToSECURL', n_clicks=0, children='GO TO SEC'),
     dcc.Link('Go to Fact Report', href='/apps/app1'),
     html.Div(id='hidden-div2', style={'display':'none'}),
     html.Div(id='hidden-div1', style={'display':'none'}),
-    html.Div(id='hidden-div3', style={'display':'none'})
+    html.Div(id='hidden-div3', style={'display':'none'}),
+    html.Div(id='hidden-div4', style={'display':'none'})
 ])
 
 @app.callback(
@@ -93,6 +97,20 @@ def doReImport(n_clicks, rows, selected_row_indices):
     if(selected_row_indices is not None and len(selected_row_indices) != 0):
         fileName = rows[selected_row_indices[0]]["fileName"]
         ImportFileEngine.importFiles(filename=fileName, reimport=True)
+
+@app.callback(
+    Output('hidden-div4', "children"),
+    [Input('btn-goToSECURL', 'n_clicks')],
+    [State('dt-fd2', "rows"),
+     State('dt-fd2', "selected_row_indices")])
+def doGoToSECURL(n_clicks, rows, selected_row_indices):
+    print(rows)
+    print(selected_row_indices)
+    if(selected_row_indices is not None and len(selected_row_indices) != 0):
+        fileName = rows[selected_row_indices[0]]["fileName"]
+        fileName = fileName.replace(".txt", "-index.htm")
+        url = 'https://www.sec.gov/Archives/' + fileName
+        webbrowser.open(url) 
 
 @app.callback(
     Output('app-2-display-value', 'children'),
