@@ -212,3 +212,13 @@ class CustomFactEngine():
             if itemToDelete.customConcept.fillStrategy == fillStrategy:
                 session.delete(itemToDelete)
         session.commit()
+
+    @staticmethod       
+    def deleteCustomFactByStrategy(fillStrategy, session):
+        try:
+            customFactList = CustomFactDao.getCustomFact(fillStrategy, session);
+        except NoResultFound:
+            return None
+        for itemToDelete in customFactList:
+            session.delete(itemToDelete)
+        session.commit()

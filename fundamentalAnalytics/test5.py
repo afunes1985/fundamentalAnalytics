@@ -7,7 +7,6 @@ from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from dao.dao import GenericDao
 from engine.customFactEngine import CustomFactEngine
-from modelClass.company import Company
 from modelClass.customConcept import CustomConcept
 from engine.expressionEngine import ExpressionEngine
 
@@ -16,14 +15,20 @@ Initializer()
 session = DBConnector().getNewSession()
 
 #customConceptName = 'COST_OF_REVENUE' 
-ticker = 'AAPL'
-masive = False
+ticker = 'AMZN'
+masive = True
 copy = True
 calculate = True
+createRatio = True
 deleteCopyCalculate = False
 deleteExpression = False
-createRatio = False
+deleteAllFact = False
+
 if (masive):
+    if(deleteAllFact):
+        CustomFactEngine.deleteCustomFactByStrategy("COPY_CALCULATE", session)
+        CustomFactEngine.deleteCustomFactByStrategy("EXPRESSION", session)
+    
     if(deleteCopyCalculate):
         CustomFactEngine.deleteCustomFactByCompany(ticker = ticker, fillStrategy = "COPY_CALCULATE", session = session)
     customConceptList = GenericDao.getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = session)

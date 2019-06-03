@@ -56,6 +56,7 @@ class FileDataDao():
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
             .with_entities(FileData.fileName, FileData.documentPeriodEndDate,  FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status, FileData.importStatus, FileData.errorMessage)\
+            .order_by(FileData.documentPeriodEndDate)\
             .filter(FileData.fileName.like('%' + filename + '%'))
             objectResult = query.all()
             return objectResult

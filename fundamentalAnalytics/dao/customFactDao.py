@@ -47,4 +47,18 @@ class CustomFactDao():
             return objectResult
         except NoResultFound:
             return FactValue()
+        
+    @staticmethod
+    def getCustomFact(fillStrategy, session = None):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            objectResult = session.query(CustomFact)\
+                .join(CustomFact.customConcept)\
+                .filter(and_(CustomConcept.fillStrategy.__eq__(fillStrategy)))\
+                .all()
+            return objectResult
+        except NoResultFound:
+            return FactValue()
     
