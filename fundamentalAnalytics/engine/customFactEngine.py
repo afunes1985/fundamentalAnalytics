@@ -24,13 +24,14 @@ from modelClass.period import Period
 class CustomFactEngine():
     
     @staticmethod
-    def createCustomConcept(customConceptName, customReportName, defaultOrder, periodType, session):
+    def createCustomConcept(customConceptName, customReportName, defaultOrder, periodType, fillStrategy, session):
         concept = Dao.getCustomConcept(customConceptName, session)
         if concept is None:
             concept = CustomConcept()
             concept.conceptName = customConceptName
             concept.defaultOrder = defaultOrder
             concept.periodType = periodType
+            concept.fillStrategy = fillStrategy
             report = Dao.getCustomReport(customReportName, session)
             if report is None:
                 report = CustomReport()
@@ -39,6 +40,7 @@ class CustomFactEngine():
         else:
             concept.defaultOrder = defaultOrder
             concept.periodType = periodType
+            concept.fillStrategy = fillStrategy
         return concept
     
     @staticmethod
@@ -60,7 +62,7 @@ class CustomFactEngine():
     def copyToCustomFact(ticker, customConceptName, session = None):
         copiedValues = 0
         customFact = CustomFactEngine.createCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
-        copiedValues += CustomFactEngine.copyToCustomFactQTD(customFact, ticker, customConceptName, session)
+        copiedValues += CustomFactEngine.copyToCustomFactQTDINST(customFact, ticker, customConceptName, session)
         copiedValues += CustomFactEngine.copyToCustomFactYTD(customFact, ticker, customConceptName, session)
         return copiedValues
         
@@ -98,7 +100,7 @@ class CustomFactEngine():
         return len(newFactValues)  
         
     @staticmethod    
-    def copyToCustomFactQTD(customFact, ticker, customConceptName, session = None):    
+    def copyToCustomFactQTDINST(customFact, ticker, customConceptName, session = None):    
         newFactValueDict = {}
         periodsCompleted = [x.periodOID for x in customFact.customFactValueList]
         for concept in customFact.customConcept.conceptList:
@@ -117,7 +119,7 @@ class CustomFactEngine():
                 customFactValue.value = value
                 customFactValue.origin = 'COPY'
                 newFactValues.append(customFactValue)
-        print("Copy to QTD " + customConceptName + " " + str(len(newFactValues)))   
+        print("Copy to " + customFact.customConcept.periodType + " " + customConceptName + " " + str(len(newFactValues)))   
         if(len(newFactValues) > 0):
             customFact.customFactValueList.extend(newFactValues)
             Dao.addObject(objectToAdd = customFact, session = session, doCommit = True) 

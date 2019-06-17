@@ -15,10 +15,10 @@ Initializer()
 session = DBConnector().getNewSession()
 
 #customConceptName = 'COST_OF_REVENUE' 
-ticker = 'AMZN'
+ticker = 'INTC'
 masive = True
-copy = True
-calculate = True
+copy = False
+calculate = False
 createRatio = True
 deleteCopyCalculate = False
 deleteExpression = False
@@ -46,7 +46,7 @@ if (masive):
         for customConcept in customConceptExpressionList:
                 ExpressionEngine.solveCustomFactFromExpression(ticker, customConcept.conceptName, session)
 else:
-    customConceptName = "COST_OF_REVENUE"
+    customConceptName = "CASH_AND_CASH_EQUIVALENTS"
     if(copy):
         CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
     if(calculate):

@@ -22,7 +22,7 @@ class Period(PersistenObject):
     def getKeyDate(self):
         if(self.type == "QTD" or self.type == "YTD"):
             return self.endDate
-        elif(type == "INST"):
+        elif(self.type == "INST"):
             return self.instant
             
 

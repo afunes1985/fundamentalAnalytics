@@ -5,7 +5,7 @@ Created on 7 ago. 2018
 '''
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql.sqltypes import Boolean
+from sqlalchemy.sql.sqltypes import Boolean, Integer
 
 from modelClass import PersistenObject
 
@@ -23,3 +23,4 @@ class FileData(PersistenObject):
     status = Column(String(15), nullable=False)
     importStatus = Column(String(15), nullable=False)
     errorMessage = Column(String(100), nullable=True)
+    CIK = Column(Integer, nullable=False)

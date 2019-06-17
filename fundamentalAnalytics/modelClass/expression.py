@@ -13,3 +13,4 @@ class Expression(PersistenObject):
     __tablename__ = 'fa_expression'
     name = Column(String(255), nullable=False)
     expression = Column(String(255), nullable=False)
+    periodType = Column(String(4), nullable=False)

@@ -8,6 +8,7 @@ import logging
 from nt import listdir
 from threading import Semaphore
 import threading
+import traceback
 
 import pandas
 from sqlalchemy.sql.expression import and_, or_
@@ -34,8 +35,8 @@ def initMainCache():
             xsdDF.head()
             mainCache[xsdFileName] = xsdDF
             print(xsdFileName)
-        except Exception:
-            pass
+        except Exception as e:
+            traceback.print_exc()
     return mainCache
 
 if __name__ == "__main__":
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
     
-    fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("PENDING")), session)
+    fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("INIT")), session)
     #fileDataList = GenericDao.getAllResult(FileData, and_(FileData.fileName == "edgar/data/1016708/0001477932-18-002398.txt"), session)
     threads = []    
     mainCache = initMainCache()

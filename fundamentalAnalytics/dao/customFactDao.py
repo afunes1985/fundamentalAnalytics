@@ -38,12 +38,30 @@ class CustomFactDao():
             dbconnector = DBConnector()
             if (session is None): 
                 session = dbconnector.getNewSession()
-            objectResult = session.query(CustomFactValue)\
+            query = session.query(CustomFactValue)\
                 .join(CustomFactValue.customFact)\
                 .join(CustomFact.customConcept)\
                 .join(CustomFact.company)\
-                .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName.__eq__(customConceptName), Period.type.__eq__(periodType)))\
-                .all()
+                .join(CustomFactValue.period)\
+                .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName.__eq__(customConceptName), Period.type.__eq__(periodType)))
+            objectResult = query.all()
+            return objectResult
+        except NoResultFound:
+            return FactValue()
+
+    @staticmethod
+    def getCustomFactValue2(ticker, customConceptName, session = None):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            query = session.query(CustomFactValue)\
+                .join(CustomFactValue.customFact)\
+                .join(CustomFact.customConcept)\
+                .join(CustomFact.company)\
+                .join(CustomFactValue.period)\
+                .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName.__eq__(customConceptName)))
+            objectResult = query.all()
             return objectResult
         except NoResultFound:
             return FactValue()

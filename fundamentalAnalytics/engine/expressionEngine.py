@@ -17,28 +17,27 @@ class ExpressionEngine(object):
     def solveCustomFactFromExpression(ticker, customConceptName, session = None):
         from engine.customFactEngine import CustomFactEngine
         customFact = CustomFactEngine.createCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
-        customFact.customFactValueList = ExpressionEngine.solveExpression(ticker, customConceptName);
+        customFact.customFactValueList.extend(ExpressionEngine.solveExpression(ticker, customConceptName, customFact));
         Dao.addObject(objectToAdd = customFact, session = session, doCommit = True)
     
     @staticmethod
-    def solveExpression(ticker, expressionName):
+    def solveExpression(ticker, expressionName, customFact):
         expression = Dao.getExpression(expressionName)
         expr = parse_expr(expression.expression)
-        periodDict = {}
+        valueByDateDict = {}
         symbolList = list(expr.free_symbols)
+        periodsCompleted = [x.period.getKeyDate() for x in customFact.customFactValueList]
         for var in symbolList:
-            cfvList = CustomFactDao.getCustomFactValue(ticker, str(var), 'QTD')
+            cfvList = CustomFactDao.getCustomFactValue2(ticker, str(var))
             for cfv in cfvList:
-                periodDict.setdefault(cfv.periodOID, {})[var] = cfv.value
-                if(cfv.period.endDate is not None):
-                    periodDict[cfv.periodOID]["DATE"] = cfv.period.endDate
-                else:
-                    periodDict[cfv.periodOID]["DATE"] = cfv.period.instant
+                if (cfv.period.getKeyDate() not in periodsCompleted):
+                    valueByDateDict.setdefault(cfv.period.getKeyDate(), {})[var] = cfv.value
+                    valueByDateDict[cfv.period.getKeyDate()][cfv.period.type] = cfv.periodOID
         returnList = []
-        for item, value in periodDict.items():
+        for date, value in valueByDateDict.items():
             try:
                 customFactValue = CustomFactValue()
-                customFactValue.periodOID = item
+                customFactValue.periodOID = value[expression.periodType]
                 if(len(symbolList) == 2):
                     customFactValue.value = expr.subs([(symbolList[0], value[symbolList[0]]), (symbolList[1], value[symbolList[1]])])
                 elif(len(symbolList) == 3):
@@ -46,5 +45,6 @@ class ExpressionEngine(object):
                 customFactValue.origin = 'CALCULATED_BY_RULE'
                 returnList.append(customFactValue)
             except Exception as e:
-                print("Error in periodDate " + str(value["DATE"].strftime('%Y-%m-%d')) + " CustomFact missing -> " + str(e) + " periodOID " + str(item)) 
+                print("Error in periodDate " + str(date.strftime('%Y-%m-%d')) + " CustomFact missing -> " + str(e)) 
+        print("Ready to add " + expressionName + " " + str(len(returnList)))
         return returnList

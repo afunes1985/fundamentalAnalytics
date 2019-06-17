@@ -88,4 +88,16 @@ class FileDataDao():
             return GenericDao.getOneResult(FileData, and_(FileData.fileName == filename), session)
         except NoResultFound:
             return None
+        
+    @staticmethod   
+    def getFileDataYearPeriodList():
+        dbconnector = DBConnector()
+        with dbconnector.engine.connect() as con:
+            query = text("""select fd.CIK, fd.documentFiscalYearFocus, fd.documentFiscalPeriodFocus 
+                    from fa_file_data fd
+                    where fd.documentFiscalYearFocus is not null
+                    group by fd.CIK, fd.documentFiscalYearFocus, fd.documentFiscalPeriodFocus
+                    order by fd.CIK, fd.documentFiscalYearFocus, fd.documentFiscalPeriodFocus""")
+            rs = con.execute(query)
+            return rs 
     
