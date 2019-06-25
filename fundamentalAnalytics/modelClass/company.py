@@ -17,3 +17,4 @@ class Company(PersistenObject):
     industry = Column(String(100), nullable=False)
     factList = relationship("Fact", back_populates="company")
     customFactList = relationship("CustomFact", back_populates="company")
+    entityFactList = relationship("EntityFact", back_populates="company")

@@ -104,8 +104,7 @@ class Dao():
         except NoResultFound:
             return None
     
-    @staticmethod   
-    def addObject(objectToAdd, session = None, doCommit = False, doFlush = False):
+    def addObject(self, objectToAdd, session = None, doCommit = False, doFlush = False):
         if(session is None):
             internalSession = DBConnector().getNewSession()
         else:

@@ -13,3 +13,4 @@ class Report(PersistenObject):
     __tablename__ = 'fa_report'
     shortName = Column(String(250), nullable=False)
     factList = relationship("Fact", back_populates="report")
+    entityFactList = relationship("EntityFact", back_populates="report")

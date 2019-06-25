@@ -63,21 +63,25 @@ class FileDataDao():
         except NoResultFound:
             return None
     
-    @staticmethod     
-    def addOrModifyFileData(status, importStatus = None, filename = None, externalSession = None, errorMessage = None):
+    def addOrModifyFileData(self, status = None, importStatus = None, entityStatus = None, filename = None, externalSession = None, errorMessage = None, fileData = None):
         if (externalSession is None):
             session = DBConnector().getNewSession()
         else:
             session = externalSession
-        fileData = FileDataDao.getFileData(filename, session)
+        if (fileData is None):
+            fileData = FileDataDao.getFileData(filename, session)
         if (fileData is None):
             fileData = FileData()
             fileData.fileName = filename
-        fileData.status = status
-        fileData.errorMessage = errorMessage
+        if (status is not None):
+            fileData.status = status
+        if (entityStatus is not None):
+            fileData.entityStatus = entityStatus
+        if (errorMessage is not None):
+            fileData.errorMessage = errorMessage
         if importStatus is not None:
             fileData.importStatus = importStatus
-        Dao.addObject(objectToAdd = fileData, session = session, doCommit = True)
+        Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
         if (externalSession is None):
             session.close()
         return fileData

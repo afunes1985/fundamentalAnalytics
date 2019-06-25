@@ -6,8 +6,9 @@ Created on 22 ago. 2018
 from concurrent.futures.thread import ThreadPoolExecutor
 import logging
 from nt import listdir
-from threading import Semaphore
+from threading import Semaphore, BoundedSemaphore
 import threading
+from time import sleep
 import traceback
 
 import pandas
@@ -42,7 +43,9 @@ def initMainCache():
 if __name__ == "__main__":
     COMPANY_TICKER = None
     replace = False
-    threadNumber = 2
+    threadNumber = 3
+    conceptName = 'EntityCommonStockSharesOutstanding'
+    maxProcessInQueue = 20
     Initializer()
     session = DBConnector().getNewSession()
     if (COMPANY_TICKER is not None):
@@ -56,16 +59,29 @@ if __name__ == "__main__":
     createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
     
-    fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("INIT")), session)
+    fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("OK")), session)
     #fileDataList = GenericDao.getAllResult(FileData, and_(FileData.fileName == "edgar/data/1016708/0001477932-18-002398.txt"), session)
     threads = []    
     mainCache = initMainCache()
     executor = ThreadPoolExecutor(max_workers=threadNumber)
+    semaphore = BoundedSemaphore(maxProcessInQueue)
     for fileData in fileDataList:
         try:
-            fi = FactImporterEngine(fileData.fileName, replace, mainCache)
-            #fi.doImport(replace)
-            executor.submit(fi.doImport)
+            if (conceptName is None):
+                fi = FactImporterEngine(fileData.fileName, replace, mainCache)
+                #fi.doImport(replace)
+                executor.submit(fi.doImport)
+            else:
+                
+                fi = FactImporterEngine(fileData.fileName, replace, mainCache, conceptName)
+                #fi.doImport(replace)
+                semaphore.acquire()
+                try:
+                    future = executor.submit(fi.doImportEntityFactByConcept)
+                except:
+                    semaphore.release()
+                else:
+                    future.add_done_callback(lambda x: semaphore.release())
         except Exception as e:
                 logging.getLogger(Constant.LOGGER_ERROR).exception("ERROR " + fileData.fileName + " " + str(e))
             

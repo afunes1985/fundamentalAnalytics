@@ -64,14 +64,14 @@ class AbstractFileImporter():
                         period.type = self.getPeriodType(startDate, endDate)
                         Dao.addObject(objectToAdd = period, session = session, doCommit = False)
                     periodDict[item['@id']] = period
-                elif(getDaysBetweenDates(instant, documentPeriodEndDate) < 5):
+                elif(instant is not None):
                     try:
                         period =  GenericDao.getOneResult(Period, and_(Period.instant == instant), session)
                     except NoResultFound:
                         period = Period()
                         period.instant = instant
                         period.type = "INST"
-                        Dao.addObject(objectToAdd = period, session = session, doCommit = False)
+                        #Dao.addObject(objectToAdd = period, session = session, doCommit = False)
                     periodDict[item['@id']] = period
         return periodDict
     
@@ -123,12 +123,13 @@ class AbstractFileImporter():
                 return True
         return False
     
-    def getReportDict(self, processCache, session):
+    def getReportDict(self, processCache, menuCategoryAllowed, session):
         #Obtengo reportes statements
         xmlDict= processCache[Constant.DOCUMENT_SUMMARY]
         reportDict = {}
         for report in xmlDict["FilingSummary"]["MyReports"]["Report"]:
-            if(report.get("MenuCategory", None) is None or report.get("MenuCategory", -1) == "Statements"):
+            menuCategory = report.get("MenuCategory", None)
+            if(menuCategory is None or menuCategory in menuCategoryAllowed):
                 try:
                     reportRole = report["Role"]
                     #if(self.isReportAllowed(reportRole)):
@@ -179,6 +180,7 @@ class AbstractFileImporter():
                 
             if(not isReportAllowed):
                 try:
+                    print(reportRole)
                     del reportDict[reportRole]
                 except KeyError as e:
                     pass
@@ -186,6 +188,26 @@ class AbstractFileImporter():
                 factVOList = factVOList + tempFactVOList
         for report in reportDict.values():
             Dao.addObject(objectToAdd = report, session = session, doFlush = True)
+        return factVOList
+    
+    def getFactByConcept(self, reportDict, processCache, conceptName):
+        factVOList = []
+        #Obtengo para cada reporte sus conceptos
+        xmlDictPre = processCache[Constant.DOCUMENT_PRE]
+        for item in self.getListFromElement(Constant.PRESENTATON_LINK, self.getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
+            reportRole = item['@xlink:role']
+            if(reportDict.get(reportRole, None) is not None):
+                for item2 in self.getListFromElement(Constant.LOC, item):
+                    href = item2["@xlink:href"]
+                    if(href.find(conceptName) != -1):
+                        factVO = FactVO()
+                        factVO.xlink_href = href
+                        factVO.reportRole = reportRole
+                        factVO.labelID = item2["@xlink:label"]
+                        factVO.order = 99
+                        factVO = self.setXsdValue(factVO, processCache)
+                        factVOList.append(factVO)
+                        return factVOList
         return factVOList
     
     def isReportAllowed2(self, xlink_href):
@@ -251,9 +273,9 @@ class AbstractFileImporter():
                 if(len(factVO.factValueList) == 0):
                     objectToDelete.append(factVO)
             except KeyError as e:
-                a = 1
-        factToAddList = [x for x in factToAddList if x not in objectToDelete]
+                pass
                 #logging.getLogger(Constant.LOGGER_ERROR).debug("KeyError " + str(e) + " " + conceptID )
+        factToAddList = [x for x in factToAddList if x not in objectToDelete]
         return factToAddList
     
     def getValueAsDate(self, attrID, element):

@@ -13,5 +13,5 @@ class Concept(PersistenObject):
     __tablename__ = 'fa_concept'
     conceptName = Column(String(250), nullable=False)
     label = Column(String(200), nullable=False)
-    #section = relationship("Section", back_populates="conceptList")
     factList = relationship("Fact", back_populates="concept")
+    entityFactList = relationship("EntityFact", back_populates="concept")

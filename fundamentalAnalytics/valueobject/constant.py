@@ -35,7 +35,7 @@ class Constant:
     MEASURE =["xbrli:measure","measure"]
     PRESENTATIONARC =["link:presentationArc", "presentationArc"]
     CONTEXT_REF =["@contextRef"]
-    ALLOWED_ABSTRACT_CONCEPT =["us-gaap_StatementOfFinancialPositionAbstract", "us-gaap_StatementOfCashFlowsAbstract", "us-gaap_IncomeStatementAbstract", "us-gaap_AssetsAbstract", "us-gaap_CommonStockSharesOutstanding", "us-gaap_OperatingExpensesAbstract", "us-gaap_StatementTable", "us-gaap_NetCashProvidedByUsedInOperatingActivitiesAbstract"]
+    ALLOWED_ABSTRACT_CONCEPT =["us-gaap_StatementOfFinancialPositionAbstract", "us-gaap_StatementOfCashFlowsAbstract", "us-gaap_IncomeStatementAbstract", "us-gaap_AssetsAbstract", "us-gaap_CommonStockSharesOutstanding", "us-gaap_OperatingExpensesAbstract", "us-gaap_StatementTable", "us-gaap_NetCashProvidedByUsedInOperatingActivitiesAbstract", "DocumentAndEntityInformationAbstract"]
     
     LOGGER_ERROR = "Error"
     LOGGER_NONEFACTVALUE = "NoneFactValue"

@@ -87,12 +87,10 @@ class FactDao():
             rs = con.execute(query, params)
             return rs 
         
-    @staticmethod   
-    def addFact(factVOList, company, fileData, reportDict, session, replace):
+    def addFact(self, factVOList, company, fileData, reportDict, session, replace):
         objectAlreadyAdded = {}
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
-                #time1 = datetime.now()
                 concept = Dao.getConcept(factVO.conceptName, session = session)
                 if(concept == None):
                     concept = Concept()
@@ -127,8 +125,8 @@ class FactDao():
                     objectAlreadyAdded[factKey] = "" 
                     logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added fact" + str(factVO.conceptName))
                     #print("STEP 3.1 " + str(datetime.now() - time1))
-                    #elif(len(factVO.factValueList) == 0):
-                        #logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + fact.concept.conceptName + " " +  fileData.fileName)
+                    if(len(factVO.factValueList) == 0):
+                        logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + fact.concept.conceptName + " " +  fileData.fileName)
         #session.commit()
         
     @staticmethod
