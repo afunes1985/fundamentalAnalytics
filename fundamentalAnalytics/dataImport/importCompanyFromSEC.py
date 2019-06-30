@@ -13,6 +13,7 @@ from sqlalchemy.sql.expression import and_
 
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
+from dao.fileDataDao import FileDataDao
 from modelClass.company import Company
 from modelClass.period import QuarterPeriod
 from tools.tools import getBinaryFileFromCache, getTxtFileFromCache, \
@@ -46,7 +47,7 @@ def readSECIndexFor(period, replace, session):
                     processCache = {}
                     insXMLDict = getXmlDictFromText(fileText,"TYPE",Constant.DOCUMENT_INS,"XBRL")
                     processCache[Constant.DOCUMENT_INS] = insXMLDict
-                    fileData = getFileData(processCache, filename, session)
+                    fileData = FileDataDao.getFileData(processCache, filename, session)
                     print(fileData.__dict__)
                     company = Company()
                     company.entityCentralIndexKey = fileData.entityCentralIndexKey

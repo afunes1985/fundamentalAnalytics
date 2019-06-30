@@ -19,6 +19,7 @@ class Period(PersistenObject):
     factValueList = relationship("FactValue", back_populates="period")
     customFactValueList = relationship("CustomFactValue", back_populates="period")
     entityFactValueList = relationship("EntityFactValue", back_populates="period")
+    priceList = relationship("Price", back_populates="period")
     
     def getKeyDate(self):
         if(self.type == "QTD" or self.type == "YTD"):

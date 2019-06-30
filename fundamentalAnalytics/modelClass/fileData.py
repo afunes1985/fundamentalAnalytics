@@ -26,3 +26,4 @@ class FileData(PersistenObject):
     errorMessage = Column(String(100), nullable=True)
     CIK = Column(Integer, nullable=False)
     entityStatus = Column(String(15), nullable=False)
+    priceStatus = Column(String(15), nullable=False)
