@@ -67,7 +67,7 @@ if(createCustomConcept):
     ccList.append(CustomFactEngine.createCustomConcept("NET_INCOME_BY_SHARES", "CUSTOM_RATIO", 7, 'QTD', "EXPRESSION", session));
     
     for itemToAdd in ccList:
-        Dao.addObject(objectToAdd = itemToAdd, session = session, doCommit = True) 
+        Dao().addObject(objectToAdd = itemToAdd, session = session, doCommit = True) 
 
 customConceptDict = {"REVENUE": ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet"],
                      "COST_OF_REVENUE": ["CostOfRevenue", "CostOfGoodsAndServicesSold"],
@@ -124,5 +124,5 @@ for customConceptName, conceptList in customConceptDict.items():
         concept = Dao.getConcept(conceptName, session)
         print("    Concept added " +  concept.conceptName)
         customConcept.conceptList.append(concept)
-    Dao.addObject(objectToAdd = customConcept, session = session, doCommit = True)
+    Dao().addObject(objectToAdd = customConcept, session = session, doCommit = True)
 

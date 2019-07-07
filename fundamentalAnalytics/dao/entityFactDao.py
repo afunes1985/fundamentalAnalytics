@@ -23,6 +23,7 @@ class EntityFactDao():
     
     def addEntityFact(self, factVOList, company, fileDataOID, reportDict, session, replace):
         objectAlreadyAdded = {}
+        factValuesAdded = 0
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
                 concept = Dao.getConcept(factVO.conceptName, session = session)
@@ -37,7 +38,7 @@ class EntityFactDao():
                         entityFact = EntityFact()
                         entityFact.companyOID = company.OID
                         entityFact.conceptOID = concept.OID
-                        entityFact.reportOID = reportDict[factVO.reportRole].OID
+                        entityFact.report = reportDict[factVO.reportRole]
                         entityFact.fileDataOID = fileDataOID
                         entityFact.order_ = factVO.order
                     Dao().addObject(objectToAdd = entityFact, session = session, doFlush = True)
@@ -50,11 +51,13 @@ class EntityFactDao():
                             entityFactValue.period = factValueVO.period
                             entityFact.entityFactValueList.append(entityFactValue)
                             objectAlreadyAdded[factValuekey] = ""
+                            factValuesAdded += 1 
                     objectAlreadyAdded[factKey] = "" 
                     logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added entityFact" + str(factVO.conceptName))
                     if(len(factVO.factValueList) == 0):
                         logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + entityFact.concept.conceptName)
-        #session.commit()
+        session.commit()
+        return factValuesAdded
         
     def getEntityFact(self, conceptOID, fileDataOID, session):
         try:
@@ -62,22 +65,22 @@ class EntityFactDao():
         except NoResultFound:
             return None
         
-    def getEntityFactList(self, conceptName, priceStatus, session):
+    def getEntityFactList(self, ticker, conceptName, priceStatus, session):
         try:
-            dbconnector = DBConnector()
             if (session is None): 
+                dbconnector = DBConnector()
                 session = dbconnector.getNewSession()
-            objectResult = session.query(EntityFactValue)\
+            query = session.query(EntityFactValue)\
                 .join(EntityFactValue.entityFact)\
                 .join(EntityFact.concept)\
                 .join(EntityFact.fileData)\
                 .join(EntityFactValue.period)\
                 .join(FileData.company)\
-                .filter(and_(Concept.conceptName.__eq__(conceptName), FileData.priceStatus == priceStatus))\
+                .filter(and_(Concept.conceptName.__eq__(conceptName), FileData.priceStatus == priceStatus, or_(ticker == "", Company.ticker == ticker), Company.ticker.isnot(None)))\
                 .order_by(Period.endDate)\
                 .with_entities(Company.ticker, FileData.fileName, EntityFactValue.periodOID, Period.instant, EntityFact.fileDataOID)\
-                .distinct()\
-                .all()
+                .distinct()
+            objectResult = query.all()
             return objectResult
         except NoResultFound:
             return None

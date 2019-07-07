@@ -14,14 +14,14 @@ from dao.entityFactDao import EntityFactDao
 
 
 logging.basicConfig(level=logging.DEBUG)
-threadNumber = 10
+threadNumber = 3
 maxProcessInQueue = 15
 executor = ThreadPoolExecutor(max_workers=threadNumber)
 semaphore = BoundedSemaphore(maxProcessInQueue)
 Initializer()
 session = DBConnector().getNewSession()
 conceptName = 'EntityCommonStockSharesOutstanding'
-entityFactList = EntityFactDao().getEntityFactList(conceptName, "PENDING", session)
+entityFactList = EntityFactDao().getEntityFactList(ticker="", conceptName = conceptName, priceStatus = "ERROR", session = session)
 for efv in entityFactList:
     ipe = ImportPriceEngine(efv[0], efv[1], efv[2], efv[3], efv[4])
     #fi.doImport(replace)

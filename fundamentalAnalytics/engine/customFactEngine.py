@@ -8,10 +8,13 @@ from operator import and_
 
 from sqlalchemy.orm.exc import NoResultFound
 
+from dao.companyDao import CompanyDao
 from dao.customFactDao import CustomFactDao
 from dao.dao import Dao, GenericDao
 from dao.factDao import FactDao
+from dao.fileDataDao import FileDataDao
 from engine.expressionEngine import ExpressionEngine
+from engine.periodEngine import PeriodEngine
 from modelClass import period
 from modelClass.company import Company
 from modelClass.customConcept import CustomConcept
@@ -19,8 +22,6 @@ from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
 from modelClass.customReport import CustomReport
 from modelClass.period import Period
-from dao.fileDataDao import FileDataDao
-from engine.periodEngine import PeriodEngine
 
 
 class CustomFactEngine():
@@ -52,7 +53,7 @@ class CustomFactEngine():
             customConcept = Dao.getCustomConcept(customConceptName, session)
             fact.customReport = customConcept.defaultCustomReport
             fact.customConcept = customConcept
-            fact.company = Dao.getCompany(ticker, session)
+            fact.company = CompanyDao().getCompany(ticker, session)
         return fact
     
     @staticmethod    
@@ -85,7 +86,7 @@ class CustomFactEngine():
         for fileDataOID, row in newFactValueDict.items():
                 customFactValue = CustomFactValue()
                 endDate = row["END_DATE"]
-                period = GenericDao.getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseError = False)
+                period = GenericDao.getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseNoResultFound = False)
                 customFactValue.period = period
                 if(period is None):
                     newPeriod = Period()

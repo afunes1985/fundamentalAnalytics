@@ -22,6 +22,8 @@ from tools.tools import getDaysBetweenDates, getXSDFileFromCache, getBinaryFileF
     FileNotFoundException, XSDNotFoundException, getXMLDictFromGZCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
+from dao.companyDao import CompanyDao
+from engine.companyEngine import CompanyEngine
 
 
 class AbstractFileImporter():
@@ -62,16 +64,16 @@ class AbstractFileImporter():
                         period.startDate = startDate
                         period.endDate = endDate
                         period.type = self.getPeriodType(startDate, endDate)
-                        Dao.addObject(objectToAdd = period, session = session, doCommit = False)
+                        Dao().addObject(objectToAdd = period, session = session, doFlush = True)
                     periodDict[item['@id']] = period
                 elif(instant is not None):
                     try:
-                        period =  GenericDao.getOneResult(Period, and_(Period.instant == instant), session)
+                        period =  GenericDao.getOneResult(Period, and_(Period.instant == instant, Period.type == 'INST'), session)
                     except NoResultFound:
                         period = Period()
                         period.instant = instant
                         period.type = "INST"
-                        #Dao.addObject(objectToAdd = period, session = session, doCommit = False)
+                        Dao().addObject(objectToAdd = period, session = session, doFlush = True)
                     periodDict[item['@id']] = period
         return periodDict
     
@@ -106,14 +108,7 @@ class AbstractFileImporter():
         CIK = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityCentralIndexKey'], insDict, False), False)
         entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], insDict, False), False) 
         ticker = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:TradingSymbol'], insDict, False), False)
-        try:
-            self.company = GenericDao.getOneResult(Company,Company.CIK.__eq__(CIK), session)
-        except NoResultFound:
-            self.company = Company()
-            self.company.CIK = CIK
-            self.company.entityRegistrantName = entityRegistrantName
-            self.company.ticker = ticker
-            Dao.addObject(objectToAdd = self.company, session = session, doCommit = True)
+        processCache["COMPANY"] = CompanyEngine().getOrCreateCompany(CIK, ticker, entityRegistrantName, session)
         return processCache
     
     def isReportAllowed(self, reportRole):
@@ -180,14 +175,13 @@ class AbstractFileImporter():
                 
             if(not isReportAllowed):
                 try:
-                    print(reportRole)
                     del reportDict[reportRole]
                 except KeyError as e:
                     pass
             else:
                 factVOList = factVOList + tempFactVOList
         for report in reportDict.values():
-            Dao.addObject(objectToAdd = report, session = session, doFlush = True)
+            Dao().addObject(objectToAdd = report, session = session, doFlush = True)
         return factVOList
     
     def getFactByConcept(self, reportDict, processCache, conceptName):
@@ -373,8 +367,6 @@ class AbstractFileImporter():
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalPeriodFocus " + documentFiscalPeriodFocus)
         entityCentralIndexKey = self.getValueFromElement(['#text'], insXMLDict['dei:EntityCentralIndexKey'])
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("EntityCentralIndexKey " + entityCentralIndexKey)
-        #tradingSymbol = self.getValueFromElement(['#text'], insXMLDict['dei:TradingSymbol'], False)
-        #logging.getLogger(Constant.LOGGER_GENERAL).debug("TradingSymbol " + tradingSymbol)
         #entityRegistrantName = insXMLDict['dei:EntityRegistrantName']['#text']
         fileData.documentType = documentType
         fileData.amendmentFlag = amendmentFlag
@@ -383,7 +375,7 @@ class AbstractFileImporter():
             fileData.documentFiscalYearFocus = documentFiscalYearFocus
         fileData.documentFiscalPeriodFocus = documentFiscalPeriodFocus
         fileData.entityCentralIndexKey = entityCentralIndexKey
-        #fileData.tradingSymbol = tradingSymbol
+        fileData.company = processCache["COMPANY"]
         #fileData.entityRegistrantName = entityRegistrantName
-        #Dao.addObject(objectToAdd = fileData, session = session, doCommit = True)
+        Dao.addObject(objectToAdd = fileData, session = session, doCommit = True)
         return fileData

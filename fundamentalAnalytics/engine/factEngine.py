@@ -25,5 +25,5 @@ class FactEngine(object):
                 session.commit()
             fileData.status = 'PENDING'
             fileData.factList = []
-            Dao.addObject(objectToAdd = fileData, session = session, doCommit = True)
+            Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
             print("Object deleted " + str(len(fileData.factList)))

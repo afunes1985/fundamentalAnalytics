@@ -38,24 +38,24 @@ class GenericDao():
         return objectResult
     
     @staticmethod
-    def getOneResult(objectClazz, condition = "", session = None, raiseError = True):
-        dbconnector = DBConnector()
+    def getOneResult(objectClazz, condition = "", session = None, raiseNoResultFound = True):
         if (session is None): 
+            dbconnector = DBConnector()
             session = dbconnector.getNewSession()
         try:
             objectResult = session.query(objectClazz)\
             .filter(condition)\
             .one()
         except NoResultFound as e:
-            if(raiseError):
+            if(raiseNoResultFound):
                 raise e
             return None
         return objectResult
     
     @staticmethod
     def getAllResult(objectClazz, condition = (1 == 1), session = None):
-        dbconnector = DBConnector()
         if (session is None): 
+            dbconnector = DBConnector()
             session = dbconnector.getNewSession()
         objectResult = session.query(objectClazz)\
         .filter(condition)\
@@ -64,17 +64,6 @@ class GenericDao():
 
 
 class Dao():
-    @staticmethod
-    def getCompanyList(session = None):
-        dbconnector = DBConnector()
-        with dbconnector.engine.connect() as con:
-            query = text("""select distinct company.CIK, company.entityRegistrantName, company.ticker
-                                FROM fa_company company
-                                    join fa_file_data fd on fd.companyOID = company.OID
-                                order by company.entityRegistrantName""")
-            rs = con.execute(query, [])
-            return rs 
-    
     
     @staticmethod
     def getFactValue(fact, period, session):
@@ -83,13 +72,6 @@ class Dao():
         except NoResultFound:
             return FactValue()
         
-    @staticmethod
-    def getCompany(ticker, session):
-        try:
-            return GenericDao.getOneResult(Company, and_(Company.ticker.__eq__(ticker)), session)
-        except NoResultFound:
-            return None
-
     @staticmethod
     def getConcept(conceptName, session = None):
         try:
@@ -126,7 +108,7 @@ class Dao():
         except NoResultFound:
             abstractConcept = AbstractConcept()
             abstractConcept.conceptName = factVO.conceptName
-            Dao.addObject(objectToAdd = abstractConcept, session = session, doCommit = False)
+            Dao().addObject(objectToAdd = abstractConcept, session = session, doCommit = False)
         factVO.abstractConcept = abstractConcept
         return factVO
     

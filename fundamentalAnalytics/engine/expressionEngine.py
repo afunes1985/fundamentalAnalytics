@@ -18,7 +18,7 @@ class ExpressionEngine(object):
         from engine.customFactEngine import CustomFactEngine
         customFact = CustomFactEngine().getOrCreateCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
         customFact.customFactValueList.extend(ExpressionEngine.solveExpression(ticker, customConceptName, customFact));
-        Dao.addObject(objectToAdd = customFact, session = session, doCommit = True)
+        Dao().addObject(objectToAdd = customFact, session = session, doCommit = True)
     
     @staticmethod
     def solveExpression(ticker, expressionName, customFact):

@@ -3,6 +3,7 @@ from dash.dependencies import Input, Output, State
 from pandas.core.frame import DataFrame
 
 from base.initializer import Initializer
+from dao.companyDao import CompanyDao
 from dao.dao import Dao
 from dao.factDao import FactDao
 import dash_core_components as dcc
@@ -12,8 +13,10 @@ from engine.plotlyEngineInterface import PlotlyEngineInterface
 from valueobject.valueobject import FilterFactVO
 from web.app import app
 
+
+
 Initializer()
-rs = Dao.getCompanyList()
+rs = CompanyDao().getCompanyList()
 rows = rs.fetchall()
 if (len(rows) != 0):
     df = DataFrame(rows)

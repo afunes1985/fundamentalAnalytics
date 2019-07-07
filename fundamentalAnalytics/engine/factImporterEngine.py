@@ -5,6 +5,7 @@ Created on 19 sep. 2018
 '''
 from datetime import datetime
 import logging
+import traceback
 
 from sqlalchemy.orm.session import Session
 
@@ -42,12 +43,12 @@ class FactImporterEngine(AbstractFileImporter):
                 reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
                 factVOList = self.getFactByReport(reportDict, self.processCache, self.session)
                 factVOList = self.setFactValues(factVOList, self.processCache)
-                FactDao.addFact(factVOList, fileData, reportDict, self.session, self.replace)
+                FactDao().addFact(factVOList, fileData, reportDict, self.session, self.replace)
                 if(len(factVOList) != 0):
                     fileData.status = "OK"
                 else:
                     fileData.status = "NO_DATA"
-                Dao.addObject(objectToAdd = fileData, session = self.session, doCommit = True)
+                Dao().addObject(objectToAdd = fileData, session = self.session, doCommit = True)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).info("FINISH AT " + str(datetime.now() - time1))
         except (FileNotFoundException, XSDNotFoundException) as e:
@@ -68,7 +69,7 @@ class FactImporterEngine(AbstractFileImporter):
         try:
             logging.info("START")
             fileData = self.fileDataDao.getFileData(self.filename, self.session)
-            if((fileData.status == "OK")):
+            if((fileData.status == "OK" and fileData.entityStatus != 'OK')):
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
                 time1 = datetime.now()
                 self.fileDataDao.addOrModifyFileData(entityStatus = "INIT", fileData=fileData, externalSession = self.session)
@@ -76,9 +77,9 @@ class FactImporterEngine(AbstractFileImporter):
                 reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
                 factVOList = self.getFactByConcept(reportDict, self.processCache, self.conceptName)
                 factVOList = self.setFactValues(factVOList, self.processCache)
-                EntityFactDao().addEntityFact(factVOList, self.company, fileData.OID , reportDict, self.session, self.replace)
-                if(len(factVOList) != 0):
-                    self.fileDataDao.addOrModifyFileData(entityStatus = "OK", fileData=fileData, externalSession = self.session)
+                factValueAdded = EntityFactDao().addEntityFact(factVOList, self.company, fileData.OID , reportDict, self.session, self.replace)
+                if(factValueAdded > 0):
+                    self.fileDataDao.addOrModifyFileData(entityStatus = "OK", fileData=fileData, errorMessage='',  externalSession = self.session)
                 else:
                     self.fileDataDao.addOrModifyFileData(entityStatus = "NO_DATA", fileData=fileData, externalSession = self.session)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
@@ -87,13 +88,14 @@ class FactImporterEngine(AbstractFileImporter):
             self.session.rollback()
             self.session.close()
             self.fileDataDao.addOrModifyFileData(entityStatus = e.status, filename = self.filenamea, errorMessage=str(e))
-            logging.getLogger(Constant.LOGGER_GENERAL).error("*******************************END - Processing filename " + self.filename)
+            logging.getLogger(Constant.LOGGER_GENERAL).error("*******************************END - Processing filename " + self.filename + " " + str(e))
             raise e
         except Exception as e:
             self.session.rollback()
             self.session.close()
             self.fileDataDao.addOrModifyFileData(entityStatus = "ERROR", filename = self.filename, errorMessage = str(e)[0:99])
-            logging.getLogger(Constant.LOGGER_GENERAL).error("*******************************END - Processing filename " + self.filename)
+            traceback.print_exc()
+            logging.getLogger(Constant.LOGGER_GENERAL).error("*******************************END - Processing filename " + " " +str(e)[0:99])
             raise e
         finally:
             self.session.close()

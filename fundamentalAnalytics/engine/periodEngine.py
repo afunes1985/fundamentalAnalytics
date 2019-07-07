@@ -15,7 +15,7 @@ class PeriodEngine():
     def getOrCreatePeriod(self, ticker, periodType, endDate, session):
         period = PeriodDao().getPeriodByFact3(ticker, periodType, endDate, session)
         if(period is None):
-            period = GenericDao.getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseError = False)
+            period = GenericDao.getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseNoResultFound = False)
             if(period is None):
                 period = Period()
                 period.endDate = endDate

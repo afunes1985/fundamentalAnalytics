@@ -97,7 +97,7 @@ class FactDao():
                 if(concept == None):
                     concept = Concept()
                     concept.conceptName = factVO.conceptName
-                    Dao.addObject(objectToAdd = concept, session = session, doFlush = True)
+                    Dao().addObject(objectToAdd = concept, session = session, doFlush = True)
                 factKey = str(concept.OID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
                 if(objectAlreadyAdded.get(factKey, None) is None):
                     fact = FactDao.getFact(concept, reportDict[factVO.reportRole], fileData, session)
@@ -112,7 +112,7 @@ class FactDao():
 #                     if(replace):
 #                         for itemToDelete in fact.factValueList:
 #                             session.delete(itemToDelete)
-                    Dao.addObject(objectToAdd = fact, session = session, doFlush = True)
+                    Dao().addObject(objectToAdd = fact, session = session, doFlush = True)
                     
                     for factValueVO in factVO.factValueList:
                         #factValue = Dao.getFactValue(fact, factValueVO.period, session)
