@@ -14,24 +14,12 @@ from modelClass.customConcept import CustomConcept
 from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
 from modelClass.factValue import FactValue
+from modelClass.fileData import FileData
 from modelClass.period import Period
 
 
 class CustomFactDao():
     
-    @staticmethod
-    def getCustomFact2(ticker, customConceptName, session):
-        try:
-            company = Dao.getCompany(ticker, session)
-            if (company is None):
-                raise Exception('Company not found ' + ticker )
-            customConcept = Dao.getCustomConcept(customConceptName, session)
-            if (customConcept is None):
-                raise Exception('CustomConcept not found ' + ticker )
-            return Dao.getCustomFact(company, customConcept, customConcept.defaultCustomReport, session)
-        except NoResultFound:
-            return None
-        
     @staticmethod
     def getCustomFactValue(ticker, customConceptName, periodType = None, session = None):
         try:
@@ -41,7 +29,8 @@ class CustomFactDao():
             query = session.query(CustomFactValue)\
                 .join(CustomFactValue.customFact)\
                 .join(CustomFact.customConcept)\
-                .join(CustomFact.company)\
+                .join(CustomFact.fileData)\
+                .join(FileData.company)\
                 .join(CustomFactValue.period)\
                 .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName.__eq__(customConceptName), Period.type.__eq__(periodType)))
             objectResult = query.all()
@@ -58,7 +47,8 @@ class CustomFactDao():
             query = session.query(CustomFactValue)\
                 .join(CustomFactValue.customFact)\
                 .join(CustomFact.customConcept)\
-                .join(CustomFact.company)\
+                .join(CustomFact.fileData)\
+                .join(FileData.company)\
                 .join(CustomFactValue.period)\
                 .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName.__eq__(customConceptName)))
             objectResult = query.all()
@@ -80,3 +70,17 @@ class CustomFactDao():
         except NoResultFound:
             return FactValue()
     
+    def getCustomFact3(self, ticker, customConceptName, session = None):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            objectResult = session.query(CustomFact)\
+                .join(CustomFact.customConcept)\
+                .join(CustomFact.fileData)\
+                .join(FileData.company)\
+                .filter(and_(Company.ticker == ticker, CustomConcept.conceptName == customConceptName))\
+                .all()
+            return objectResult
+        except NoResultFound:
+            return FactValue()

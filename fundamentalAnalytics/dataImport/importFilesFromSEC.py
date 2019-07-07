@@ -28,7 +28,7 @@ if __name__ == "__main__":
     logging.info("START")
     createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)
     if(useQuarterPeriod):
-        periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2012, QuarterPeriod.quarter == 3)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+        periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year >= 2012, QuarterPeriod.quarter == 4)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
         #periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2011)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
         #periodList = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2020, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter > 3)), QuarterPeriod.year > 2017)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
         for period in periodList:

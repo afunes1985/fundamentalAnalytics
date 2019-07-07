@@ -15,35 +15,36 @@ from dao.fileDataDao import FileDataDao
 
 class ImportPriceEngine():
 
-    def __init__(self, entityFactValue, replace = False, session = None):
-        self.session = DBConnector().getNewSession()
-        self.replace = replace
-        self.efv = entityFactValue
-        self.webSession = requests.Session()
-        self.webSession.headers.update({"Accept":"application/json","Authorization":"Bearer XGabnWN7VqBkIuSVvS6QrhwtiQcK"})
-        self.webSession.trust_env = False
-
+    def __init__(self, ticker, fileName, periodOID, dateToImport, fileDataOID):
+        self.ticker = ticker
+        self.fileName = fileName
+        self.periodOID = periodOID
+        self.dateToImport = dateToImport
+        self.fileDataOID = fileDataOID
 
     def doImportPrice(self):
         start = time.time()
         try:
-            ticker = self.efv.entityFact.company.ticker
-            dateToImport = self.efv.period.getKeyDate() 
-            url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + ticker +'&interval=daily&start='+(dateToImport).strftime("%Y-%m-%d")+ '&end=' + (dateToImport).strftime("%Y-%m-%d")
+            self.webSession = requests.Session()
+            self.webSession.headers.update({"Accept":"application/json","Authorization":"Bearer XGabnWN7VqBkIuSVvS6QrhwtiQcK"})
+            self.webSession.trust_env = False
+            self.session = DBConnector().getNewSession()
+            url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(self.dateToImport).strftime("%Y-%m-%d")+ '&end=' + (self.dateToImport).strftime("%Y-%m-%d")
             response = self.webSession.get(url, timeout=2)
             r = response.json()
             print(r)
             if(r["history"] is not None):
                 price = Price()
-                price.fileDataOID = self.efv.entityFact.fileDataOID
-                price.periodOID = self.efv.periodOID
+                price.fileDataOID = self.fileDataOID
+                price.periodOID = self.periodOID
                 price.value =  r["history"]["day"]["close"]
-                Dao().addObject(objectToAdd = price, doFlush = True, session = self.session)
-                self.efv.entityFact.fileData.priceStatus = "OK"
-                Dao().addObject(objectToAdd = self.efv.entityFact.fileData, doCommit = True, session = self.session)
+                Dao().addObject(objectToAdd = price, doCommit = True, session = self.session)
+                FileDataDao().addOrModifyFileData(priceStatus = "OK", filename = self.fileName)
+            else:
+                FileDataDao().addOrModifyFileData(priceStatus = "NO_DATA", filename = self.fileName)
         except Exception as e:
             print(str(e))
-            FileDataDao().addOrModifyFileData("ERROR", priceStatus = "ERROR", filename = self.efv.entityFact.fileData.fileName)
+            FileDataDao().addOrModifyFileData(priceStatus = "ERROR", filename = self.fileName)
         finally:
             self.session.close()
         end = time.time()

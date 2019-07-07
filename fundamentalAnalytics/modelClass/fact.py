@@ -11,8 +11,6 @@ from modelClass import PersistenObject
 
 class Fact(PersistenObject):
     __tablename__ = 'fa_fact'
-    companyOID = Column(Integer, ForeignKey('fa_company.OID'))
-    company = relationship('Company', back_populates="factList")
     conceptOID = Column(Integer, ForeignKey('fa_concept.OID'))
     concept = relationship("Concept", back_populates="factList")
     reportOID = Column(Integer, ForeignKey('fa_report.OID'))

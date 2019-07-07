@@ -15,6 +15,4 @@ class Company(PersistenObject):
     ticker = Column(String(45), nullable=False)
     sector = Column(String(45), nullable=False)
     industry = Column(String(100), nullable=False)
-    factList = relationship("Fact", back_populates="company")
-    customFactList = relationship("CustomFact", back_populates="company")
-    entityFactList = relationship("EntityFact", back_populates="company")
+    fileDataList = relationship("FileData", back_populates="company")

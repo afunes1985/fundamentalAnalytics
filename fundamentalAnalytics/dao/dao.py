@@ -19,6 +19,7 @@ from modelClass.customReport import CustomReport
 from modelClass.expression import Expression
 from modelClass.fact import Fact
 from modelClass.factValue import FactValue
+from modelClass.fileData import FileData
 from modelClass.period import Period
 from modelClass.report import Report
 from valueobject.constant import Constant
@@ -69,7 +70,7 @@ class Dao():
         with dbconnector.engine.connect() as con:
             query = text("""select distinct company.CIK, company.entityRegistrantName, company.ticker
                                 FROM fa_company company
-                                    join fa_fact fact on fact.companyOID = company.OID
+                                    join fa_file_data fd on fd.companyOID = company.OID
                                 order by company.entityRegistrantName""")
             rs = con.execute(query, [])
             return rs 
@@ -144,20 +145,14 @@ class Dao():
             return None
     
     @staticmethod
-    def getCustomFact(company, concept, report, session):
-        try:
-            return GenericDao.getOneResult(CustomFact, and_(CustomFact.company == company, CustomFact.customConcept == concept, CustomFact.customReport == report), session)
-        except NoResultFound:
-            return None
-        
-    @staticmethod
     def getCustomFact2(ticker, customConcept, session):
         try:
             dbconnector = DBConnector()
             if (session is None): 
                 session = dbconnector.getNewSession()
             query = session.query(CustomFact)\
-                .join(CustomFact.company)\
+                .join(CustomFact.fileData)\
+                .join(FileData.company)\
                 .join(CustomFact.customConcept)\
                 .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName == customConcept))
             objectResult = query.all()
@@ -182,11 +177,12 @@ class Dao():
                 .join(Period.factValueList)\
                 .join(FactValue.fact)\
                 .join(Fact.concept)\
-                .join(Fact.company)\
+                .join(Fact.fileData)\
+                .join(FileData.company)\
                 .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), \
                              Concept.conceptName.__eq__(conceptName)))\
                 .order_by(Period.endDate)\
-                .with_entities(Period.OID, Period.endDate)\
+                .with_entities(Period.OID, Period.endDate, Fact.fileDataOID)\
                 .distinct()
             objectResult = query.all()
             return objectResult
@@ -204,7 +200,8 @@ class Dao():
                 .join(Period.factValueList)\
                 .join(FactValue.fact)\
                 .join(Fact.concept)\
-                .join(Fact.company)\
+                .join(Fact.fileData)\
+                .join(FileData.company)\
                 .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType)))\
                 .order_by(Period.endDate)\
                 .with_entities(Period.OID, Period.endDate)\
@@ -213,6 +210,8 @@ class Dao():
             return objectResult
         except NoResultFound:
             return None
+       
+
         
     @staticmethod    
     def getPeriodByCustomFact(ticker, conceptName, periodType = None, session = None):
@@ -224,7 +223,8 @@ class Dao():
                 .join(Period.customFactValueList)\
                 .join(CustomFactValue.customFact)\
                 .join(CustomFact.customConcept)\
-                .join(CustomFact.company)\
+                .join(CustomFact.fileData)\
+                .join(FileData.company)\
                 .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), CustomConcept.conceptName.__eq__(conceptName)))\
                 .order_by(Period.endDate)\
                 .with_entities(Period.OID, Period.endDate)

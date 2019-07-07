@@ -32,7 +32,7 @@ class EntityFactDao():
                     Dao().addObject(objectToAdd = concept, session = session, doFlush = True)
                 factKey = str(company.OID) + "-" + str(concept.OID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileDataOID)
                 if(objectAlreadyAdded.get(factKey, None) is None):
-                    entityFact = self.getEntityFact(company, concept, reportDict[factVO.reportRole], fileDataOID, session)
+                    entityFact = self.getEntityFact(concept.OID, fileDataOID, session)
                     if(entityFact is None):
                         entityFact = EntityFact()
                         entityFact.companyOID = company.OID
@@ -56,9 +56,29 @@ class EntityFactDao():
                         logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + entityFact.concept.conceptName)
         #session.commit()
         
-    def getEntityFact(self, company, concept, report, fileDataOID, session):
+    def getEntityFact(self, conceptOID, fileDataOID, session):
         try:
-            return GenericDao.getOneResult(EntityFact, and_(EntityFact.company == company, EntityFact.concept == concept, EntityFact.report == report, EntityFact.fileDataOID == fileDataOID), session)
+            return GenericDao.getOneResult(EntityFact, and_(EntityFact.conceptOID == conceptOID, EntityFact.fileDataOID == fileDataOID), session)
+        except NoResultFound:
+            return None
+        
+    def getEntityFactList(self, conceptName, priceStatus, session):
+        try:
+            dbconnector = DBConnector()
+            if (session is None): 
+                session = dbconnector.getNewSession()
+            objectResult = session.query(EntityFactValue)\
+                .join(EntityFactValue.entityFact)\
+                .join(EntityFact.concept)\
+                .join(EntityFact.fileData)\
+                .join(EntityFactValue.period)\
+                .join(FileData.company)\
+                .filter(and_(Concept.conceptName.__eq__(conceptName), FileData.priceStatus == priceStatus))\
+                .order_by(Period.endDate)\
+                .with_entities(Company.ticker, FileData.fileName, EntityFactValue.periodOID, Period.instant, EntityFact.fileDataOID)\
+                .distinct()\
+                .all()
+            return objectResult
         except NoResultFound:
             return None
     

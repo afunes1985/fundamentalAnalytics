@@ -15,7 +15,7 @@ Initializer()
 session = DBConnector().getNewSession()
 
 #customConceptName = 'COST_OF_REVENUE' 
-ticker = 'INTC'
+ticker = 'AAPL'
 masive = True
 copy = False
 calculate = False
@@ -35,9 +35,9 @@ if (masive):
     copiedValues = 0
     for customConcept in customConceptList:
         if(copy):
-            copiedValues += CustomFactEngine.copyToCustomFact(ticker = ticker, customConceptName = customConcept.conceptName, session = session)
+            CustomFactEngine.copyToCustomFact(ticker = ticker, customConcept = customConcept, session = session)
         if(calculate):
-            CustomFactEngine.calculateMissingQTDValues(ticker, customConcept.conceptName, session)
+            CustomFactEngine.calculateMissingQTDValues(ticker, customConcept, session)
     
     if(deleteExpression):
         CustomFactEngine.deleteCustomFactByCompany(ticker = ticker, fillStrategy = "EXPRESSION", session = session)

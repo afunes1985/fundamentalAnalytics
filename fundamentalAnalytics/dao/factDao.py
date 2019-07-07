@@ -59,7 +59,8 @@ class FactDao():
                             select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
                                     IFNULL(period.endDate, period.instant) date_, period.type as periodType, fact.order_ as order_
                                  FROM fa_fact fact
-                                     join fa_company company on fact.companyOID = company.OID
+                                     join fa_file_data fd on fd.OID = fact.fileDataOID
+                                     join fa_company company on fd.companyOID = company.OID
                                      join fa_concept concept on fact.conceptOID = concept.OID
                                      join fa_report report on fact.reportOID = report.OID
                                      join fa_fact_value factValue on factValue.factOID = fact.OID
@@ -73,7 +74,8 @@ class FactDao():
                             select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
                                     IFNULL(period.endDate, period.instant) date_, period.type as periodType, concept.defaultOrder as order_
                                  FROM fa_custom_fact fact
-                                     join fa_company company on fact.companyOID = company.OID
+                                     join fa_file_data fd on fd.OID = fact.fileDataOID
+                                     join fa_company company on fd.companyOID = company.OID
                                      join fa_custom_concept concept on fact.customConceptOID = concept.OID
                                      join fa_custom_report report on fact.customReportOID = report.OID
                                      join fa_custom_fact_value factValue on factValue.customFactOID = fact.OID
@@ -87,7 +89,7 @@ class FactDao():
             rs = con.execute(query, params)
             return rs 
         
-    def addFact(self, factVOList, company, fileData, reportDict, session, replace):
+    def addFact(self, factVOList, fileData, reportDict, session, replace):
         objectAlreadyAdded = {}
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
@@ -96,13 +98,13 @@ class FactDao():
                     concept = Concept()
                     concept.conceptName = factVO.conceptName
                     Dao.addObject(objectToAdd = concept, session = session, doFlush = True)
-                factKey = str(company.OID) + "-" + str(concept.OID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
+                factKey = str(concept.OID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
                 if(objectAlreadyAdded.get(factKey, None) is None):
-                    fact = FactDao.getFact(company, concept, reportDict[factVO.reportRole], fileData, session)
+                    fact = FactDao.getFact(concept, reportDict[factVO.reportRole], fileData, session)
                     #fact = None
                     if(fact is None):
                         fact = Fact()
-                        fact.companyOID = company.OID
+                        #fact.companyOID = company.OID
                         fact.conceptOID = concept.OID
                         fact.reportOID = reportDict[factVO.reportRole].OID
                         fact.fileDataOID = fileData.OID
@@ -130,9 +132,9 @@ class FactDao():
         #session.commit()
         
     @staticmethod
-    def getFact(company, concept, report, fileData, session):
+    def getFact(concept, report, fileData, session):
         try:
-            return GenericDao.getOneResult(Fact, and_(Fact.company == company, Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session)
+            return GenericDao.getOneResult(Fact, and_(Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session)
         except NoResultFound:
             return None
     
@@ -145,15 +147,15 @@ class FactDao():
             objectResult = session.query(FactValue)\
                 .join(FactValue.fact)\
                 .join(Fact.concept)\
-                .join(Fact.company)\
                 .join(Fact.report)\
                 .join(FactValue.period)\
                 .join(Fact.fileData)\
+                .join(FileData.company)\
                 .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), \
                              or_(FileData.documentType.__eq__(documentType), documentType == None), \
                              Concept.conceptName.__eq__(concept.conceptName)))\
                 .order_by(Period.endDate)\
-                .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus)\
+                .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, Fact.fileDataOID)\
                 .distinct()\
                 .all()
             return objectResult

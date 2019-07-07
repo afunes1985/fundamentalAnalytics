@@ -5,6 +5,7 @@ Created on 7 ago. 2018
 '''
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import Boolean, Integer
 
 from modelClass import PersistenObject
@@ -21,9 +22,13 @@ class FileData(PersistenObject):
     entityCentralIndexKey = Column(String(45), nullable=False)
     factList = relationship("Fact", back_populates="fileData")
     entityFactList = relationship("EntityFact", back_populates="fileData")
+    customFactList = relationship("CustomFact", back_populates="fileData")
     status = Column(String(15), nullable=False)
     importStatus = Column(String(15), nullable=False)
-    errorMessage = Column(String(100), nullable=True)
-    CIK = Column(Integer, nullable=False)
     entityStatus = Column(String(15), nullable=False)
     priceStatus = Column(String(15), nullable=False)
+    copyStatus = Column(String(15), nullable=False)
+    errorMessage = Column(String(100), nullable=True)
+    CIK = Column(Integer, nullable=False)
+    companyOID = Column(Integer, ForeignKey('fa_company.OID'))
+    company = relationship('Company', back_populates="fileDataList")

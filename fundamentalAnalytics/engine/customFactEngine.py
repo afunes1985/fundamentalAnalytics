@@ -19,6 +19,8 @@ from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
 from modelClass.customReport import CustomReport
 from modelClass.period import Period
+from dao.fileDataDao import FileDataDao
+from engine.periodEngine import PeriodEngine
 
 
 class CustomFactEngine():
@@ -43,46 +45,46 @@ class CustomFactEngine():
             concept.fillStrategy = fillStrategy
         return concept
     
-    @staticmethod
-    def createCustomFact(ticker, customConceptName, session = None):
-        customConcept = Dao.getCustomConcept(customConceptName, session)
-        company = Dao.getCompany(ticker, session)
-        if (company is None):
-            raise Exception('Company not found ' + ticker )
-        
-        fact = Dao.getCustomFact(company, customConcept, customConcept.defaultCustomReport, session)
+    def getOrCreateCustomFact(self, ticker, customConceptName, session = None):
+        fact = CustomFactDao().getCustomFact3(ticker, customConceptName, session)
         if fact is None: 
             fact = CustomFact()
+            customConcept = Dao.getCustomConcept(customConceptName, session)
             fact.customReport = customConcept.defaultCustomReport
             fact.customConcept = customConcept
-            fact.company = company
+            fact.company = Dao.getCompany(ticker, session)
         return fact
     
     @staticmethod    
-    def copyToCustomFact(ticker, customConceptName, session = None):
+    def copyToCustomFact(ticker, customConcept, session = None):
         copiedValues = 0
-        customFact = CustomFactEngine.createCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
-        copiedValues += CustomFactEngine.copyToCustomFactQTDINST(customFact, ticker, customConceptName, session)
-        copiedValues += CustomFactEngine.copyToCustomFactYTD(customFact, ticker, customConceptName, session)
-        return copiedValues
+        copiedValues += CustomFactEngine.copyToCustomFactQTDINST(ticker, customConcept, session)
+        copiedValues += CustomFactEngine.copyToCustomFactYTD(ticker, customConcept, session)
+        if(copiedValues > 0):
+            print(customConcept.conceptName + "-> COPY -> COPIED: " + str(copiedValues))
+                
         
     @staticmethod    
-    def copyToCustomFactYTD(customFact, ticker, customConceptName, session = None):
+    def copyToCustomFactYTD(ticker, customConcept, session = None):
+        #Solo toma el Q1 en YTD y lo completa en QTD de los custom facts
         newFactValueDict = {}
-        periodsCompleted = [x.period.getKeyDate() for x in customFact.customFactValueList]            
-        for concept in customFact.customConcept.conceptList:
+        customFactList = CustomFactDao.getCustomFact3(ticker, customConcept.conceptName, session)
+        fileDataCompleted = [x.fileDataOID for x in customFactList]         
+        for concept in customConcept.conceptList:
             factValueList = FactDao.getFactValue2(ticker = ticker, periodType = 'YTD', concept = concept, session = session)
             for row in factValueList:
-                if (row.endDate not in periodsCompleted):#Si el periodo de ese customConcept ya no se encuentra resuelto
-                    if (row.endDate not in newFactValueDict.keys()):#Si el periodo de ese customConcept no se encuentra duplicado desde los conceptos origen
+                if (row.fileDataOID not in fileDataCompleted):#Si el periodo de ese customConcept ya no se encuentra resuelto
+                    if (row.fileDataOID not in newFactValueDict.keys()):#Si el periodo de ese customConcept no se encuentra duplicado desde los conceptos origen
                         if (row.documentFiscalPeriodFocus == 'Q1'):
-                            newFactValueDict[row.endDate] = row.value
+                            newFactValueDict.setdefault(row.fileDataOID, {})["VALUE"] = row.value
+                            newFactValueDict[row.fileDataOID]["END_DATE"] = row.endDate
                     else:
                         print('Duplicated period between concepts, periodOID =  ' + str(row.periodOID) + " " + str(row.endDate)+ ' Concept = ' + concept.conceptName)
             
-        newFactValues = []
-        for endDate, value in newFactValueDict.items():
+        newCustomFactList = []
+        for fileDataOID, row in newFactValueDict.items():
                 customFactValue = CustomFactValue()
+                endDate = row["END_DATE"]
                 period = GenericDao.getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseError = False)
                 customFactValue.period = period
                 if(period is None):
@@ -90,119 +92,115 @@ class CustomFactEngine():
                     newPeriod.endDate = endDate
                     newPeriod.type = 'QTD'
                     customFactValue.period = newPeriod
-                customFactValue.value = value
+                customFactValue.value = row["VALUE"]
                 customFactValue.origin = 'COPY'
-                newFactValues.append(customFactValue)
-        print("Copy to YTD->QTD " + customConceptName + " " + str(len(newFactValues)))   
-        if(len(newFactValues) > 0):
-            customFact.customFactValueList.extend(newFactValues)
-            Dao.addObject(objectToAdd = customFact, session = session, doCommit = True) 
-        return len(newFactValues)  
+                customFact = CustomFact()
+                customFact.customConceptOID = customConcept.OID
+                customFact.customReportOID = customConcept.defaultCustomReportOID
+                customFact.fileDataOID = fileDataOID
+                customFact.customFactValueList.append(customFactValue)
+                newCustomFactList.append(customFact)
+        #print("Copy to YTD->QTD " + customConcept.conceptName + " " + str(len(newCustomFactList)))   
+        if(len(newCustomFactList) > 0):
+            for newCustomFact in newCustomFactList:
+                Dao().addObject(objectToAdd = newCustomFact, session = session, doCommit = True) 
+        return len(newCustomFactList)  
         
     @staticmethod    
-    def copyToCustomFactQTDINST(customFact, ticker, customConceptName, session = None):    
+    def copyToCustomFactQTDINST(ticker, customConcept, session = None):    
         newFactValueDict = {}
-        periodsCompleted = [x.periodOID for x in customFact.customFactValueList]
-        for concept in customFact.customConcept.conceptList:
-            factValueList = FactDao.getFactValue2(ticker = ticker, periodType = customFact.customConcept.periodType, concept = concept, session = session)
+        customFactList = CustomFactDao.getCustomFact3(ticker, customConcept.conceptName, session)
+        fileDataCompleted = [x.fileDataOID for x in customFactList]
+        for concept in customConcept.conceptList:
+            factValueList = FactDao.getFactValue2(ticker = ticker, periodType = customConcept.periodType, concept = concept, session = session)
             for row in factValueList:
-                if (row.periodOID not in periodsCompleted):#Si el periodo de ese customConcept ya no se encuentra resuelto
-                    if (row.periodOID not in newFactValueDict.keys()):#Si el periodo de ese customConcept no se encuentra duplicado desde los conceptos origen
-                        newFactValueDict[row.periodOID] = row.value
-                    else:
-                        print('Duplicated period between concepts, periodOID =  ' + str(row.periodOID) + " " + str(row.endDate)+ ' Concept = ' + concept.conceptName)
+                if (row.fileDataOID not in fileDataCompleted):#Si el periodo de ese customConcept ya no se encuentra resuelto
+                    if (row.fileDataOID  not in newFactValueDict.keys()):#Si el periodo de ese customConcept no se encuentra duplicado desde los conceptos origen
+                        newFactValueDict.setdefault(row.fileDataOID, {})["VALUE"] = row.value
+                        newFactValueDict[row.fileDataOID]["PERIOD_OID"] = row.periodOID
+                    #else:
+                        #print('Duplicated period between concepts, periodOID =  ' + str(row.periodOID) + " " + str(row.endDate)+ ' Concept = ' + concept.conceptName)
             
-        newFactValues = []
-        for periodOID, value in newFactValueDict.items():
+        newCustomFactList = []
+        for fileDataOID, row in newFactValueDict.items():
                 customFactValue = CustomFactValue()
-                customFactValue.periodOID = periodOID
-                customFactValue.value = value
+                customFactValue.periodOID = row["PERIOD_OID"]
+                customFactValue.value = row["VALUE"]
                 customFactValue.origin = 'COPY'
-                newFactValues.append(customFactValue)
-        print("Copy to " + customFact.customConcept.periodType + " " + customConceptName + " " + str(len(newFactValues)))   
-        if(len(newFactValues) > 0):
-            customFact.customFactValueList.extend(newFactValues)
-            Dao.addObject(objectToAdd = customFact, session = session, doCommit = True) 
-        return len(newFactValues)  
+                customFact = CustomFact()
+                customFact.customConceptOID = customConcept.OID
+                customFact.customReportOID = customConcept.defaultCustomReportOID
+                customFact.fileDataOID = fileDataOID
+                customFact.customFactValueList.append(customFactValue)
+                newCustomFactList.append(customFact)
+        #print("Copy to " + customConcept.periodType + " " + customConcept.conceptName + " " + str(len(newCustomFactList)))   
+        if(len(newCustomFactList) > 0):
+            for newCustomFact in newCustomFactList:
+                Dao().addObject(objectToAdd = newCustomFact, session = session, doCommit = True) 
+        return len(newCustomFactList)  
     
     @staticmethod       
-    def calculateMissingQTDValues(ticker, customConceptName, session):
-        customFact = CustomFactDao.getCustomFact2(ticker, customConceptName, session)
-        if(customFact is not None):
-            for concept in customFact.customConcept.conceptList:
-                periodFactYTDList = Dao.getPeriodByFact(ticker, concept.conceptName, 'YTD', session)
-                periodDefaultQTDList = Dao.getPeriodByFact2(ticker, 'QTD', session)
-                periodCustomFactQTDList = Dao.getPeriodByCustomFact(ticker, customConceptName, 'QTD', session)
-                periodToResolve = [x for x in periodFactYTDList if x[1] not in (y[1] for y in periodCustomFactQTDList)]
-                if(len(periodToResolve) > 0):
-                    print('CustomConceptToCalculate ' + customConceptName + " " + concept.conceptName)
-                    print('Period to resolve ' + str(periodToResolve))
+    def calculateMissingQTDValues(ticker, customConcept, session):
+        newCustomFactList = []
+        fileDataToResolve = FileDataDao.getFileDataListWithoutConcept(ticker,customConcept.OID, session)
+        fd2 = []
+        for fd in fileDataToResolve:
+            fd2.append(fd.fileDataOID)
+        if(len(fd2) > 0):
+            for concept in customConcept.conceptList:
+                #    print('CustomConceptToCalculate ' + customConcept.conceptName + " " + concept.conceptName)
+                #    print('Period to resolve ' + str(fileDataToResolve.rows))
                     listYTD = FactDao.getFactValue2(ticker, 'YTD', None, concept, session)
                     #print(listYTD)
                     prevRow = None
                     for itemYTD in listYTD: # itero todos los YTD y cuando corresponde con un faltante busco el YTD anterior y se lo resto o busco los 3 QTD anteriores
-                        newFactValue = None
+                        newCustomFact = None
                         sumValue = 0
-                        if(itemYTD.endDate in (itemYTD[1] for itemYTD in periodToResolve)):
+                        if(itemYTD.fileDataOID in (fd for fd in fd2)):
                             if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100 and itemYTD.documentFiscalYearFocus == prevRow.documentFiscalYearFocus:
                                 #estrategia de calculo usando el YTD
-                                periodOID = None
-                                for defaultPeriodRow in periodDefaultQTDList:
-                                    if(defaultPeriodRow.endDate == itemYTD.endDate):
-                                        periodOID = defaultPeriodRow[0]
-                                        break
                                 customFactValue = CustomFactValue()
                                 customFactValue.value = itemYTD.value - prevRow.value
-                                if(periodOID is None):
-                                    period = GenericDao.getOneResult(Period, and_(Period.endDate == itemYTD.endDate, Period.startDate == None), session, raiseError = False)
-                                    customFactValue.period = period
-                                    if(period is None):
-                                        newPeriod = Period()
-                                        newPeriod.endDate = itemYTD.endDate
-                                        newPeriod.type = 'QTD'
-                                        customFactValue.period = newPeriod
-                                else:
-                                    customFactValue.periodOID = periodOID
-                                    customFactValue.period = GenericDao.getOneResult(Period, (Period.OID == periodOID), session)
+                                customFactValue.period = PeriodEngine().getOrCreatePeriod(ticker, 'QTD', itemYTD.endDate, session)
                                 customFactValue.origin = 'CALCULATED'
-                                newFactValue = customFactValue
+                                customFact = CustomFact()
+                                customFact.customConceptOID = customConcept.OID
+                                customFact.customReportOID = customConcept.defaultCustomReportOID
+                                customFact.fileDataOID = itemYTD.fileDataOID
+                                customFact.customFactValueList.append(customFactValue)
+                                newCustomFact = customFact
                             else:
                                 #estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
-                                listQTD = CustomFactDao.getCustomFactValue(ticker, customConceptName, 'QTD', session)
+                                listQTD = CustomFactDao.getCustomFactValue(ticker, concept.conceptName, 'QTD', session)
                                 listQTD_2 = []
-                                periodOID = None
                                 for itemQTD in listQTD:
                                     if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285:
                                         sumValue += itemQTD.value
                                         listQTD_2.append(itemQTD)
                                 if(len(listQTD_2) == 3):
-                                    for defaultPeriodRow in periodDefaultQTDList:
-                                        if(defaultPeriodRow.endDate == itemYTD.endDate):
-                                            periodOID = defaultPeriodRow[0]
-                                            break
                                     customFactValue = CustomFactValue()
                                     customFactValue.value = itemYTD.value - sumValue
-                                    if(periodOID is None):
-                                        newPeriod = Period()
-                                        newPeriod.endDate = itemYTD.endDate
-                                        newPeriod.type = 'QTD'
-                                        customFactValue.period = newPeriod
-                                    else:
-                                        customFactValue.periodOID = periodOID
-                                        customFactValue.period = GenericDao.getOneResult(Period, Period.OID == periodOID, session)
+                                    customFactValue.period = PeriodEngine().getOrCreatePeriod(ticker, 'QTD', itemYTD.endDate, session)
                                     customFactValue.origin = 'CALCULATED'
-                                    newFactValue = customFactValue
-                                else:
-                                    print('COULDNT CALCULATE PERIOD ' + str(itemYTD.endDate))
-                                    for itemQTD in listQTD_2:
-                                        print('ITEMS FOUND ' + str(itemQTD.period.endDate))
-                            
-                            if(newFactValue is not None):
-                                print('NEW CALCULATED FACT VALUES FOR ' + str(newFactValue.period.endDate))
-                                customFact.customFactValueList.append(newFactValue)
-                                Dao.addObject(objectToAdd = customFact, session = session, doCommit = True)
+                                    customFact = CustomFact()
+                                    customFact.customConceptOID = customConcept.OID
+                                    customFact.customReportOID = customConcept.defaultCustomReportOID
+                                    customFact.fileDataOID = itemYTD.fileDataOID
+                                    customFact.customFactValueList.append(customFactValue)
+                                    newCustomFact = customFact
+                                #else:
+                                    #print('COULDNT CALCULATE PERIOD ' + str(itemYTD.endDate))
+                                    #for itemQTD in listQTD_2:
+                                    #    print('ITEMS FOUND ' + str(itemQTD.period.endDate))
+                            if(newCustomFact is not None):
+                                #print('NEW CALCULATED FACT VALUES FOR ' + str(customFactValue.period.endDate))
+                                newCustomFactList.append(newCustomFact)
                         else:
                             prevRow = itemYTD
+        for newCustomFact in newCustomFactList:
+            Dao().addObject(objectToAdd = newCustomFact, session = session, doCommit = True)
+        if(len(fd2) > 0):
+            print(customConcept.conceptName + " -> CALCULATE - CALCULATED: " + str(len(newCustomFactList)) + " PENDING: "  + str((len(fd2) - len(newCustomFactList))))
                 
     @staticmethod       
     def deleteCustomFactByCompany(ticker, fillStrategy, session):

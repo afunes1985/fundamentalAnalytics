@@ -5,10 +5,11 @@ Created on Apr 19, 2019
 '''
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.elements import and_
-from sqlalchemy.sql.expression import text
+from sqlalchemy.sql.expression import text, outerjoin
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
+from modelClass.company import Company
 from modelClass.fileData import FileData
 
 
@@ -27,6 +28,8 @@ class FileDataDao():
             return objectResult
         except NoResultFound:
             return None
+        
+        
         
     @staticmethod   
     def getFileDataList2(status = [], session = None):
@@ -62,6 +65,25 @@ class FileDataDao():
             return objectResult
         except NoResultFound:
             return None
+        
+    @staticmethod   
+    def getFileDataListWithoutConcept(ticker, customConceptOID, session = None):
+        try:
+            dbconnector = DBConnector()
+            with dbconnector.engine.connect() as con:
+                params = { 'ticker' : ticker,
+                           'customConceptOID' : customConceptOID}
+                
+                query = text("""select fd.OID as fileDataOID
+                                    from fa_file_data fd
+                                        join fa_company comp on comp.oid = fd.companyOID
+                                        left join fa_custom_fact fact on fd.oid = fact.fileDataOID and fact.customConceptOID = :customConceptOID
+                                    where comp.ticker = :ticker
+                                        and fact.OID is null""")
+                rs = con.execute(query, params)
+            return rs 
+        except NoResultFound:
+            return None
     
     def addOrModifyFileData(self, status = None, importStatus = None, entityStatus = None, priceStatus = None, filename = None, externalSession = None, errorMessage = None, fileData = None):
         if (externalSession is None):
@@ -77,7 +99,7 @@ class FileDataDao():
             fileData.status = status
         if (entityStatus is not None):
             fileData.entityStatus = entityStatus
-        if (entityStatus is not None):
+        if (priceStatus is not None):
             fileData.priceStatus = priceStatus    
         if (errorMessage is not None):
             fileData.errorMessage = errorMessage

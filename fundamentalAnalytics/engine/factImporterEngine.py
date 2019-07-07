@@ -42,7 +42,7 @@ class FactImporterEngine(AbstractFileImporter):
                 reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
                 factVOList = self.getFactByReport(reportDict, self.processCache, self.session)
                 factVOList = self.setFactValues(factVOList, self.processCache)
-                FactDao.addFact(factVOList, self.company, fileData, reportDict, self.session, self.replace)
+                FactDao.addFact(factVOList, fileData, reportDict, self.session, self.replace)
                 if(len(factVOList) != 0):
                     fileData.status = "OK"
                 else:
