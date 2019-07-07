@@ -67,25 +67,15 @@ class Dao():
     
     @staticmethod
     def getFactValue(fact, period, session):
-        try:
-            return GenericDao.getOneResult(FactValue, and_(FactValue.fact.__eq__(fact), FactValue.period.__eq__(period)), session)
-        except NoResultFound:
-            return FactValue()
+        return GenericDao.getOneResult(FactValue, and_(FactValue.fact.__eq__(fact), FactValue.period.__eq__(period)), session, raiseNoResultFound = False)
         
     @staticmethod
     def getConcept(conceptName, session = None):
-        try:
-            return GenericDao.getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session)
-        except NoResultFound:
-            
-            return None
+        return GenericDao.getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session, raiseNoResultFound = False)
     
     @staticmethod  
     def getReport(reportShortName, session):
-        try:
-            return GenericDao.getOneResult(Report, and_(Report.shortName == reportShortName), session)
-        except NoResultFound:
-            return None
+        return GenericDao.getOneResult(Report, and_(Report.shortName == reportShortName), session, raiseNoResultFound = False)
     
     def addObject(self, objectToAdd, session = None, doCommit = False, doFlush = False):
         if(session is None):
@@ -114,17 +104,11 @@ class Dao():
     
     @staticmethod
     def getCustomConcept(customConceptName, session = None):
-        try:
-            return GenericDao.getOneResult(CustomConcept, CustomConcept.conceptName.__eq__(customConceptName), session)
-        except NoResultFound:
-            return None
+        return GenericDao.getOneResult(CustomConcept, CustomConcept.conceptName.__eq__(customConceptName), session, raiseNoResultFound = False)
 
     @staticmethod  
     def getCustomReport(reportShortName, session = None):
-        try:
-            return GenericDao.getOneResult(CustomReport, and_(CustomReport.shortName == reportShortName), session)
-        except NoResultFound:
-            return None
+        return GenericDao.getOneResult(CustomReport, and_(CustomReport.shortName == reportShortName), session, raiseNoResultFound = False)
     
     @staticmethod
     def getCustomFact2(ticker, customConcept, session):
@@ -144,10 +128,7 @@ class Dao():
     
     @staticmethod
     def getExpression(expressionName, session = None):
-        try:
-            return GenericDao.getOneResult(Expression, Expression.name == expressionName, session)
-        except NoResultFound:
-            return None
+        return GenericDao.getOneResult(Expression, Expression.name == expressionName, session, raiseNoResultFound=False)
     
     @staticmethod    
     def getPeriodByFact(ticker, conceptName, periodType = None, session = None):

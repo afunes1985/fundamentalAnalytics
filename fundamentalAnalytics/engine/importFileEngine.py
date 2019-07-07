@@ -55,7 +55,7 @@ class ImportFileEngine():
         try:
             session = DBConnector().getNewSession()
             fileData = FileDataDao.getFileData(filename, session)
-            if(fileData is None or (fileData.importStatus != "OK") or reimport):
+            if(fileData is None or (fileData.importStatus != Constant.STATUS_OK) or reimport):
                 FileDataDao.addOrModifyFileData("PENDING", "INIT", filename, session)
                 fullFileName = Constant.CACHE_FOLDER + filename
                 fullFileName = fullFileName[0: fullFileName.find(".txt")]
@@ -83,17 +83,17 @@ class ImportFileEngine():
                     ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_SCH, "XBRL",fullFileName, True)
                     ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_PRE, "XBRL",fullFileName) 
                     logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - SUCCESSFULLY " + fullFileName)
-                    FileDataDao.addOrModifyFileData("PENDING", "OK", filename, session)
+                    FileDataDao.addOrModifyFileData("PENDING", Constant.STATUS_OK, filename, session)
                 else:
                     logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - EXISTS " + fullFileName)
-                    FileDataDao.addOrModifyFileData("PENDING", "OK", filename, session)  
+                    FileDataDao.addOrModifyFileData("PENDING", Constant.STATUS_OK, filename, session)  
         except (FileNotFoundException, XSDNotFoundException, XMLNotFoundException) as e:
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + str(e))
             FileDataDao.addOrModifyFileData("PENDING", e.importStatus, filename, errorMessage=str(e))
         except Exception as e:
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + url)
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).exception(e)
-            FileDataDao.addOrModifyFileData("PENDING", "IMP ERROR", filename, errorMessage=str(e))
+            FileDataDao.addOrModifyFileData(status = "PENDING", importStatus = Constant.STATUS_ERROR, filename, errorMessage=str(e))
         finally:
             session.remove()
             session.close()

@@ -112,10 +112,7 @@ class FileDataDao():
     
     @staticmethod   
     def getFileData(filename, session = None):
-        try:
-            return GenericDao.getOneResult(FileData, and_(FileData.fileName == filename), session)
-        except NoResultFound:
-            return None
+        return GenericDao.getOneResult(FileData, and_(FileData.fileName == filename), session, raiseNoResultFound = False)
         
     @staticmethod   
     def getFileDataYearPeriodList():

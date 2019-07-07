@@ -32,10 +32,10 @@ class FactImporterEngine(AbstractFileImporter):
             
     def doImport(self):
         try:
+            time1 = datetime.now()
             logging.info("START")
             fileData = FileDataDao.getFileData(self.filename, self.session)
-            if((fileData.status != "OK") or self.replace == True):
-                time1 = datetime.now()
+            if((fileData.status != Constant.STATUS_OK) or self.replace == True):
                 self.fileDataDao.addOrModifyFileData(status = "INIT", filename = self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
                 self.processCache = self.initProcessCache(self.filename, self.session)
@@ -45,8 +45,8 @@ class FactImporterEngine(AbstractFileImporter):
                 factVOList = self.setFactValues(factVOList, self.processCache)
                 FactDao().addFact(factVOList, fileData, reportDict, self.session, self.replace)
                 if(len(factVOList) != 0):
-                    fileData.status = "OK"
-                else:
+                    fileData.status = Constant.STATUS_OK
+                else: 
                     fileData.status = "NO_DATA"
                 Dao().addObject(objectToAdd = fileData, session = self.session, doCommit = True)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
@@ -57,7 +57,7 @@ class FactImporterEngine(AbstractFileImporter):
             raise e
         except Exception as e:
             self.session.rollback()
-            self.fileDataDao.addOrModifyFileData(status = "ERROR", filename = self.filename, errorMessage = str(e)[0:99])
+            self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:99])
             logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
             raise e
         finally:
@@ -69,7 +69,7 @@ class FactImporterEngine(AbstractFileImporter):
         try:
             logging.info("START")
             fileData = self.fileDataDao.getFileData(self.filename, self.session)
-            if((fileData.status == "OK" and fileData.entityStatus != 'OK')):
+            if((fileData.status == Constant.STATUS_OK and fileData.entityStatus != Constant.STATUS_OK)):
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
                 time1 = datetime.now()
                 self.fileDataDao.addOrModifyFileData(entityStatus = "INIT", fileData=fileData, externalSession = self.session)
@@ -79,7 +79,7 @@ class FactImporterEngine(AbstractFileImporter):
                 factVOList = self.setFactValues(factVOList, self.processCache)
                 factValueAdded = EntityFactDao().addEntityFact(factVOList, self.company, fileData.OID , reportDict, self.session, self.replace)
                 if(factValueAdded > 0):
-                    self.fileDataDao.addOrModifyFileData(entityStatus = "OK", fileData=fileData, errorMessage='',  externalSession = self.session)
+                    self.fileDataDao.addOrModifyFileData(entityStatus = Constant.STATUS_OK, fileData=fileData, errorMessage='',  externalSession = self.session)
                 else:
                     self.fileDataDao.addOrModifyFileData(entityStatus = "NO_DATA", fileData=fileData, externalSession = self.session)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
@@ -93,7 +93,7 @@ class FactImporterEngine(AbstractFileImporter):
         except Exception as e:
             self.session.rollback()
             self.session.close()
-            self.fileDataDao.addOrModifyFileData(entityStatus = "ERROR", filename = self.filename, errorMessage = str(e)[0:99])
+            self.fileDataDao.addOrModifyFileData(entityStatus = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:99])
             traceback.print_exc()
             logging.getLogger(Constant.LOGGER_GENERAL).error("*******************************END - Processing filename " + " " +str(e)[0:99])
             raise e

@@ -60,10 +60,7 @@ class EntityFactDao():
         return factValuesAdded
         
     def getEntityFact(self, conceptOID, fileDataOID, session):
-        try:
-            return GenericDao.getOneResult(EntityFact, and_(EntityFact.conceptOID == conceptOID, EntityFact.fileDataOID == fileDataOID), session)
-        except NoResultFound:
-            return None
+        return GenericDao.getOneResult(EntityFact, and_(EntityFact.conceptOID == conceptOID, EntityFact.fileDataOID == fileDataOID), session, raiseNoResultFound = False)
         
     def getEntityFactList(self, ticker, conceptName, priceStatus, session):
         try:

@@ -101,10 +101,8 @@ class FactDao():
                 factKey = str(concept.OID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
                 if(objectAlreadyAdded.get(factKey, None) is None):
                     fact = FactDao.getFact(concept, reportDict[factVO.reportRole], fileData, session)
-                    #fact = None
                     if(fact is None):
                         fact = Fact()
-                        #fact.companyOID = company.OID
                         fact.conceptOID = concept.OID
                         fact.reportOID = reportDict[factVO.reportRole].OID
                         fact.fileDataOID = fileData.OID
@@ -112,16 +110,18 @@ class FactDao():
 #                     if(replace):
 #                         for itemToDelete in fact.factValueList:
 #                             session.delete(itemToDelete)
-                    Dao().addObject(objectToAdd = fact, session = session, doFlush = True)
+                        Dao().addObject(objectToAdd = fact, session = session, doFlush = True)
+                    else:
+                        for factValue in fact.factValueList:
+                            factValuekey =  str(factValue.periodOID) + "-" + str(fact.OID)
+                            objectAlreadyAdded[factValuekey] = ""
                     
                     for factValueVO in factVO.factValueList:
-                        #factValue = Dao.getFactValue(fact, factValueVO.period, session)
                         factValuekey =  str(factValueVO.period.OID) + "-" + str(fact.OID)
                         if(objectAlreadyAdded.get(factValuekey, None) is None):
                             factValue = FactValue()
                             factValue.value = factValueVO.value
                             factValue.period = factValueVO.period
-                            #factValue.fact = fact
                             fact.factValueList.append(factValue)
                             objectAlreadyAdded[factValuekey] = ""
                     objectAlreadyAdded[factKey] = "" 
@@ -129,14 +129,11 @@ class FactDao():
                     #print("STEP 3.1 " + str(datetime.now() - time1))
                     if(len(factVO.factValueList) == 0):
                         logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + fact.concept.conceptName + " " +  fileData.fileName)
-        #session.commit()
+        session.commit()
         
     @staticmethod
     def getFact(concept, report, fileData, session):
-        try:
-            return GenericDao.getOneResult(Fact, and_(Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session)
-        except NoResultFound:
-            return None
+        return GenericDao.getOneResult(Fact, and_(Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session, raiseNoResultFound = False)
     
     @staticmethod
     def getFactValue2(ticker, periodType = None, documentType = None, concept = None, session = None):

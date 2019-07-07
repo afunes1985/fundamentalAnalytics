@@ -5,6 +5,10 @@ Created on 18 sep. 2018
 '''
 
 class Constant:
+    
+    STATUS_OK = "OK"
+    STATUS_ERROR = "ERROR" 
+    #IMPORT_FILE_STATUS_O
 
     CACHE_FOLDER = "D://Per//cache//"
 

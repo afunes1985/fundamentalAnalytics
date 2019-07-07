@@ -13,6 +13,7 @@ from base.dbConnector import DBConnector
 from dao.dao import Dao
 from dao.fileDataDao import FileDataDao
 from modelClass.price import Price
+from valueobject.constant import Constant
 
 
 class ImportPriceEngine():
@@ -29,7 +30,7 @@ class ImportPriceEngine():
         start = time.time()
         try:
             fileData = FileDataDao.getFileData(self.fileName)
-            if((fileData.entityStatus == "OK" and fileData.priceStatus != "OK") or self.replace == True):
+            if((fileData.entityStatus == Constant.STATUS_OK and fileData.priceStatus != Constant.STATUS_OK) or self.replace == True):
                 self.webSession = requests.Session()
                 self.webSession.headers.update({"Accept":"application/json","Authorization":"Bearer XGabnWN7VqBkIuSVvS6QrhwtiQcK"})
                 self.webSession.trust_env = False
@@ -45,7 +46,7 @@ class ImportPriceEngine():
                     price.value =  r["history"]["day"]["close"]
                     if (isinstance(price.value, float)):
                         Dao().addObject(objectToAdd = price, doCommit = True, session = self.session)
-                        FileDataDao().addOrModifyFileData(priceStatus = "OK", errorMessage = '', filename = self.fileName)
+                        FileDataDao().addOrModifyFileData(priceStatus = Constant.STATUS_OK, errorMessage = '', filename = self.fileName)
                     else:
                         FileDataDao().addOrModifyFileData(priceStatus = "NO_DATA", errorMessage = '', filename = self.fileName)
                 else:
@@ -54,7 +55,7 @@ class ImportPriceEngine():
             FileDataDao().addOrModifyFileData(priceStatus = "TIMEOUT", filename = self.fileName)
         except Exception as e:
             traceback.print_exc()
-            FileDataDao().addOrModifyFileData(priceStatus = "ERROR", filename = self.fileName, errorMessage = str(e)[0:99])
+            FileDataDao().addOrModifyFileData(priceStatus = Constant.STATUS_ERROR, filename = self.fileName, errorMessage = str(e)[0:99])
         finally:
             self.session.close()
         end = time.time()

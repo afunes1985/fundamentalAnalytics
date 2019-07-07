@@ -44,8 +44,8 @@ if __name__ == "__main__":
     COMPANY_TICKER = None
     replace = False
     threadNumber = 3
-    conceptName = 'EntityCommonStockSharesOutstanding'
-    #conceptName = None
+    #conceptName = 'EntityCommonStockSharesOutstanding'
+    conceptName = None
     maxProcessInQueue = 20
     Initializer()
     session = DBConnector().getNewSession()
@@ -59,8 +59,8 @@ if __name__ == "__main__":
     createLog(Constant.LOGGER_NONEFACTVALUE, logging.INFO)
     createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
-    #fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("PENDING")), session)
-    fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("ERROR")), session)
+    fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("ERROR"), FileData.errorMessage == ''), session)
+    #fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("ERROR")), session)
     #fileDataList = GenericDao.getAllResult(FileData, and_(FileData.fileName == "edgar/data/1016708/0001477932-18-002398.txt"), session)
     threads = []    
     mainCache = initMainCache()
@@ -69,15 +69,18 @@ if __name__ == "__main__":
     for fileData in fileDataList:
         try:
             if (conceptName is None):
-                fi = FactImporterEngine(fileData.fileName, replace, mainCache)
-                #fi.doImport(replace)
-                executor.submit(fi.doImport)
-            else:
-                
-                fi = FactImporterEngine(fileData.fileName, replace, mainCache, conceptName)
-                #fi.doImport(replace)
-                semaphore.acquire()
                 try:
+                    semaphore.acquire()
+                    fi = FactImporterEngine(fileData.fileName, replace, mainCache)
+                    future = executor.submit(fi.doImport)
+                except:
+                    semaphore.release()
+                else:
+                    future.add_done_callback(lambda x: semaphore.release())
+            else:
+                try:
+                    semaphore.acquire()
+                    fi = FactImporterEngine(fileData.fileName, replace, mainCache, conceptName)
                     future = executor.submit(fi.doImportEntityFactByConcept)
                 except:
                     semaphore.release()

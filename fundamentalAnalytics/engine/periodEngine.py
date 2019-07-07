@@ -5,7 +5,7 @@ Created on Jul 6, 2019
 '''
 from sqlalchemy.sql.expression import and_
 
-from dao.dao import GenericDao
+from dao.dao import GenericDao, Dao
 from dao.periodDao import PeriodDao
 from modelClass.period import Period
 
@@ -21,3 +21,23 @@ class PeriodEngine():
                 period.endDate = endDate
                 period.type = 'QTD'
         return period
+    
+    def getOrCreatePeriod2(self, startDate, endDate, session):
+        period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session)
+        if (period is None):
+            period = Period()
+            period.startDate = startDate
+            period.endDate = endDate
+            period.type = self.getPeriodType(startDate, endDate)
+            Dao().addObject(objectToAdd = period, session = session, doFlush = True)
+        return period
+    
+    def getOrCreatePeriod3(self, instant, session):
+        period =  GenericDao.getOneResult(Period, and_(Period.instant == instant), session)
+        if (period is None):
+            period = Period()
+            period.instant = instant
+            period.type = "INST"
+            Dao().addObject(objectToAdd = period, session = session, doFlush = True)
+        return period
+        

@@ -14,7 +14,10 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import and_
 import xmltodict
 
+from dao.companyDao import CompanyDao
 from dao.dao import GenericDao, Dao
+from engine.companyEngine import CompanyEngine
+from engine.periodEngine import PeriodEngine
 from modelClass.company import Company
 from modelClass.period import Period
 from modelClass.report import Report
@@ -22,8 +25,6 @@ from tools.tools import getDaysBetweenDates, getXSDFileFromCache, getBinaryFileF
     FileNotFoundException, XSDNotFoundException, getXMLDictFromGZCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
-from dao.companyDao import CompanyDao
-from engine.companyEngine import CompanyEngine
 
 
 class AbstractFileImporter():
@@ -57,23 +58,10 @@ class AbstractFileImporter():
                 endDate = self.getValueAsDate(Constant.XBRL_END_DATE, periodElement)
                 instant = self.getValueAsDate(Constant.XBRL_INSTANT, periodElement) 
                 if(endDate is not None and getDaysBetweenDates(documentPeriodEndDate, endDate) < 5):
-                    try:
-                        period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session)
-                    except NoResultFound:
-                        period = Period()
-                        period.startDate = startDate
-                        period.endDate = endDate
-                        period.type = self.getPeriodType(startDate, endDate)
-                        Dao().addObject(objectToAdd = period, session = session, doFlush = True)
+                    period =  PeriodEngine().getOrCreatePeriod2(startDate, endDate, session)
                     periodDict[item['@id']] = period
                 elif(instant is not None):
-                    try:
-                        period =  GenericDao.getOneResult(Period, and_(Period.instant == instant, Period.type == 'INST'), session)
-                    except NoResultFound:
-                        period = Period()
-                        period.instant = instant
-                        period.type = "INST"
-                        Dao().addObject(objectToAdd = period, session = session, doFlush = True)
+                    period =  PeriodEngine().getOrCreatePeriod3(instant, session)
                     periodDict[item['@id']] = period
         return periodDict
     
@@ -377,5 +365,5 @@ class AbstractFileImporter():
         fileData.entityCentralIndexKey = entityCentralIndexKey
         fileData.company = processCache["COMPANY"]
         #fileData.entityRegistrantName = entityRegistrantName
-        Dao.addObject(objectToAdd = fileData, session = session, doCommit = True)
+        Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
         return fileData
