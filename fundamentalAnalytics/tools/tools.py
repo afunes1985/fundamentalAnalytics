@@ -12,6 +12,7 @@ from pathlib import Path
 import requests
 import xmltodict
 
+from valueobject import constant
 from valueobject.constant import Constant
 
 
@@ -119,13 +120,13 @@ class FileNotFoundException(Exception):
         self.fileName = fileName
 
 class XSDNotFoundException(Exception):
-    importStatus = "XSD_FNF"
-    status = "XSD_FNF"
+    importStatus = Constant.STATUS_XSD_FNF
+    status = Constant.STATUS_XSD_FNF
     def __init__(self, fileName):
         self.fileName = fileName
         
 class XMLNotFoundException(Exception):
-    importStatus = "XML_FNF"
+    importStatus = Constant.FILE_STATUS_XML_FNF
     def __init__(self, fileName):
         self.fileName = fileName
            

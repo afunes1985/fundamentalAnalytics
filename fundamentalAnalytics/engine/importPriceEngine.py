@@ -48,11 +48,11 @@ class ImportPriceEngine():
                         Dao().addObject(objectToAdd = price, doCommit = True, session = self.session)
                         FileDataDao().addOrModifyFileData(priceStatus = Constant.STATUS_OK, errorMessage = '', filename = self.fileName)
                     else:
-                        FileDataDao().addOrModifyFileData(priceStatus = "NO_DATA", errorMessage = '', filename = self.fileName)
+                        FileDataDao().addOrModifyFileData(priceStatus = Constant.STATUS_NO_DATA, errorMessage = '', filename = self.fileName)
                 else:
-                    FileDataDao().addOrModifyFileData(priceStatus = "NO_DATA", filename = self.fileName)
+                    FileDataDao().addOrModifyFileData(priceStatus = Constant.STATUS_NO_DATA, filename = self.fileName)
         except ReadTimeout as e:
-            FileDataDao().addOrModifyFileData(priceStatus = "TIMEOUT", filename = self.fileName)
+            FileDataDao().addOrModifyFileData(priceStatus = Constant.PRICE_STATUS_TIMEOUT, filename = self.fileName)
         except Exception as e:
             traceback.print_exc()
             FileDataDao().addOrModifyFileData(priceStatus = Constant.STATUS_ERROR, filename = self.fileName, errorMessage = str(e)[0:99])

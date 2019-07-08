@@ -21,7 +21,7 @@ from valueobject.valueobject import ImportFileVO
 
 if __name__ == "__main__":
     replaceMasterFile = False
-    useQuarterPeriod = True
+    useQuarterPeriod = False
     threadNumber = 5
     Initializer()
     session = DBConnector().getNewSession()
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         for period in periodList:
             ImportFileEngine.importMasterIndexFor(period, replaceMasterFile, session,threadNumber = threadNumber)
     else:
-        fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus == "IMP FNF"), session)
+        fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus == "INIT"), session)
         executor = ThreadPoolExecutor(max_workers=threadNumber)
         print("START")
         for filedata in fileDataList:

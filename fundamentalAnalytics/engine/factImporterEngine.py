@@ -7,8 +7,6 @@ from datetime import datetime
 import logging
 import traceback
 
-from sqlalchemy.orm.session import Session
-
 from base.dbConnector import DBConnector
 from dao.dao import Dao
 from dao.entityFactDao import EntityFactDao
@@ -36,7 +34,7 @@ class FactImporterEngine(AbstractFileImporter):
             logging.info("START")
             fileData = FileDataDao.getFileData(self.filename, self.session)
             if((fileData.status != Constant.STATUS_OK) or self.replace == True):
-                self.fileDataDao.addOrModifyFileData(status = "INIT", filename = self.filename)
+                self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_INIT, filename = self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
                 self.processCache = self.initProcessCache(self.filename, self.session)
                 fileData = self.completeFileData(fileData, self.processCache, self.filename, self.session)
@@ -72,7 +70,7 @@ class FactImporterEngine(AbstractFileImporter):
             if((fileData.status == Constant.STATUS_OK and fileData.entityStatus != Constant.STATUS_OK)):
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
                 time1 = datetime.now()
-                self.fileDataDao.addOrModifyFileData(entityStatus = "INIT", fileData=fileData, externalSession = self.session)
+                self.fileDataDao.addOrModifyFileData(entityStatus = Constant.STATUS_INIT, fileData=fileData, externalSession = self.session)
                 self.processCache = self.initProcessCache(self.filename, self.session)
                 reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
                 factVOList = self.getFactByConcept(reportDict, self.processCache, self.conceptName)
@@ -81,7 +79,7 @@ class FactImporterEngine(AbstractFileImporter):
                 if(factValueAdded > 0):
                     self.fileDataDao.addOrModifyFileData(entityStatus = Constant.STATUS_OK, fileData=fileData, errorMessage='',  externalSession = self.session)
                 else:
-                    self.fileDataDao.addOrModifyFileData(entityStatus = "NO_DATA", fileData=fileData, externalSession = self.session)
+                    self.fileDataDao.addOrModifyFileData(entityStatus = Constant.STATUS_NO_DATA, fileData=fileData, externalSession = self.session)
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************END - Processing filename " + self.filename)
                 logging.getLogger(Constant.LOGGER_GENERAL).info("FINISH AT " + str(datetime.now() - time1))
         except (FileNotFoundException, XSDNotFoundException) as e:

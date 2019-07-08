@@ -54,9 +54,9 @@ class ImportFileEngine():
     def importFiles(filename, reimport = False):
         try:
             session = DBConnector().getNewSession()
-            fileData = FileDataDao.getFileData(filename, session)
+            fileData = FileDataDao().getFileData(filename, session)
             if(fileData is None or (fileData.importStatus != Constant.STATUS_OK) or reimport):
-                FileDataDao.addOrModifyFileData("PENDING", "INIT", filename, session)
+                FileDataDao().addOrModifyFileData(status = Constant.STATUS_PENDING, importStatus = Constant.STATUS_INIT, filename = filename, externalSession = session)
                 fullFileName = Constant.CACHE_FOLDER + filename
                 fullFileName = fullFileName[0: fullFileName.find(".txt")]
                 logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("START - Processing index file " + fullFileName)   
@@ -83,17 +83,17 @@ class ImportFileEngine():
                     ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_SCH, "XBRL",fullFileName, True)
                     ImportFileEngine.saveFile(fileText,"TYPE", Constant.DOCUMENT_PRE, "XBRL",fullFileName) 
                     logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - SUCCESSFULLY " + fullFileName)
-                    FileDataDao.addOrModifyFileData("PENDING", Constant.STATUS_OK, filename, session)
+                    FileDataDao().addOrModifyFileData(status = Constant.STATUS_PENDING, importStatus = Constant.STATUS_OK, filename = filename, externalSession = session)
                 else:
                     logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("END - EXISTS " + fullFileName)
-                    FileDataDao.addOrModifyFileData("PENDING", Constant.STATUS_OK, filename, session)  
+                    FileDataDao().addOrModifyFileData(status = Constant.STATUS_PENDING, importStatus = Constant.STATUS_OK, filename = filename, externalSession = session)  
         except (FileNotFoundException, XSDNotFoundException, XMLNotFoundException) as e:
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + str(e))
-            FileDataDao.addOrModifyFileData("PENDING", e.importStatus, filename, errorMessage=str(e))
+            FileDataDao().addOrModifyFileData(status = Constant.STATUS_PENDING, importStatus = e.importStatus, filename = filename, errorMessage=str(e))
         except Exception as e:
-            logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + url)
+            #logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + url)
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).exception(e)
-            FileDataDao.addOrModifyFileData(status = "PENDING", importStatus = Constant.STATUS_ERROR, filename, errorMessage=str(e))
+            FileDataDao().addOrModifyFileData(status = Constant.STATUS_PENDING, importStatus = Constant.STATUS_ERROR, filename = filename, errorMessage=str(e))
         finally:
             session.remove()
             session.close()

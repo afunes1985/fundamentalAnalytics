@@ -10,6 +10,7 @@ from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
 from modelClass.customFactValue import CustomFactValue
 from modelClass.fileData import FileData
+from valueobject.constant import Constant
 
 
 class FactEngine(object):
@@ -23,7 +24,7 @@ class FactEngine(object):
             for itemToDelete in fileData.factList:
                 session.delete(itemToDelete)
                 session.commit()
-            fileData.status = 'PENDING'
+            fileData.status = Constant.STATUS_PENDING
             fileData.factList = []
             Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
             print("Object deleted " + str(len(fileData.factList)))

@@ -6,9 +6,14 @@ Created on 18 sep. 2018
 
 class Constant:
     
+    STATUS_PENDING = "PENDING"
+    STATUS_INIT = "INIT"
     STATUS_OK = "OK"
-    STATUS_ERROR = "ERROR" 
-    #IMPORT_FILE_STATUS_O
+    STATUS_ERROR = "ERROR"
+    STATUS_XSD_FNF = "XSD_FNF"
+    STATUS_NO_DATA = "NO_DATA"
+    FILE_STATUS_XML_FNF = "XML_FNF"
+    PRICE_STATUS_TIMEOUT = "TIMEOUT"
 
     CACHE_FOLDER = "D://Per//cache//"
 
