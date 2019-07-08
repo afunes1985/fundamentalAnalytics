@@ -86,7 +86,7 @@ class FileDataDao():
         except NoResultFound:
             return None
     
-    def addOrModifyFileData(self, status = None, importStatus = None, entityStatus = None, priceStatus = None, filename = None, externalSession = None, errorMessage = None, fileData = None):
+    def addOrModifyFileData(self, status = None, importStatus = None, entityStatus = None, priceStatus = None, filename = None, externalSession = None, errorMessage = None, errorKey = None, fileData = None):
         if (externalSession is None):
             session = DBConnector().getNewSession()
         else:
@@ -98,26 +98,30 @@ class FileDataDao():
             fileData.fileName = filename
         if (status is not None):
             fileData.status = status
-            if (errorMessage is not None):
+            if (errorMessage is not None and errorKey == 'FACT_ERROR'):
                 em = ErrorMessage()
                 em.errorKey = 'FACT_ERROR'
                 em.errorMessage = errorMessage
                 fileData.errorMessageList.append(em)
             else:
-                fileData.errorMessageList = []
+                for em in fileData.errorMessageList:
+                    if (em.errorKey == 'FACT_ERROR'):
+                        fileData.errorMessageList.remove(em)
         if (entityStatus is not None):
             fileData.entityStatus = entityStatus
         if (priceStatus is not None):
             fileData.priceStatus = priceStatus    
         if importStatus is not None:
             fileData.importStatus = importStatus
-            if (errorMessage is not None):
+            if (errorMessage is not None and errorKey == 'FILE_ERROR'):
                 em = ErrorMessage()
                 em.errorKey = 'FILE_ERROR'
                 em.errorMessage = errorMessage
                 fileData.errorMessageList.append(em)
             else:
-                fileData.errorMessageList = []
+                for em in fileData.errorMessageList:
+                    if (em.errorKey == 'FILE_ERROR'):
+                        fileData.errorMessageList.remove(em)
         Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
         if (externalSession is None):
             session.close()

@@ -38,14 +38,4 @@ class FilterFactVO():
         self.CIK = None
         self.conceptName = None
         self.reportShortName = None
-        self.ticker = None
-        
-class ImportFileVO():
-    filenameToImport = None
-    def __init__(self, filename):
-        self.filenameToImport = filename
-        
-    def importFile(self):
-        from engine.importFileEngine import ImportFileEngine
-        ImportFileEngine.importFiles(self.filenameToImport)
-        
+        self.ticker = None     

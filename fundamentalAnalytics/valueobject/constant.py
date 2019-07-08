@@ -14,7 +14,10 @@ class Constant:
     STATUS_NO_DATA = "NO_DATA"
     FILE_STATUS_XML_FNF = "XML_FNF"
     PRICE_STATUS_TIMEOUT = "TIMEOUT"
-
+    
+    ERROR_KEY_FILE = 'FILE_ERROR'
+    ERROR_KEY_FACT = 'FACT_ERROR'
+    
     CACHE_FOLDER = "D://Per//cache//"
 
     DOCUMENT_SCH = "EX-101.SCH"

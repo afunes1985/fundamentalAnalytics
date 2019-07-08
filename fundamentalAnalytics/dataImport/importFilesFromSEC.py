@@ -17,7 +17,6 @@ from modelClass.fileData import FileData
 from modelClass.period import QuarterPeriod
 from tools.tools import createLog
 from valueobject.constant import Constant
-from valueobject.valueobject import ImportFileVO
 
 
 if __name__ == "__main__":
@@ -37,14 +36,14 @@ if __name__ == "__main__":
             ImportFileEngine.importMasterIndexFor(period, replaceMasterFile, session,threadNumber = threadNumber)
     else:
         semaphore = BoundedSemaphore(maxProcessInQueue)
-        fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus == "XML_FNF"), session)
+        fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus == "INIT"), session)
         executor = ThreadPoolExecutor(max_workers=threadNumber)
         print("START")
         for filedata in fileDataList:
             try:
                 semaphore.acquire()
-                importVO = ImportFileVO(filedata.fileName)
-                future = executor.submit(importVO.importFile)
+                importFileEngine = ImportFileEngine(filedata.fileName)
+                future = executor.submit(importFileEngine.doImport)
             except:
                 semaphore.release()
             else:

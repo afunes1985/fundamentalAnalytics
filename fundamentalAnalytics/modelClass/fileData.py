@@ -23,7 +23,7 @@ class FileData(PersistenObject):
     factList = relationship("Fact", back_populates="fileData")
     entityFactList = relationship("EntityFact", back_populates="fileData")
     customFactList = relationship("CustomFact", back_populates="fileData")
-    errorMessageList = relationship("ErrorMessage", back_populates="fileData")
+    errorMessageList = relationship("ErrorMessage", back_populates="fileData", cascade="all, delete-orphan")
     status = Column(String(15), nullable=False)
     importStatus = Column(String(15), nullable=False)
     entityStatus = Column(String(15), nullable=False)
