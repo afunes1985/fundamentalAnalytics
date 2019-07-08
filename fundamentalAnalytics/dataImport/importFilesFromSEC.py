@@ -5,6 +5,7 @@ Created on 9 nov. 2017
 '''
 from concurrent.futures.thread import ThreadPoolExecutor
 import logging
+from threading import BoundedSemaphore
 
 from sqlalchemy.sql.expression import and_
 
@@ -22,7 +23,8 @@ from valueobject.valueobject import ImportFileVO
 if __name__ == "__main__":
     replaceMasterFile = False
     useQuarterPeriod = False
-    threadNumber = 5
+    threadNumber = 3
+    maxProcessInQueue = 3
     Initializer()
     session = DBConnector().getNewSession()
     logging.info("START")
@@ -34,10 +36,17 @@ if __name__ == "__main__":
         for period in periodList:
             ImportFileEngine.importMasterIndexFor(period, replaceMasterFile, session,threadNumber = threadNumber)
     else:
-        fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus == "INIT"), session)
+        semaphore = BoundedSemaphore(maxProcessInQueue)
+        fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus == "XML_FNF"), session)
         executor = ThreadPoolExecutor(max_workers=threadNumber)
         print("START")
         for filedata in fileDataList:
-            importVO = ImportFileVO(filedata.fileName)
-            executor.submit(importVO.importFile)
+            try:
+                semaphore.acquire()
+                importVO = ImportFileVO(filedata.fileName)
+                future = executor.submit(importVO.importFile)
+            except:
+                semaphore.release()
+            else:
+                future.add_done_callback(lambda x: semaphore.release())
         print("FINISHED")

@@ -23,7 +23,7 @@ class PeriodEngine():
         return period
     
     def getOrCreatePeriod2(self, startDate, endDate, session):
-        period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session)
+        period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session, raiseNoResultFound = False)
         if (period is None):
             period = Period()
             period.startDate = startDate
@@ -33,7 +33,7 @@ class PeriodEngine():
         return period
     
     def getOrCreatePeriod3(self, instant, session):
-        period =  GenericDao.getOneResult(Period, and_(Period.instant == instant), session)
+        period =  GenericDao.getOneResult(Period, and_(Period.instant == instant), session, raiseNoResultFound = False)
         if (period is None):
             period = Period()
             period.instant = instant

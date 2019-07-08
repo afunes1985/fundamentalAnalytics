@@ -10,6 +10,7 @@ from sqlalchemy.sql.expression import text, outerjoin
 from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
 from modelClass.company import Company
+from modelClass.errorMessage import ErrorMessage
 from modelClass.fileData import FileData
 
 
@@ -97,14 +98,26 @@ class FileDataDao():
             fileData.fileName = filename
         if (status is not None):
             fileData.status = status
+            if (errorMessage is not None):
+                em = ErrorMessage()
+                em.errorKey = 'FACT_ERROR'
+                em.errorMessage = errorMessage
+                fileData.errorMessageList.append(em)
+            else:
+                fileData.errorMessageList = []
         if (entityStatus is not None):
             fileData.entityStatus = entityStatus
         if (priceStatus is not None):
             fileData.priceStatus = priceStatus    
-        if (errorMessage is not None):
-            fileData.errorMessage = errorMessage
         if importStatus is not None:
             fileData.importStatus = importStatus
+            if (errorMessage is not None):
+                em = ErrorMessage()
+                em.errorKey = 'FILE_ERROR'
+                em.errorMessage = errorMessage
+                fileData.errorMessageList.append(em)
+            else:
+                fileData.errorMessageList = []
         Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
         if (externalSession is None):
             session.close()
