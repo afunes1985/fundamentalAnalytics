@@ -23,7 +23,7 @@ from valueobject.constant import Constant
 class FactDao():
     
     @staticmethod
-    def getFactValues(CIK = None, ticker = None, conceptName = None, periodType = None):
+    def getFactValues(CIK=None, ticker=None, conceptName=None, periodType=None):
         dbconnector = DBConnector()
         with dbconnector.engine.connect() as con:
             params = { 'conceptName' : conceptName,
@@ -46,7 +46,7 @@ class FactDao():
             return rs 
         
     @staticmethod
-    def getFactValues2(reportShortName = None, CIK = None, ticker = None, conceptName = None, periodType = None):
+    def getFactValues2(reportShortName=None, CIK=None, ticker=None, conceptName=None, periodType=None):
         dbconnector = DBConnector()
         with dbconnector.engine.connect() as con:
             params = { 'conceptName' : conceptName,
@@ -93,11 +93,11 @@ class FactDao():
         objectAlreadyAdded = {}
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
-                concept = Dao.getConcept(factVO.conceptName, session = session)
+                concept = Dao.getConcept(factVO.conceptName, session=session)
                 if(concept == None):
                     concept = Concept()
                     concept.conceptName = factVO.conceptName
-                    Dao().addObject(objectToAdd = concept, session = session, doFlush = True)
+                    Dao().addObject(objectToAdd=concept, session=session, doFlush=True)
                 factKey = str(concept.OID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
                 if(objectAlreadyAdded.get(factKey, None) is None):
                     fact = FactDao.getFact(concept, reportDict[factVO.reportRole], fileData, session)
@@ -110,14 +110,14 @@ class FactDao():
 #                     if(replace):
 #                         for itemToDelete in fact.factValueList:
 #                             session.delete(itemToDelete)
-                        Dao().addObject(objectToAdd = fact, session = session, doFlush = True)
+                        Dao().addObject(objectToAdd=fact, session=session, doFlush=True)
                     else:
                         for factValue in fact.factValueList:
-                            factValuekey =  str(factValue.periodOID) + "-" + str(fact.OID)
+                            factValuekey = str(factValue.periodOID) + "-" + str(fact.OID)
                             objectAlreadyAdded[factValuekey] = ""
                     
                     for factValueVO in factVO.factValueList:
-                        factValuekey =  str(factValueVO.period.OID) + "-" + str(fact.OID)
+                        factValuekey = str(factValueVO.period.OID) + "-" + str(fact.OID)
                         if(objectAlreadyAdded.get(factValuekey, None) is None):
                             factValue = FactValue()
                             factValue.value = factValueVO.value
@@ -126,17 +126,16 @@ class FactDao():
                             objectAlreadyAdded[factValuekey] = ""
                     objectAlreadyAdded[factKey] = "" 
                     logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added fact" + str(factVO.conceptName))
-                    #print("STEP 3.1 " + str(datetime.now() - time1))
+                    # print("STEP 3.1 " + str(datetime.now() - time1))
                     if(len(factVO.factValueList) == 0):
-                        logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + fact.concept.conceptName + " " +  fileData.fileName)
+                        logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + fact.concept.conceptName + " " + fileData.fileName)
         session.commit()
         
     @staticmethod
     def getFact(concept, report, fileData, session):
-        return GenericDao.getOneResult(Fact, and_(Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session, raiseNoResultFound = False)
+        return GenericDao.getOneResult(Fact, and_(Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session, raiseNoResultFound=False)
     
-    @staticmethod
-    def getFactValue2(ticker, periodType = None, documentType = None, concept = None, session = None):
+    def getFactValue2(self, ticker, periodType=None, documentType=None, concept=None, session=None):
         try:
             dbconnector = DBConnector()
             if (session is None): 
@@ -158,4 +157,3 @@ class FactDao():
             return objectResult
         except NoResultFound:
             return FactValue()
-    

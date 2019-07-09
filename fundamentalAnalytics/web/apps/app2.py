@@ -14,15 +14,16 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dataImport.importFactFromSEC import initMainCache
 from engine.factEngine import FactEngine
-from engine.factImporterEngine import FactImporterEngine
 from engine.importFileEngine import ImportFileEngine
 from web.app import app
+from importer.importerFact import ImporterFact
 
 
 Initializer()
 
 layout = html.Div([
     dcc.Input(id='txt-filename', value='', type='text'),
+    dcc.Input(id='txt-ticker', value='', type='text'),
     html.Button(id='btn-submit', n_clicks=0, children='Submit'),
     html.Div(dt.DataTable(data=[{}], id='dt-fileData'), style={'display': 'none'}),
     html.Div(id='dt-fileData-container'),
@@ -40,24 +41,26 @@ layout = html.Div([
 @app.callback(
     Output('dt-fileData-container', "children"),
     [Input('btn-submit', 'n_clicks')],
-    [State('txt-filename', "value")])
-def doSubmit(n_clicks, value):
-    if (value is not None and value != ''):
-        rs2 = FileDataDao.getFileDataList3(value)
-        if (len(rs2) != 0):
-            df2 = DataFrame(rs2)
-            dt2 = dt.DataTable(
-                id='dt-fileData',
-                columns=[
-                    {"name": i, "id": i, "deletable": False} for i in df2.columns
-                ],
-                data=df2.to_dict("rows"),
-                filter_action="native",
-                sort_action="native",
-                sort_mode="multi",
-                row_selectable="multi",
-                ) 
-            return dt2
+    [State('txt-filename', "value"),
+     State('txt-ticker', "value")])
+def doSubmit(n_clicks, filename, ticker):
+    if (n_clicks > 0):
+        if (filename != '' or ticker != ''):
+            rs2 = FileDataDao.getFileDataList3(filename, ticker)
+            if (len(rs2) != 0):
+                df2 = DataFrame(rs2)
+                dt2 = dt.DataTable(
+                    id='dt-fileData',
+                    columns=[
+                        {"name": i, "id": i, "deletable": False} for i in df2.columns
+                    ],
+                    data=df2.to_dict("rows"),
+                    filter_action="native",
+                    sort_action="native",
+                    sort_mode="multi",
+                    row_selectable="multi",
+                    ) 
+                return dt2
 
 @app.callback(
     Output('hidden-div1', "children"),
@@ -65,14 +68,14 @@ def doSubmit(n_clicks, value):
     [State('dt-fileData', "derived_virtual_data"),
      State('dt-fileData', "derived_virtual_selected_rows")])
 def doReprocess(n_clicks, rows, selected_rows):
-    print(rows)
-    print(selected_rows)
-    if(selected_rows is not None and len(selected_rows) != 0):
-        mainCache = initMainCache()
-        fileName = rows[selected_rows[0]]["fileName"]
-        print(fileName)
-        fi = FactImporterEngine(fileName, True, mainCache)
-        fi.doImport()
+    if (n_clicks > 0):
+        print(rows)
+        print(selected_rows)
+        if(selected_rows is not None and len(selected_rows) != 0):
+            mainCache = initMainCache()
+            fileName = rows[selected_rows[0]]["fileName"]
+            fi = ImporterFact(fileName, True, mainCache)
+            fi.doImport()
  
 @app.callback(
     Output('hidden-div2', "children"),
@@ -80,11 +83,11 @@ def doReprocess(n_clicks, rows, selected_rows):
     [State('dt-fileData', "derived_virtual_data"),
      State('dt-fileData', "derived_virtual_selected_rows")])
 def doDelete(n_clicks, rows, selected_rows):
-    print(selected_rows)
-    if(selected_rows is not None and len(selected_rows) != 0):
-        fileName = rows[selected_rows[0]]["fileName"]
-        print(fileName)
-        FactEngine.deleteFactByFileData(fileName)
+    if (n_clicks > 0):
+        print(selected_rows)
+        if(selected_rows is not None and len(selected_rows) != 0):
+            fileName = rows[selected_rows[0]]["fileName"]
+            FactEngine.deleteFactByFileData(fileName)
  
  
 @app.callback(
@@ -93,23 +96,24 @@ def doDelete(n_clicks, rows, selected_rows):
     [State('dt-fileData', "derived_virtual_data"),
      State('dt-fileData', "derived_virtual_selected_rows")])
 def doReImport(n_clicks, rows, selected_rows):
-    print(rows)
-    print(selected_rows)
-    if(selected_rows is not None and len(selected_rows) != 0):
-        fileName = rows[selected_rows[0]]["fileName"]
-        print(fileName)
-        ImportFileEngine.importFiles(filename=fileName, reimport=True)
+    if (n_clicks > 0):
+        print(rows)
+        print(selected_rows)
+        if(selected_rows is not None and len(selected_rows) != 0):
+            fileName = rows[selected_rows[0]]["fileName"]
+            ImportFileEngine().importFiles(filename=fileName, reimport=True)
  
 @app.callback(
     Output('hidden-div4', "children"),
     [Input('btn-goToSECURL', 'n_clicks')],
     [State('dt-fileData', "derived_virtual_data"),
      State('dt-fileData', "derived_virtual_selected_rows")])
-def doGoToSECURL(n_clicks, rows, selected_rows):    
-    print(rows)
-    print(selected_rows)
-    if(selected_rows is not None and len(selected_rows) != 0):
-        fileName = rows[selected_rows[0]]["fileName"]
-        fileName = fileName.replace(".txt", "-index.htm")
-        url = 'https://www.sec.gov/Archives/' + fileName
-        webbrowser.open(url) 
+def doGoToSECURL(n_clicks, rows, selected_rows):  
+    if (n_clicks > 0):  
+        print(rows)
+        print(selected_rows)
+        if(selected_rows is not None and len(selected_rows) != 0):
+            fileName = rows[selected_rows[0]]["fileName"]
+            fileName = fileName.replace(".txt", "-index.htm")
+            url = 'https://www.sec.gov/Archives/' + fileName
+            webbrowser.open(url) 

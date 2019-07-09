@@ -13,8 +13,7 @@ from modelClass.customFactValue import CustomFactValue
 
 class ExpressionEngine(object):
     
-    @staticmethod
-    def solveCustomFactFromExpression(ticker, customConceptName, session = None):
+    def solveCustomFactFromExpression(self, ticker, customConceptName, session = None):
         from engine.customFactEngine import CustomFactEngine
         customFact = CustomFactEngine().getOrCreateCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
         customFact.customFactValueList.extend(ExpressionEngine.solveExpression(ticker, customConceptName, customFact));

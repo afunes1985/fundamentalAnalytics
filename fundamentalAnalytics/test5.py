@@ -17,34 +17,33 @@ session = DBConnector().getNewSession()
 #customConceptName = 'COST_OF_REVENUE' 
 ticker = 'AAPL'
 masive = True
-copy = False
-calculate = False
+copy = True
+calculate = True
 createRatio = True
-deleteCopyCalculate = False
-deleteExpression = False
-deleteAllFact = False
+deleteCopyCalculate = True
+deleteExpression = True
+deleteAllCustomFact = True
 
 if (masive):
-    if(deleteAllFact):
-        CustomFactEngine.deleteCustomFactByStrategy("COPY_CALCULATE", session)
-        CustomFactEngine.deleteCustomFactByStrategy("EXPRESSION", session)
+    if(deleteAllCustomFact):
+        CustomFactEngine().deleteCustomFactByStrategy("COPY_CALCULATE", session)
+        CustomFactEngine().deleteCustomFactByStrategy("EXPRESSION", session)
     
     if(deleteCopyCalculate):
-        CustomFactEngine.deleteCustomFactByCompany(ticker = ticker, fillStrategy = "COPY_CALCULATE", session = session)
+        CustomFactEngine().deleteCustomFactByCompany(ticker = ticker, fillStrategy = "COPY_CALCULATE", session = session)
     customConceptList = GenericDao.getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = session)
-    copiedValues = 0
     for customConcept in customConceptList:
         if(copy):
-            CustomFactEngine.copyToCustomFact(ticker = ticker, customConcept = customConcept, session = session)
+            CustomFactEngine().copyToCustomFact(ticker = ticker, customConcept = customConcept, session = session)
         if(calculate):
-            CustomFactEngine.calculateMissingQTDValues(ticker, customConcept, session)
+            CustomFactEngine().calculateMissingQTDValues(ticker, customConcept, session)
     
     if(deleteExpression):
-        CustomFactEngine.deleteCustomFactByCompany(ticker = ticker, fillStrategy = "EXPRESSION", session = session)
+        CustomFactEngine().deleteCustomFactByCompany(ticker = ticker, fillStrategy = "EXPRESSION", session = session)
     if(createRatio):
         customConceptExpressionList = GenericDao.getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "EXPRESSION"), session = session)
         for customConcept in customConceptExpressionList:
-                ExpressionEngine.solveCustomFactFromExpression(ticker, customConcept.conceptName, session)
+                ExpressionEngine().solveCustomFactFromExpression(ticker, customConcept.conceptName, session)
 else:
     customConceptName = "CASH_AND_CASH_EQUIVALENTS"
     if(copy):

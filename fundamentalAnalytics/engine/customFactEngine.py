@@ -56,11 +56,10 @@ class CustomFactEngine():
             fact.company = CompanyDao().getCompany(ticker, session)
         return fact
     
-    @staticmethod    
-    def copyToCustomFact(ticker, customConcept, session = None):
+    def copyToCustomFact(self, ticker, customConcept, session = None):
         copiedValues = 0
-        copiedValues += CustomFactEngine.copyToCustomFactQTDINST(ticker, customConcept, session)
-        copiedValues += CustomFactEngine.copyToCustomFactYTD(ticker, customConcept, session)
+        copiedValues += CustomFactEngine().copyToCustomFactQTDINST(ticker, customConcept, session)
+        copiedValues += CustomFactEngine().copyToCustomFactYTD(ticker, customConcept, session)
         if(copiedValues > 0):
             print(customConcept.conceptName + "-> COPY -> COPIED: " + str(copiedValues))
                 
@@ -69,10 +68,10 @@ class CustomFactEngine():
     def copyToCustomFactYTD(ticker, customConcept, session = None):
         #Solo toma el Q1 en YTD y lo completa en QTD de los custom facts
         newFactValueDict = {}
-        customFactList = CustomFactDao.getCustomFact3(ticker, customConcept.conceptName, session)
+        customFactList = CustomFactDao().getCustomFact3(ticker, customConcept.conceptName, session)
         fileDataCompleted = [x.fileDataOID for x in customFactList]         
         for concept in customConcept.conceptList:
-            factValueList = FactDao.getFactValue2(ticker = ticker, periodType = 'YTD', concept = concept, session = session)
+            factValueList = FactDao().getFactValue2(ticker = ticker, periodType = 'YTD', concept = concept, session = session)
             for row in factValueList:
                 if (row.fileDataOID not in fileDataCompleted):#Si el periodo de ese customConcept ya no se encuentra resuelto
                     if (row.fileDataOID not in newFactValueDict.keys()):#Si el periodo de ese customConcept no se encuentra duplicado desde los conceptos origen
@@ -107,13 +106,12 @@ class CustomFactEngine():
                 Dao().addObject(objectToAdd = newCustomFact, session = session, doCommit = True) 
         return len(newCustomFactList)  
         
-    @staticmethod    
-    def copyToCustomFactQTDINST(ticker, customConcept, session = None):    
+    def copyToCustomFactQTDINST(self, ticker, customConcept, session = None):    
         newFactValueDict = {}
-        customFactList = CustomFactDao.getCustomFact3(ticker, customConcept.conceptName, session)
+        customFactList = CustomFactDao().getCustomFact3(ticker, customConcept.conceptName, session)
         fileDataCompleted = [x.fileDataOID for x in customFactList]
         for concept in customConcept.conceptList:
-            factValueList = FactDao.getFactValue2(ticker = ticker, periodType = customConcept.periodType, concept = concept, session = session)
+            factValueList = FactDao().getFactValue2(ticker = ticker, periodType = customConcept.periodType, concept = concept, session = session)
             for row in factValueList:
                 if (row.fileDataOID not in fileDataCompleted):#Si el periodo de ese customConcept ya no se encuentra resuelto
                     if (row.fileDataOID  not in newFactValueDict.keys()):#Si el periodo de ese customConcept no se encuentra duplicado desde los conceptos origen
@@ -140,8 +138,7 @@ class CustomFactEngine():
                 Dao().addObject(objectToAdd = newCustomFact, session = session, doCommit = True) 
         return len(newCustomFactList)  
     
-    @staticmethod       
-    def calculateMissingQTDValues(ticker, customConcept, session):
+    def calculateMissingQTDValues(self, ticker, customConcept, session):
         newCustomFactList = []
         fileDataToResolve = FileDataDao.getFileDataListWithoutConcept(ticker,customConcept.OID, session)
         fd2 = []
@@ -151,7 +148,7 @@ class CustomFactEngine():
             for concept in customConcept.conceptList:
                 #    print('CustomConceptToCalculate ' + customConcept.conceptName + " " + concept.conceptName)
                 #    print('Period to resolve ' + str(fileDataToResolve.rows))
-                    listYTD = FactDao.getFactValue2(ticker, 'YTD', None, concept, session)
+                    listYTD = FactDao().getFactValue2(ticker, 'YTD', None, concept, session)
                     #print(listYTD)
                     prevRow = None
                     for itemYTD in listYTD: # itero todos los YTD y cuando corresponde con un faltante busco el YTD anterior y se lo resto o busco los 3 QTD anteriores
@@ -203,21 +200,19 @@ class CustomFactEngine():
         if(len(fd2) > 0):
             print(customConcept.conceptName + " -> CALCULATE - CALCULATED: " + str(len(newCustomFactList)) + " PENDING: "  + str((len(fd2) - len(newCustomFactList))))
                 
-    @staticmethod       
-    def deleteCustomFactByCompany(ticker, fillStrategy, session):
+    def deleteCustomFactByCompany(self, ticker, fillStrategy, session):
         try:
-            company = GenericDao.getOneResult(objectClazz = Company, condition = (Company.ticker == ticker),session = session)
+            customFactList = CustomFactDao().getCustomFact(fillStrategy = fillStrategy, ticker = ticker, session = session);
         except NoResultFound:
             return None
-        for itemToDelete in company.customFactList:
+        for itemToDelete in customFactList:
             if itemToDelete.customConcept.fillStrategy == fillStrategy:
                 session.delete(itemToDelete)
         session.commit()
 
-    @staticmethod       
-    def deleteCustomFactByStrategy(fillStrategy, session):
+    def deleteCustomFactByStrategy(self, fillStrategy, session):
         try:
-            customFactList = CustomFactDao.getCustomFact(fillStrategy, session);
+            customFactList = CustomFactDao().getCustomFact(fillStrategy = fillStrategy, session = session);
         except NoResultFound:
             return None
         for itemToDelete in customFactList:

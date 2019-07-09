@@ -7,7 +7,7 @@ import logging
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.elements import and_
-from sqlalchemy.sql.expression import text, outerjoin
+from sqlalchemy.sql.expression import text, or_
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
@@ -56,15 +56,16 @@ class FileDataDao():
             return rs 
         
     @staticmethod   
-    def getFileDataList3(filename = None, session = None):
+    def getFileDataList3(filename = '', ticker = '', session = None):
         try:
             dbconnector = DBConnector()
             if (session is None): 
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
-            .with_entities(FileData.fileName, FileData.documentPeriodEndDate,  FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status, FileData.importStatus, FileData.entityStatus, FileData.priceStatus)\
+            .join(FileData.company)\
+            .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate,  FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.importStatus, FileData.status, FileData.entityStatus, FileData.priceStatus)\
             .order_by(FileData.documentPeriodEndDate)\
-            .filter(FileData.fileName.like('%' + filename + '%'))
+            .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''),and_(Company.ticker.like('%' + ticker + '%'), ticker != '') ))
             objectResult = query.all()
             return objectResult
         except NoResultFound:

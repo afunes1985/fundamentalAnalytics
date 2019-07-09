@@ -6,6 +6,7 @@ Created on Apr 19, 2019
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.elements import and_
+from sqlalchemy.sql.expression import or_
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao
@@ -56,15 +57,16 @@ class CustomFactDao():
         except NoResultFound:
             return FactValue()
         
-    @staticmethod
-    def getCustomFact(fillStrategy, session = None):
+    def getCustomFact(self, fillStrategy = '', ticker = '', session = None):
         try:
             dbconnector = DBConnector()
             if (session is None): 
                 session = dbconnector.getNewSession()
             objectResult = session.query(CustomFact)\
                 .join(CustomFact.customConcept)\
-                .filter(and_(CustomConcept.fillStrategy.__eq__(fillStrategy)))\
+                .join(CustomFact.fileData)\
+                .join(FileData.company)\
+                .filter(or_(and_(fillStrategy != ''), CustomConcept.fillStrategy.__eq__(fillStrategy)), and_(ticker != '', Company.ticker.__eq__(ticker)))\
                 .all()
             return objectResult
         except NoResultFound:

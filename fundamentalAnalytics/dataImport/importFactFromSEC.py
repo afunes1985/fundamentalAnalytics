@@ -6,9 +6,7 @@ Created on 22 ago. 2018
 from concurrent.futures.thread import ThreadPoolExecutor
 import logging
 from nt import listdir
-from threading import Semaphore, BoundedSemaphore
-import threading
-from time import sleep
+from threading import BoundedSemaphore
 import traceback
 
 import pandas
@@ -18,7 +16,6 @@ import xmltodict
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from dao.dao import GenericDao
-from engine.factImporterEngine import FactImporterEngine
 from importer.importerFact import ImporterFact
 from modelClass.company import Company
 from modelClass.fileData import FileData
@@ -37,7 +34,7 @@ def initMainCache():
             xsdDF.head()
             mainCache[xsdFileName] = xsdDF
             print(xsdFileName)
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
     return mainCache
 
