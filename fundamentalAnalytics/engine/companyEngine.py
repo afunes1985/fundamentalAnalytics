@@ -17,8 +17,8 @@ class CompanyEngine():
             company.CIK = CIK
             company.entityRegistrantName = entityRegistrantName
             company.ticker = ticker
-            Dao().addObject(objectToAdd = self.company, session = session, doCommit = True)
+            Dao().addObject(objectToAdd = company, session = session, doCommit = True)
         if(company.ticker is None and ticker is not None):
             company.ticker = ticker
-            Dao().addObject(objectToAdd = self.company, session = session, doCommit = True)
+            Dao().addObject(objectToAdd = company, session = session, doCommit = True)
         return company

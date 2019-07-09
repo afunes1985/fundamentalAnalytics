@@ -17,6 +17,8 @@ class Constant:
     
     ERROR_KEY_FILE = 'FILE_ERROR'
     ERROR_KEY_FACT = 'FACT_ERROR'
+    ERROR_KEY_ENTITY_FACT = 'ENTITYFACT_ERROR'
+    ERROR_KEY_PRICE = 'PRICE_ERROR'
     
     CACHE_FOLDER = "D://Per//cache//"
 

@@ -40,4 +40,17 @@ class PeriodEngine():
             period.type = "INST"
             Dao().addObject(objectToAdd = period, session = session, doFlush = True)
         return period
+    
+    def getPeriodType(self, startDate, endDate):
+        days = self.getDaysBetweenDates(startDate, endDate)
+        if(70 < days < 110):
+            return "QTD"
+        elif(days > 130):
+            return "YTD"
+    
+    def getDaysBetweenDates(self, firstDate, secondDate):
+        if(secondDate is not None and firstDate is not None):
+            return abs((secondDate - firstDate).days)
+        else:
+            return 10000
         

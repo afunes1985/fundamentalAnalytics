@@ -23,7 +23,6 @@ class EntityFactDao():
     
     def addEntityFact(self, factVOList, company, fileDataOID, reportDict, session, replace):
         objectAlreadyAdded = {}
-        factValuesAdded = 0
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
                 concept = Dao.getConcept(factVO.conceptName, session = session)
@@ -41,7 +40,11 @@ class EntityFactDao():
                         entityFact.report = reportDict[factVO.reportRole]
                         entityFact.fileDataOID = fileDataOID
                         entityFact.order_ = factVO.order
-                    Dao().addObject(objectToAdd = entityFact, session = session, doFlush = True)
+                        Dao().addObject(objectToAdd = entityFact, session = session, doFlush = True)
+                    else:
+                        for factValue in entityFact.entityFactValueList:
+                            factValuekey =  str(factValue.periodOID) + "-" + str(entityFact.OID)
+                            objectAlreadyAdded[factValuekey] = ""
                     
                     for factValueVO in factVO.factValueList:
                         factValuekey =  str(factValueVO.period.OID) + "-" + str(entityFact.OID)
@@ -51,13 +54,11 @@ class EntityFactDao():
                             entityFactValue.period = factValueVO.period
                             entityFact.entityFactValueList.append(entityFactValue)
                             objectAlreadyAdded[factValuekey] = ""
-                            factValuesAdded += 1 
                     objectAlreadyAdded[factKey] = "" 
                     logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added entityFact" + str(factVO.conceptName))
                     if(len(factVO.factValueList) == 0):
                         logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + entityFact.concept.conceptName)
         session.commit()
-        return factValuesAdded
         
     def getEntityFact(self, conceptOID, fileDataOID, session):
         return GenericDao.getOneResult(EntityFact, and_(EntityFact.conceptOID == conceptOID, EntityFact.fileDataOID == fileDataOID), session, raiseNoResultFound = False)

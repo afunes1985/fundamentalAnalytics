@@ -65,12 +65,6 @@ def getXSDFileFromCache(filename, url):
             fileText = response.text
     return fileText
 
-def getDaysBetweenDates(firstDate, secondDate):
-    if(secondDate is not None and firstDate is not None):
-        return abs((secondDate - firstDate).days)
-    else:
-        return 10000
-
 def getXmlDictFromText(fileText, tagKey, key, mainTag):
     xmlText = getXMLFromText(fileText, tagKey, key, mainTag)
     xmlDict = xmltodict.parse(xmlText)

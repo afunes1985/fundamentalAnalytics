@@ -3,6 +3,8 @@ Created on Apr 19, 2019
 
 @author: afunes
 '''
+import logging
+
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.elements import and_
 from sqlalchemy.sql.expression import text, outerjoin
@@ -12,6 +14,7 @@ from dao.dao import Dao, GenericDao
 from modelClass.company import Company
 from modelClass.errorMessage import ErrorMessage
 from modelClass.fileData import FileData
+from valueobject.constant import Constant
 
 
 class FileDataDao():
@@ -59,7 +62,7 @@ class FileDataDao():
             if (session is None): 
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
-            .with_entities(FileData.fileName, FileData.documentPeriodEndDate,  FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status, FileData.importStatus, FileData.entityStatus, FileData.priceStatus, FileData.errorMessage)\
+            .with_entities(FileData.fileName, FileData.documentPeriodEndDate,  FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status, FileData.importStatus, FileData.entityStatus, FileData.priceStatus)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(FileData.fileName.like('%' + filename + '%'))
             objectResult = query.all()
@@ -87,45 +90,59 @@ class FileDataDao():
             return None
     
     def addOrModifyFileData(self, status = None, importStatus = None, entityStatus = None, priceStatus = None, filename = None, externalSession = None, errorMessage = None, errorKey = None, fileData = None):
-        if (externalSession is None):
-            session = DBConnector().getNewSession()
-        else:
-            session = externalSession
-        if (fileData is None):
-            fileData = FileDataDao.getFileData(filename, session)
-        if (fileData is None):
-            fileData = FileData()
-            fileData.fileName = filename
-        if (status is not None):
-            fileData.status = status
-            if (errorMessage is not None and errorKey == 'FACT_ERROR'):
-                em = ErrorMessage()
-                em.errorKey = 'FACT_ERROR'
-                em.errorMessage = errorMessage
-                fileData.errorMessageList.append(em)
+        try:
+            if (externalSession is None):
+                session = DBConnector().getNewSession()
             else:
-                for em in fileData.errorMessageList:
-                    if (em.errorKey == 'FACT_ERROR'):
-                        fileData.errorMessageList.remove(em)
-        if (entityStatus is not None):
-            fileData.entityStatus = entityStatus
-        if (priceStatus is not None):
-            fileData.priceStatus = priceStatus    
-        if importStatus is not None:
-            fileData.importStatus = importStatus
-            if (errorMessage is not None and errorKey == 'FILE_ERROR'):
-                em = ErrorMessage()
-                em.errorKey = 'FILE_ERROR'
-                em.errorMessage = errorMessage
-                fileData.errorMessageList.append(em)
-            else:
-                for em in fileData.errorMessageList:
-                    if (em.errorKey == 'FILE_ERROR'):
-                        fileData.errorMessageList.remove(em)
-        Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
-        if (externalSession is None):
-            session.close()
-        return fileData
+                session = externalSession
+            if (fileData is None):
+                fileData = FileDataDao.getFileData(filename, session)
+            if (fileData is None):
+                fileData = FileData()
+                fileData.fileName = filename
+            if (status is not None):
+                fileData.status = status
+                if (errorMessage is not None and errorKey == Constant.ERROR_KEY_FACT):
+                    em = ErrorMessage()
+                    em.errorKey = errorKey
+                    em.errorMessage = errorMessage
+                    fileData.errorMessageList.append(em)
+                else:
+                    for em in fileData.errorMessageList:
+                        if (em.errorKey == errorKey):
+                            fileData.errorMessageList.remove(em)
+            if (entityStatus is not None):
+                fileData.entityStatus = entityStatus
+                if (errorMessage is not None and errorKey == Constant.ERROR_KEY_ENTITY_FACT):
+                    em = ErrorMessage()
+                    em.errorKey = errorKey
+                    em.errorMessage = errorMessage
+                    fileData.errorMessageList.append(em)
+                else:
+                    for em in fileData.errorMessageList:
+                        if (em.errorKey == errorKey):
+                            fileData.errorMessageList.remove(em)
+            if (priceStatus is not None):
+                fileData.priceStatus = priceStatus    
+            if importStatus is not None:
+                fileData.importStatus = importStatus
+                if (errorMessage is not None and errorKey == Constant.ERROR_KEY_FILE):
+                    em = ErrorMessage()
+                    em.errorKey = errorKey
+                    em.errorMessage = errorMessage
+                    fileData.errorMessageList.append(em)
+                else:
+                    fileData.errorMessageList = []
+                    #for em in fileData.errorMessageList:
+                    #    if (em.errorKey == 'FILE_ERROR'):
+                    #        fileData.errorMessageList.remove(em)
+            Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
+            if (externalSession is None):
+                session.close()
+            return fileData
+        except Exception as e:
+            logging.getLogger(Constant.LOGGER_GENERAL).exception(e)
+            raise e
     
     @staticmethod   
     def getFileData(filename, session = None):

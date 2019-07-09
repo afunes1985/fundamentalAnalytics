@@ -88,6 +88,9 @@ class ImportFileEngine():
         except (FileNotFoundException, XSDNotFoundException, XMLNotFoundException) as e:
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + str(e))
             FileDataDao().addOrModifyFileData(status = Constant.STATUS_PENDING, importStatus = e.importStatus, filename =self.fileName, errorMessage=str(e), errorKey = Constant.ERROR_KEY_FILE)
+        except MemoryError as e:
+            logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).exception(e)
+            FileDataDao().addOrModifyFileData(status = Constant.STATUS_PENDING, importStatus = Constant.STATUS_ERROR, filename =self.fileName, errorMessage='MemoryError', errorKey = Constant.ERROR_KEY_FILE)
         except Exception as e:
             #logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).debug("ERROR " + url)
             logging.getLogger(Constant.LOGGER_IMPORT_GENERAL).exception(e)

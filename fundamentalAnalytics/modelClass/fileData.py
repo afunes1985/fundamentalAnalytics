@@ -29,7 +29,6 @@ class FileData(PersistenObject):
     entityStatus = Column(String(15), nullable=False)
     priceStatus = Column(String(15), nullable=False)
     copyStatus = Column(String(15), nullable=False)
-    errorMessage = Column(String(100), nullable=True)
     CIK = Column(Integer, nullable=False)
     companyOID = Column(Integer, ForeignKey('fa_company.OID'))
     company = relationship('Company', back_populates="fileDataList")

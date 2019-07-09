@@ -1,16 +1,13 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 import logging
 from threading import BoundedSemaphore
-import time
 
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from dao.dao import GenericDao, Dao
-from engine.importPriceEngine import ImportPriceEngine
-from modelClass.concept import Concept
-from modelClass.entityFact import EntityFact
-from modelClass.price import Price
 from dao.entityFactDao import EntityFactDao
+from importer.importerPrice import ImporterPrice
+from valueobject.constant import Constant
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -21,13 +18,12 @@ semaphore = BoundedSemaphore(maxProcessInQueue)
 Initializer()
 session = DBConnector().getNewSession()
 conceptName = 'EntityCommonStockSharesOutstanding'
-entityFactList = EntityFactDao().getEntityFactList(ticker="", conceptName = conceptName, priceStatus = Constant.STATUS_ERROR, session = session)
+entityFactList = EntityFactDao().getEntityFactList(ticker="", conceptName = conceptName, priceStatus = Constant.STATUS_PENDING, session = session)
 for efv in entityFactList:
-    ipe = ImportPriceEngine(efv[0], efv[1], efv[2], efv[3], efv[4])
-    #fi.doImport(replace)
+    ipe = ImporterPrice(efv[0], efv[1], efv[2], efv[3], efv[4])
     semaphore.acquire()
     try:
-        future = executor.submit(ipe.doImportPrice)
+        future = executor.submit(ipe.doImport)
     except:
         semaphore.release()
     else:
