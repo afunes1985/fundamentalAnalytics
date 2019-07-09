@@ -10,7 +10,7 @@ from requests.exceptions import ReadTimeout
 from base.dbConnector import DBConnector
 from dao.dao import Dao
 from dao.fileDataDao import FileDataDao
-from importer.importer import AbstractImporter
+from importer.abstractImporter import AbstractImporter
 from modelClass.price import Price
 from valueobject.constant import Constant
 

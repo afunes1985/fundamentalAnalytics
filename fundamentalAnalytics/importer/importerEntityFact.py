@@ -10,7 +10,7 @@ import pandas
 from dao.dao import Dao
 from dao.entityFactDao import EntityFactDao
 from engine.companyEngine import CompanyEngine
-from importer.importer import AbstractImporter
+from importer.abstractImporter import AbstractImporter
 from tools.tools import getXMLDictFromGZCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO

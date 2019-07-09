@@ -5,9 +5,9 @@ Created on 19 sep. 2018
 '''
 
 from dao.factDao import FactDao
-from importer.importer import AbstractImporter
+from importer.abstractImporter import AbstractImporter
 from valueobject.constant import Constant
-from importer.abstratFactImporter import AbstractFactImporter
+from importer.abstractFactImporter import AbstractFactImporter
 
 
 class ImporterFact(AbstractImporter, AbstractFactImporter):
