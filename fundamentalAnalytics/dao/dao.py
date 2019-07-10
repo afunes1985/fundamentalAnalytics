@@ -28,8 +28,8 @@ from valueobject.constant import Constant
 class GenericDao():
     @staticmethod
     def getFirstResult(objectClazz, condition, session = None):
-        dbconnector = DBConnector()
         if (session is None): 
+            dbconnector = DBConnector()
             session = dbconnector.getNewSession()
     
         objectResult = session.query(objectClazz)\
@@ -37,8 +37,7 @@ class GenericDao():
         .first()
         return objectResult
     
-    @staticmethod
-    def getOneResult(objectClazz, condition = "", session = None, raiseNoResultFound = True):
+    def getOneResult(self, objectClazz, condition = "", session = None, raiseNoResultFound = True):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
@@ -67,15 +66,13 @@ class Dao():
     
     @staticmethod
     def getFactValue(fact, period, session):
-        return GenericDao.getOneResult(FactValue, and_(FactValue.fact.__eq__(fact), FactValue.period.__eq__(period)), session, raiseNoResultFound = False)
+        return GenericDao().getOneResult(FactValue, and_(FactValue.fact.__eq__(fact), FactValue.period.__eq__(period)), session, raiseNoResultFound = False)
         
-    @staticmethod
-    def getConcept(conceptName, session = None):
-        return GenericDao.getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session, raiseNoResultFound = False)
+    def getConcept(self, conceptName, session = None):
+        return GenericDao().getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session, raiseNoResultFound = False)
     
-    @staticmethod  
-    def getReport(reportShortName, session):
-        return GenericDao.getOneResult(Report, and_(Report.shortName == reportShortName), session, raiseNoResultFound = False)
+    def getReport(self, reportShortName, session):
+        return GenericDao().getOneResult(Report, and_(Report.shortName == reportShortName), session, raiseNoResultFound = False)
     
     def addObject(self, objectToAdd, session = None, doCommit = False, doFlush = False):
         if(session is None):
@@ -94,7 +91,7 @@ class Dao():
     @staticmethod     
     def addAbstractConcept(factVO, session):
         try:
-            abstractConcept =  GenericDao.getOneResult(AbstractConcept, and_(AbstractConcept.conceptName == factVO.conceptName), session)
+            abstractConcept =  GenericDao().getOneResult(AbstractConcept, and_(AbstractConcept.conceptName == factVO.conceptName), session)
         except NoResultFound:
             abstractConcept = AbstractConcept()
             abstractConcept.conceptName = factVO.conceptName
@@ -104,11 +101,11 @@ class Dao():
     
     @staticmethod
     def getCustomConcept(customConceptName, session = None):
-        return GenericDao.getOneResult(CustomConcept, CustomConcept.conceptName.__eq__(customConceptName), session, raiseNoResultFound = False)
+        return GenericDao().getOneResult(CustomConcept, CustomConcept.conceptName.__eq__(customConceptName), session, raiseNoResultFound = False)
 
     @staticmethod  
     def getCustomReport(reportShortName, session = None):
-        return GenericDao.getOneResult(CustomReport, and_(CustomReport.shortName == reportShortName), session, raiseNoResultFound = False)
+        return GenericDao().getOneResult(CustomReport, and_(CustomReport.shortName == reportShortName), session, raiseNoResultFound = False)
     
     @staticmethod
     def getCustomFact2(ticker, customConcept, session):
@@ -128,7 +125,7 @@ class Dao():
     
     @staticmethod
     def getExpression(expressionName, session = None):
-        return GenericDao.getOneResult(Expression, Expression.name == expressionName, session, raiseNoResultFound=False)
+        return GenericDao().getOneResult(Expression, Expression.name == expressionName, session, raiseNoResultFound=False)
     
     @staticmethod    
     def getPeriodByFact(ticker, conceptName, periodType = None, session = None):

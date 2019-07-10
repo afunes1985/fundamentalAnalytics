@@ -15,7 +15,7 @@ class PeriodEngine():
     def getOrCreatePeriod(self, ticker, periodType, endDate, session):
         period = PeriodDao().getPeriodByFact3(ticker, periodType, endDate, session)
         if(period is None):
-            period = GenericDao.getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseNoResultFound = False)
+            period = GenericDao().getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseNoResultFound = False)
             if(period is None):
                 period = Period()
                 period.endDate = endDate
@@ -23,22 +23,22 @@ class PeriodEngine():
         return period
     
     def getOrCreatePeriod2(self, startDate, endDate, session):
-        period =  GenericDao.getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session, raiseNoResultFound = False)
+        period =  GenericDao().getOneResult(Period, and_(Period.startDate == startDate, Period.endDate == endDate), session, raiseNoResultFound = False)
         if (period is None):
             period = Period()
             period.startDate = startDate
             period.endDate = endDate
             period.type = self.getPeriodType(startDate, endDate)
-            Dao().addObject(objectToAdd = period, session = session, doFlush = True)
+            #Dao().addObject(objectToAdd = period, session = session, doFlush = True)
         return period
     
     def getOrCreatePeriod3(self, instant, session):
-        period =  GenericDao.getOneResult(Period, and_(Period.instant == instant), session, raiseNoResultFound = False)
+        period =  GenericDao().getOneResult(Period, and_(Period.instant == instant), session, raiseNoResultFound = False)
         if (period is None):
             period = Period()
             period.instant = instant
             period.type = "INST"
-            Dao().addObject(objectToAdd = period, session = session, doFlush = True)
+            #Dao().addObject(objectToAdd = period, session = session, doFlush = True)
         return period
     
     def getPeriodType(self, startDate, endDate):

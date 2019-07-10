@@ -142,7 +142,7 @@ class AbstractFactImporter(object):
                     reportRole = report["Role"]
                     #if(self.isReportAllowed(reportRole)):
                     reportShortName = report["ShortName"]
-                    report = Dao.getReport(reportShortName, session)
+                    report = Dao().getReport(reportShortName, session)
                     if(report is None):
                         report = Report()
                         report.shortName = reportShortName[0:299]

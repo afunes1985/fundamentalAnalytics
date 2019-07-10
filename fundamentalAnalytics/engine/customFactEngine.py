@@ -85,7 +85,7 @@ class CustomFactEngine():
         for fileDataOID, row in newFactValueDict.items():
                 customFactValue = CustomFactValue()
                 endDate = row["END_DATE"]
-                period = GenericDao.getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseNoResultFound = False)
+                period = GenericDao().getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseNoResultFound = False)
                 customFactValue.period = period
                 if(period is None):
                     newPeriod = Period()

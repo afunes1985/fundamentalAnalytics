@@ -14,10 +14,10 @@ from modelClass.company import Company
 class CompanyDao():
     
     def getCompany(self, ticker, session):
-        return GenericDao.getOneResult(Company, and_(Company.ticker.__eq__(ticker)), session, raiseNoResultFound = False)
+        return GenericDao().getOneResult(Company, and_(Company.ticker.__eq__(ticker)), session, raiseNoResultFound = False)
 
     def getCompany2(self, CIK, session):
-        return GenericDao.getOneResult(Company,Company.CIK.__eq__(CIK), session, raiseNoResultFound = False)
+        return GenericDao().getOneResult(Company,Company.CIK.__eq__(CIK), session, raiseNoResultFound = False)
 
     def getCompanyList(self, session = None):
         dbconnector = DBConnector()

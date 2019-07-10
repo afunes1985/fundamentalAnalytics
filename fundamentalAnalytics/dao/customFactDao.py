@@ -24,8 +24,8 @@ class CustomFactDao():
     @staticmethod
     def getCustomFactValue(ticker, customConceptName, periodType = None, session = None):
         try:
-            dbconnector = DBConnector()
             if (session is None): 
+                dbconnector = DBConnector()
                 session = dbconnector.getNewSession()
             query = session.query(CustomFactValue)\
                 .join(CustomFactValue.customFact)\
@@ -42,8 +42,8 @@ class CustomFactDao():
     @staticmethod
     def getCustomFactValue2(ticker, customConceptName, session = None):
         try:
-            dbconnector = DBConnector()
             if (session is None): 
+                dbconnector = DBConnector()
                 session = dbconnector.getNewSession()
             query = session.query(CustomFactValue)\
                 .join(CustomFactValue.customFact)\
@@ -59,8 +59,8 @@ class CustomFactDao():
         
     def getCustomFact(self, fillStrategy = '', ticker = '', session = None):
         try:
-            dbconnector = DBConnector()
             if (session is None): 
+                dbconnector = DBConnector()
                 session = dbconnector.getNewSession()
             objectResult = session.query(CustomFact)\
                 .join(CustomFact.customConcept)\
@@ -74,8 +74,8 @@ class CustomFactDao():
     
     def getCustomFact3(self, ticker, customConceptName, session = None):
         try:
-            dbconnector = DBConnector()
             if (session is None): 
+                dbconnector = DBConnector()
                 session = dbconnector.getNewSession()
             objectResult = session.query(CustomFact)\
                 .join(CustomFact.customConcept)\

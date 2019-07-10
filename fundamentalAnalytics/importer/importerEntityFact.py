@@ -14,12 +14,12 @@ from importer.abstractImporter import AbstractImporter
 from tools.tools import getXMLDictFromGZCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO
-from importer.abstratFactImporter import AbstractFactImporter
+from importer.abstractFactImporter import AbstractFactImporter
 
 
 class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
 
-    def __init__(self, filename, replace, mainCache, conceptName = None):
+    def __init__(self, filename, replace, mainCache, conceptName=None):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace)
         self.processCache = None
         self.mainCache = mainCache
@@ -30,30 +30,30 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
         factVOList = self.getFactByConcept(reportDict, self.processCache, self.conceptName)
         factVOList = self.setFactValues(factVOList, self.processCache)
-        EntityFactDao().addEntityFact(factVOList, self.processCache["COMPANY"], self.fileData.OID , reportDict, self.session, self.replace)
+        EntityFactDao().addEntityFact(factVOList, self.fileData.OID , reportDict, self.session, self.replace)
         if(len(factVOList) != 0):
             self.fileData.entityStatus = Constant.STATUS_OK
         else: 
             self.fileData.entityStatus = Constant.STATUS_NO_DATA
             
     def addOrModifyFDError1(self, e):
-        self.fileDataDao.addOrModifyFileData(entityStatus = e.status, filename = self.filename, errorMessage=str(e), errorKey = self.errorKey)
+        self.fileDataDao.addOrModifyFileData(entityStatus=e.status, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey)
     
     def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(entityStatus = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:190], errorKey = self.errorKey)         
+        self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey)         
             
     def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(entityStatus = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey)   
+        self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_INIT, priceStatus=Constant.STATUS_PENDING, filename=self.filename, errorKey=self.errorKey)   
             
     def skipOrProcess(self):
-        if((self.fileData.importStatus == Constant.STATUS_OK and self.fileData.entityStatus != Constant.STATUS_OK) or self.replace == True):
+        if((self.fileData.status == Constant.STATUS_OK and self.fileData.entityStatus != Constant.STATUS_OK) or self.replace == True):
             return True
         else:
             return False    
             
     def getFactByReport(self, reportDict, processCache, session):
         factVOList = []
-        #Obtengo para cada reporte sus conceptos
+        # Obtengo para cada reporte sus conceptos
         xmlDictPre = processCache[Constant.DOCUMENT_PRE]
         for item in self.getListFromElement(Constant.PRESENTATON_LINK, self.getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
             tempFactVOList = []
@@ -71,7 +71,7 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
                     factVO = self.setXsdValue(factVO, processCache)
                     if factVO.abstract != "true":
                         try:
-                            factVO.order = self.getValueFromElement( ["@order"], presentationDF.loc[factVO.labelID], True) 
+                            factVO.order = self.getValueFromElement(["@order"], presentationDF.loc[factVO.labelID], True) 
                             tempFactVOList.append(factVO)
                         except Exception as e:
                             logging.getLogger(Constant.LOGGER_ERROR).debug("Error " + str(e))
@@ -86,7 +86,7 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
             else:
                 factVOList = factVOList + tempFactVOList
         for report in reportDict.values():
-            Dao().addObject(objectToAdd = report, session = session, doFlush = True)
+            Dao().addObject(objectToAdd=report, session=session, doFlush=True)
         return factVOList
         
     def initProcessCache(self, filename, session):
@@ -96,20 +96,20 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         schDF.set_index("@id", inplace=True)
         schDF.head()
         processCache[Constant.DOCUMENT_SCH] = schDF
-        #XML INSTANCE
+        # XML INSTANCE
         insDict = getXMLDictFromGZCache(filename, Constant.DOCUMENT_INS)
         insDict = self.getElementFromElement(Constant.XBRL_ROOT, insDict)
         processCache[Constant.DOCUMENT_INS] = insDict
-        #XML SUMMARY
-        sumDict= getXMLDictFromGZCache(filename, Constant.DOCUMENT_SUMMARY)
+        # XML SUMMARY
+        sumDict = getXMLDictFromGZCache(filename, Constant.DOCUMENT_SUMMARY)
         processCache[Constant.DOCUMENT_SUMMARY] = sumDict
-        #XML PRESENTATION
+        # XML PRESENTATION
         preDict = getXMLDictFromGZCache(filename, Constant.DOCUMENT_PRE)
         processCache[Constant.DOCUMENT_PRE] = preDict 
-        #PERIOD
+        # PERIOD
         periodDict = self.getPeriodDict(insDict, session)
         processCache[Constant.PERIOD_DICT] = periodDict 
-        #COMPANY
+        # COMPANY
         CIK = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityCentralIndexKey'], insDict, False), False)
         entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], insDict, False), False) 
         ticker = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:TradingSymbol'], insDict, False), False)
@@ -138,13 +138,13 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
                     objectToDelete.append(factVO)
             except KeyError as e:
                 pass
-                #logging.getLogger(Constant.LOGGER_ERROR).debug("KeyError " + str(e) + " " + conceptID )
+                # logging.getLogger(Constant.LOGGER_ERROR).debug("KeyError " + str(e) + " " + conceptID )
         factToAddList = [x for x in factToAddList if x not in objectToDelete]
         return factToAddList
     
     def getFactByConcept(self, reportDict, processCache, conceptName):
         factVOList = []
-        #Obtengo para cada reporte sus conceptos
+        # Obtengo para cada reporte sus conceptos
         xmlDictPre = processCache[Constant.DOCUMENT_PRE]
         for item in self.getListFromElement(Constant.PRESENTATON_LINK, self.getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
             reportRole = item['@xlink:role']

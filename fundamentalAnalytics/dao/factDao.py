@@ -11,6 +11,7 @@ from sqlalchemy.sql.expression import text
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
+from engine.conceptEngine import ConceptEngine
 from modelClass.company import Company
 from modelClass.concept import Concept
 from modelClass.fact import Fact
@@ -93,11 +94,7 @@ class FactDao():
         objectAlreadyAdded = {}
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
-                concept = Dao.getConcept(factVO.conceptName, session=session)
-                if(concept == None):
-                    concept = Concept()
-                    concept.conceptName = factVO.conceptName
-                    Dao().addObject(objectToAdd=concept, session=session, doFlush=True)
+                concept = ConceptEngine().getOrCreateConcept(factVO.conceptName, session)
                 factKey = str(concept.OID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
                 if(objectAlreadyAdded.get(factKey, None) is None):
                     fact = FactDao.getFact(concept, reportDict[factVO.reportRole], fileData, session)
@@ -133,7 +130,7 @@ class FactDao():
         
     @staticmethod
     def getFact(concept, report, fileData, session):
-        return GenericDao.getOneResult(Fact, and_(Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session, raiseNoResultFound=False)
+        return GenericDao().getOneResult(Fact, and_(Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session, raiseNoResultFound=False)
     
     def getFactValue2(self, ticker, periodType=None, documentType=None, concept=None, session=None):
         try:

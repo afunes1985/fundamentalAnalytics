@@ -39,24 +39,18 @@ def initMainCache():
     return mainCache
 
 if __name__ == "__main__":
-    COMPANY_TICKER = None
     replace = False
     threadNumber = 3
     conceptName = 'EntityCommonStockSharesOutstanding'
-    maxProcessInQueue = 5
+    maxProcessInQueue = 10
     Initializer()
     session = DBConnector().getNewSession()
-    if (COMPANY_TICKER is not None):
-        company = GenericDao.getOneResult(Company,Company.ticker.__eq__(COMPANY_TICKER), session)
-    else:
-        company = None
-    
     createLog(Constant.LOGGER_GENERAL, logging.INFO)
     createLog(Constant.LOGGER_ERROR, logging.INFO)
     createLog(Constant.LOGGER_NONEFACTVALUE, logging.INFO)
     createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
-    fileDataList = GenericDao.getAllResult(FileData, and_(FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("ERROR")), session)
+    fileDataList = GenericDao.getAllResult(FileData, and_(FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("PENDING")), session)
     #fileDataList = GenericDao.getAllResult(FileData, and_(FileData.fileName == "edgar/data/1016708/0001477932-18-002398.txt"), session)
     threads = []    
     mainCache = initMainCache()

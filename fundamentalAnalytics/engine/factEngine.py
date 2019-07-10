@@ -17,7 +17,7 @@ class FactEngine(object):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
-        fileData = GenericDao.getOneResult(FileData, FileData.fileName.__eq__(filename), session)
+        fileData = GenericDao().getOneResult(FileData, FileData.fileName.__eq__(filename), session)
         if(fileData is not None):
             for itemToDelete in fileData.factList:
                 session.delete(itemToDelete)
