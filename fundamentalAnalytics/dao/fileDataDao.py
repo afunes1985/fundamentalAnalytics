@@ -71,26 +71,33 @@ class FileDataDao():
         except NoResultFound:
             return None
         
-    @staticmethod   
-    def getFileDataListWithoutConcept(ticker, customConceptOID, session = None):
+    def getFileDataListWithoutConcept(self, ticker, customConceptOID, session = None):
         try:
             dbconnector = DBConnector()
+            fd2 = []
             with dbconnector.engine.connect() as con:
                 params = { 'ticker' : ticker,
                            'customConceptOID' : customConceptOID}
                 
-                query = text("""select fd.OID as fileDataOID
+                query = text("""select fd.OID as fileDataOID, fd.documentPeriodEndDate
                                     from fa_file_data fd
                                         join fa_company comp on comp.oid = fd.companyOID
-                                        left join fa_custom_fact fact on fd.oid = fact.fileDataOID and fact.customConceptOID = :customConceptOID
-                                    where comp.ticker = :ticker
-                                        and fact.OID is null""")
+                                    where comp.ticker = :ticker and
+                                        fd.OID not in (select fd.OID
+                                            from fa_custom_fact_value cfv 
+                                                join fa_custom_fact cf on cfv.customFactOID = cf.OID 
+                                                join fa_file_data fd on fd.OID = cfv.fileDataOID
+                                                join fa_company comp on comp.oid = fd.companyOID
+                                            where comp.ticker = :ticker
+                                                and cf.customConceptOID = :customConceptOID)""")
                 rs = con.execute(query, params)
-            return rs 
+                for fd in rs:
+                    fd2.append(fd.fileDataOID)
+            return fd2 
         except NoResultFound:
             return None
     
-    def addOrModifyFileData(self, status = None, importStatus = None, entityStatus = None, priceStatus = None, filename = None, externalSession = None, errorMessage = None, errorKey = None, fileData = None):
+    def addOrModifyFileData(self, status = None, importStatus = None, entityStatus = None, priceStatus = None, expressionStatus = None, filename = None, externalSession = None, errorMessage = None, errorKey = None, fileData = None):
         try:
             if (externalSession is None):
                 session = DBConnector().getNewSession()
@@ -103,40 +110,15 @@ class FileDataDao():
                 fileData.fileName = filename
             if (status is not None):
                 fileData.status = status
-                if (errorMessage is not None and errorKey == Constant.ERROR_KEY_FACT):
-                    em = ErrorMessage()
-                    em.errorKey = errorKey
-                    em.errorMessage = errorMessage
-                    fileData.errorMessageList.append(em)
-                else:
-                    for em in fileData.errorMessageList:
-                        if (em.errorKey == errorKey):
-                            fileData.errorMessageList.remove(em)
             if (entityStatus is not None):
                 fileData.entityStatus = entityStatus
-                if (errorMessage is not None and errorKey == Constant.ERROR_KEY_ENTITY_FACT):
-                    em = ErrorMessage()
-                    em.errorKey = errorKey
-                    em.errorMessage = errorMessage
-                    fileData.errorMessageList.append(em)
-                else:
-                    for em in fileData.errorMessageList:
-                        if (em.errorKey == errorKey):
-                            fileData.errorMessageList.remove(em)
             if (priceStatus is not None):
                 fileData.priceStatus = priceStatus    
             if importStatus is not None:
                 fileData.importStatus = importStatus
-                if (errorMessage is not None and errorKey == Constant.ERROR_KEY_FILE):
-                    em = ErrorMessage()
-                    em.errorKey = errorKey
-                    em.errorMessage = errorMessage
-                    fileData.errorMessageList.append(em)
-                else:
-                    fileData.errorMessageList = []
-                    #for em in fileData.errorMessageList:
-                    #    if (em.errorKey == 'FILE_ERROR'):
-                    #        fileData.errorMessageList.remove(em)
+            if expressionStatus is not None:
+                fileData.expressionStatus = expressionStatus
+            self.setErrorMessage(errorMessage, errorKey, fileData)
             Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
             if (externalSession is None):
                 session.close()
@@ -144,6 +126,17 @@ class FileDataDao():
         except Exception as e:
             logging.getLogger(Constant.LOGGER_GENERAL).exception(e)
             raise e
+    
+    def setErrorMessage(self, errorMessage, errorKey, fileData):
+        if (errorMessage is not None):
+                    em = ErrorMessage()
+                    em.errorKey = errorKey
+                    em.errorMessage = errorMessage
+                    fileData.errorMessageList.append(em)
+        else:
+            for em in fileData.errorMessageList:
+                if (em.errorKey == errorKey):
+                    fileData.errorMessageList.remove(em)
     
     @staticmethod   
     def getFileData(filename, session = None):

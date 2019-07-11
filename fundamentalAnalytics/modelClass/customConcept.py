@@ -21,6 +21,7 @@ class CustomConcept(PersistenObject):
     conceptName = Column(String(250), nullable=False)
     label = Column(String(200), nullable=False)
     customFactList = relationship("CustomFact", back_populates="customConcept")
+    expressionList = relationship("Expression", back_populates="customConcept")
     defaultOrder = Column(Integer, nullable=False)
     defaultCustomReportOID = Column(Integer, ForeignKey('fa_custom_report.OID'))
     defaultCustomReport = relationship("CustomReport", back_populates="customConceptList")

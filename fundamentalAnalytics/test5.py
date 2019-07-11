@@ -10,6 +10,9 @@ from engine.customFactEngine import CustomFactEngine
 from modelClass.customConcept import CustomConcept
 from engine.expressionEngine import ExpressionEngine
 
+# import logging
+# logging.basicConfig()
+# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 Initializer()
 session = DBConnector().getNewSession()
@@ -17,12 +20,12 @@ session = DBConnector().getNewSession()
 #customConceptName = 'COST_OF_REVENUE' 
 ticker = 'AAPL'
 masive = True
-copy = True
-calculate = True
-createRatio = True
-deleteCopyCalculate = True
+copy = False
+calculate = False
+createRatio = False
+deleteCopyCalculate = False
 deleteExpression = True
-deleteAllCustomFact = True
+deleteAllCustomFact = False
 
 if (masive):
     if(deleteAllCustomFact):
@@ -31,7 +34,7 @@ if (masive):
     
     if(deleteCopyCalculate):
         CustomFactEngine().deleteCustomFactByCompany(ticker = ticker, fillStrategy = "COPY_CALCULATE", session = session)
-    customConceptList = GenericDao.getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = session)
+    customConceptList = GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = session)
     for customConcept in customConceptList:
         if(copy):
             CustomFactEngine().copyToCustomFact(ticker = ticker, customConcept = customConcept, session = session)
@@ -41,9 +44,9 @@ if (masive):
     if(deleteExpression):
         CustomFactEngine().deleteCustomFactByCompany(ticker = ticker, fillStrategy = "EXPRESSION", session = session)
     if(createRatio):
-        customConceptExpressionList = GenericDao.getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "EXPRESSION"), session = session)
+        customConceptExpressionList = GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "EXPRESSION"), session = session)
         for customConcept in customConceptExpressionList:
-                ExpressionEngine().solveCustomFactFromExpression(ticker, customConcept.conceptName, session)
+                ExpressionEngine().solveCustomFactFromExpression(ticker, customConcept, session)
 else:
     customConceptName = "CASH_AND_CASH_EQUIVALENTS"
     if(copy):

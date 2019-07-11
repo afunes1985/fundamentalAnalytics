@@ -11,6 +11,8 @@ from modelClass import PersistenObject
 
 class CustomFactValue(PersistenObject):
     __tablename__ = 'fa_custom_fact_value'
+    fileDataOID = Column(Integer, ForeignKey('fa_file_data.OID'))
+    fileData = relationship("FileData", back_populates="customFactValueList")
     periodOID = Column(Integer, ForeignKey('fa_period.OID'))
     period = relationship("Period", back_populates="customFactValueList")
     customFactOID = Column(Integer, ForeignKey('fa_custom_fact.OID'))

@@ -4,46 +4,41 @@ Created on 18 ago. 2018
 @author: afunes
 '''
 
-from sympy.parsing.sympy_parser import parse_expr
-
-from dao.customFactDao import CustomFactDao
 from dao.dao import Dao
+from engine.customFactEngine import CustomFactEngine
 from modelClass.customFactValue import CustomFactValue
 
 
 class ExpressionEngine(object):
     
-    def solveCustomFactFromExpression(self, ticker, customConceptName, session = None):
-        from engine.customFactEngine import CustomFactEngine
-        customFact = CustomFactEngine().getOrCreateCustomFact(ticker = ticker, customConceptName = customConceptName, session = session)
-        customFact.customFactValueList.extend(ExpressionEngine.solveExpression(ticker, customConceptName, customFact));
-        Dao().addObject(objectToAdd = customFact, session = session, doCommit = True)
+    def solveAndAddExpression(self, expressionDict, fileData, session):
+        cfvList = self.solveExpression(expressionDict, fileData, session)
+        Dao().addObjectList(objectList=cfvList, session=session)
+        return cfvList
     
-    @staticmethod
-    def solveExpression(ticker, expressionName, customFact):
-        expression = Dao.getExpression(expressionName)
-        expr = parse_expr(expression.expression)
-        valueByDateDict = {}
-        symbolList = list(expr.free_symbols)
-        periodsCompleted = [x.period.getKeyDate() for x in customFact.customFactValueList]
-        for var in symbolList:
-            cfvList = CustomFactDao.getCustomFactValue2(ticker, str(var))
-            for cfv in cfvList:
-                if (cfv.period.getKeyDate() not in periodsCompleted):
-                    valueByDateDict.setdefault(cfv.period.getKeyDate(), {})[var] = cfv.value
-                    valueByDateDict[cfv.period.getKeyDate()][cfv.period.type] = cfv.periodOID
+    def solveExpression(self, expressionDict, fileData, session):
         returnList = []
-        for date, value in valueByDateDict.items():
-            try:
-                customFactValue = CustomFactValue()
-                customFactValue.periodOID = value[expression.periodType]
-                if(len(symbolList) == 2):
-                    customFactValue.value = expr.subs([(symbolList[0], value[symbolList[0]]), (symbolList[1], value[symbolList[1]])])
-                elif(len(symbolList) == 3):
-                    customFactValue.value = expr.subs([(symbolList[0], value[symbolList[0]]), (symbolList[1], value[symbolList[1]]), (symbolList[2], value[symbolList[2]])])
-                customFactValue.origin = 'CALCULATED_BY_RULE'
-                returnList.append(customFactValue)
-            except Exception as e:
-                print("Error in periodDate " + str(date.strftime('%Y-%m-%d')) + " CustomFact missing -> " + str(e)) 
-        print("Ready to add " + expressionName + " " + str(len(returnList)))
+        cfvDict = {}
+        errorList = []
+        for cfv in fileData.customFactValueList:
+                cfvDict[cfv.customFact.customConcept.conceptName] = cfv
+                
+        for expression, expr in expressionDict.items():
+            if (expression.customConcept.conceptName not in cfvDict.keys()):
+                symbolList = list(expr.free_symbols)
+                symbolList = [str(x) for x in symbolList]
+                try:
+                    cfv = CustomFactValue()
+                    cfv.periodOID = cfvDict[symbolList[0]].periodOID
+                    if(len(symbolList) == 2):
+                        cfv.value = expr.subs([(symbolList[0], cfvDict[symbolList[0]].value), (symbolList[1], cfvDict[symbolList[1]].value)])
+                    elif(len(symbolList) == 3):
+                        cfv.value = expr.subs([(symbolList[0], cfvDict[symbolList[0]].value), (symbolList[1], cfvDict[symbolList[1]].value), (symbolList[2], cfvDict[symbolList[2]].value)])
+                    cfv.origin = 'CALCULATED_BY_RULE'
+                    cfv.fileDataOID = fileData.OID
+                    cfv.customFact = CustomFactEngine().getOrCreateCustomFact(expression.customConcept, session)
+                    returnList.append(cfv)
+                except KeyError as e:
+                    errorList.append(expression.customConcept.conceptName + " fail for " + str(e)) 
+        #print("Ready to add CFV from Expressions " + str(len(returnList)))
         return returnList

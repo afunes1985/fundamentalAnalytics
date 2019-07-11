@@ -36,7 +36,7 @@ if __name__ == "__main__":
             ImportFileEngine.importMasterIndexFor(period, replaceMasterFile, session,threadNumber = threadNumber)
     else:
         semaphore = BoundedSemaphore(maxProcessInQueue)
-        fileDataList = GenericDao.getAllResult(FileData, and_(FileData.importStatus == "ERROR"), session)
+        fileDataList = GenericDao().getAllResult(FileData, and_(FileData.importStatus == "ERROR"), session)
         executor = ThreadPoolExecutor(max_workers=threadNumber)
         print("START")
         for filedata in fileDataList:

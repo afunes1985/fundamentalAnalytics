@@ -12,14 +12,12 @@ from modelClass.period import Period
 
 class PeriodEngine():
     
-    def getOrCreatePeriod(self, ticker, periodType, endDate, session):
-        period = PeriodDao().getPeriodByFact3(ticker, periodType, endDate, session)
+    def getOrCreatePeriod(self, periodType, endDate, session):
+        period = GenericDao().getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseNoResultFound = False)
         if(period is None):
-            period = GenericDao().getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseNoResultFound = False)
-            if(period is None):
-                period = Period()
-                period.endDate = endDate
-                period.type = 'QTD'
+            period = Period()
+            period.endDate = endDate
+            period.type = periodType
         return period
     
     def getOrCreatePeriod2(self, startDate, endDate, session):

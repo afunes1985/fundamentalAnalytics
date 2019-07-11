@@ -5,44 +5,32 @@ Created on 22 ago. 2018
 '''
 from concurrent.futures.thread import ThreadPoolExecutor
 import logging
-from nt import listdir
 from threading import BoundedSemaphore
-import traceback
 
-import pandas
-from sqlalchemy.sql.expression import and_, or_
-import xmltodict
+from sqlalchemy.sql.expression import and_
+from sympy.parsing.sympy_parser import parse_expr
 
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from dao.dao import GenericDao
-from importer.importerFact import ImporterFact
-from modelClass.company import Company
+from dao.expressionDao import ExpressionDao
+from importer.importerExpression import ImporterExpression
 from modelClass.fileData import FileData
-from tools.tools import createLog, getXSDFileFromCache
+from tools.tools import createLog
 from valueobject.constant import Constant
 
 
-def initMainCache():
-    mainCache = {}
-    for xsdFileName in listdir(Constant.CACHE_FOLDER + "xsd"):
-        try:
-            xsdFile = getXSDFileFromCache(Constant.CACHE_FOLDER + "xsd//" + xsdFileName, None)
-            xsdDict = xmltodict.parse(xsdFile)
-            xsdDF = pandas.DataFrame(xsdDict["xs:schema"]["xs:element"])
-            xsdDF.set_index("@id", inplace=True)
-            xsdDF.head()
-            mainCache[xsdFileName] = xsdDF
-            print(xsdFileName)
-        except Exception:
-            traceback.print_exc()
-    return mainCache
+def initMainCache(session):
+    expressionDict = {}
+    expressionList = ExpressionDao().getExpressionList(session=session)
+    for expression in expressionList:
+        expr = parse_expr(expression.expression)
+        expressionDict[expression] = expr
+    return expressionDict
 
 if __name__ == "__main__":
-    COMPANY_TICKER = None
     replace = False
-    threadNumber = 3
-    #conceptName = 'EntityCommonStockSharesOutstanding'
+    threadNumber = 1
     conceptName = None
     maxProcessInQueue = 5
     Initializer()
@@ -52,25 +40,26 @@ if __name__ == "__main__":
     createLog(Constant.LOGGER_NONEFACTVALUE, logging.INFO)
     createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
-    #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("ERROR")), session)
+    fileDataList = GenericDao().getAllResult(FileData, and_(FileData.status.__eq__("OK"), FileData.expressionStatus.__eq__("PENDING")), session)
     #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("ERROR")), session)
-    fileDataList = GenericDao().getAllResult(FileData, and_(FileData.fileName == "edgar/data/1016708/0001477932-18-002398.txt"), session)
+    #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.fileName == "edgar/data/320193/0000320193-18-000070.txt"), session)
     threads = []    
-    mainCache = initMainCache()
+    expressionDict = initMainCache(session)
     executor = ThreadPoolExecutor(max_workers=threadNumber)
     semaphore = BoundedSemaphore(maxProcessInQueue)
-    logging.getLogger(Constant.LOGGER_GENERAL).info("READY TO IMPORT FACT " + str(len(fileDataList)) + " FILEDATA")
+    logging.getLogger(Constant.LOGGER_GENERAL).info("READY TO IMPORT EXPRESSION " + str(len(fileDataList)) + " FILEDATA")
     for fileData in fileDataList:
         try:
             try:
                 semaphore.acquire()
-                fi = ImporterFact(fileData.fileName, replace, mainCache)
+                fi = ImporterExpression(fileData.fileName, replace, expressionDict)
+                #fi.doImport()
                 future = executor.submit(fi.doImport)
             except:
                 semaphore.release()
             else:
-                pass
                 future.add_done_callback(lambda x: semaphore.release())
+                #pass
         except Exception as e:
                 logging.getLogger(Constant.LOGGER_ERROR).exception("ERROR " + fileData.fileName + " " + str(e))
             

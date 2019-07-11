@@ -26,8 +26,8 @@ from valueobject.constant import Constant
 
 
 class GenericDao():
-    @staticmethod
-    def getFirstResult(objectClazz, condition, session = None):
+    
+    def getFirstResult(self, objectClazz, condition, session = None):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
@@ -37,7 +37,7 @@ class GenericDao():
         .first()
         return objectResult
     
-    def getOneResult(self, objectClazz, condition = "", session = None, raiseNoResultFound = True):
+    def getOneResult(self, objectClazz, condition =  (1 == 1), session = None, raiseNoResultFound = True):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
@@ -51,8 +51,7 @@ class GenericDao():
             return None
         return objectResult
     
-    @staticmethod
-    def getAllResult(objectClazz, condition = (1 == 1), session = None):
+    def getAllResult(self, objectClazz, condition = (1 == 1), session = None):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
@@ -63,6 +62,12 @@ class GenericDao():
 
 
 class Dao():
+    
+    def addObjectList(self, objectList, session):
+        if(len(objectList) > 0):
+            for obj in objectList:
+                Dao().addObject(objectToAdd=obj, session=session) 
+            session.commit()
     
     @staticmethod
     def getFactValue(fact, period, session):
@@ -99,98 +104,8 @@ class Dao():
         factVO.abstractConcept = abstractConcept
         return factVO
     
-    @staticmethod
-    def getCustomConcept(customConceptName, session = None):
+    def getCustomConcept(self, customConceptName, session = None):
         return GenericDao().getOneResult(CustomConcept, CustomConcept.conceptName.__eq__(customConceptName), session, raiseNoResultFound = False)
 
-    @staticmethod  
-    def getCustomReport(reportShortName, session = None):
+    def getCustomReport(self, reportShortName, session = None):
         return GenericDao().getOneResult(CustomReport, and_(CustomReport.shortName == reportShortName), session, raiseNoResultFound = False)
-    
-    @staticmethod
-    def getCustomFact2(ticker, customConcept, session):
-        try:
-            dbconnector = DBConnector()
-            if (session is None): 
-                session = dbconnector.getNewSession()
-            query = session.query(CustomFact)\
-                .join(CustomFact.fileData)\
-                .join(FileData.company)\
-                .join(CustomFact.customConcept)\
-                .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName == customConcept))
-            objectResult = query.all()
-            return objectResult
-        except NoResultFound:
-            return None
-    
-    @staticmethod
-    def getExpression(expressionName, session = None):
-        return GenericDao().getOneResult(Expression, Expression.name == expressionName, session, raiseNoResultFound=False)
-    
-    @staticmethod    
-    def getPeriodByFact(ticker, conceptName, periodType = None, session = None):
-        try:
-            dbconnector = DBConnector()
-            if (session is None): 
-                session = dbconnector.getNewSession()
-            query = session.query(Period)\
-                .join(Period.factValueList)\
-                .join(FactValue.fact)\
-                .join(Fact.concept)\
-                .join(Fact.fileData)\
-                .join(FileData.company)\
-                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), \
-                             Concept.conceptName.__eq__(conceptName)))\
-                .order_by(Period.endDate)\
-                .with_entities(Period.OID, Period.endDate, Fact.fileDataOID)\
-                .distinct()
-            objectResult = query.all()
-            return objectResult
-        except NoResultFound:
-            return None
-        
-        
-    @staticmethod    
-    def getPeriodByFact2(ticker, periodType = None, session = None):
-        try:
-            dbconnector = DBConnector()
-            if (session is None): 
-                session = dbconnector.getNewSession()
-            query = session.query(Period)\
-                .join(Period.factValueList)\
-                .join(FactValue.fact)\
-                .join(Fact.concept)\
-                .join(Fact.fileData)\
-                .join(FileData.company)\
-                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType)))\
-                .order_by(Period.endDate)\
-                .with_entities(Period.OID, Period.endDate)\
-                .distinct()
-            objectResult = query.all()
-            return objectResult
-        except NoResultFound:
-            return None
-       
-
-        
-    @staticmethod    
-    def getPeriodByCustomFact(ticker, conceptName, periodType = None, session = None):
-        try:
-            dbconnector = DBConnector()
-            if (session is None): 
-                session = dbconnector.getNewSession()
-            query = session.query(Period)\
-                .join(Period.customFactValueList)\
-                .join(CustomFactValue.customFact)\
-                .join(CustomFact.customConcept)\
-                .join(CustomFact.fileData)\
-                .join(FileData.company)\
-                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), CustomConcept.conceptName.__eq__(conceptName)))\
-                .order_by(Period.endDate)\
-                .with_entities(Period.OID, Period.endDate)
-            #print(str(query))
-            objectResult = query.all()
-            return objectResult
-        except NoResultFound:
-            return FactValue()
-        

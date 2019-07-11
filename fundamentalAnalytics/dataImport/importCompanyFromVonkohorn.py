@@ -4767,7 +4767,7 @@ session = DBConnector().getNewSession()
 
 print(object_[50863])
 
-companyList = GenericDao.getAllResult(Company, (Company.ticker == None), session)
+companyList = GenericDao().getAllResult(Company, (Company.ticker == None), session)
 
 for company in companyList:
     if(company.ticker is None

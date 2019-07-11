@@ -19,6 +19,7 @@ class Constant:
     ERROR_KEY_FACT = 'FACT_ERROR'
     ERROR_KEY_ENTITY_FACT = 'ENTITYFACT_ERROR'
     ERROR_KEY_PRICE = 'PRICE_ERROR'
+    ERROR_KEY_EXPRESSION = 'EXPRESSION_ERROR'
     
     CACHE_FOLDER = "D://Per//cache//"
 
@@ -49,7 +50,7 @@ class Constant:
     MEASURE =["xbrli:measure","measure"]
     PRESENTATIONARC =["link:presentationArc", "presentationArc"]
     CONTEXT_REF =["@contextRef"]
-    ALLOWED_ABSTRACT_CONCEPT =["us-gaap_StatementOfFinancialPositionAbstract", "us-gaap_StatementOfCashFlowsAbstract", "us-gaap_IncomeStatementAbstract", "us-gaap_AssetsAbstract", "us-gaap_CommonStockSharesOutstanding", "us-gaap_OperatingExpensesAbstract", "us-gaap_StatementTable", "us-gaap_NetCashProvidedByUsedInOperatingActivitiesAbstract", "DocumentAndEntityInformationAbstract"]
+    ALLOWED_ABSTRACT_CONCEPT =["us-gaap_StatementOfFinancialPositionAbstract", "us-gaap_StatementOfCashFlowsAbstract", "us-gaap_IncomeStatementAbstract", "us-gaap_AssetsAbstract", "us-gaap_CommonStockSharesOutstanding", "us-gaap_OperatingExpensesAbstract", "us-gaap_StatementTable", "us-gaap_NetCashProvidedByUsedInOperatingActivitiesAbstract"]
     
     LOGGER_ERROR = "Error"
     LOGGER_NONEFACTVALUE = "NoneFactValue"

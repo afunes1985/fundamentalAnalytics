@@ -50,8 +50,8 @@ if __name__ == "__main__":
     createLog(Constant.LOGGER_NONEFACTVALUE, logging.INFO)
     createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
-    fileDataList = GenericDao.getAllResult(FileData, and_(FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("PENDING")), session)
-    #fileDataList = GenericDao.getAllResult(FileData, and_(FileData.fileName == "edgar/data/1016708/0001477932-18-002398.txt"), session)
+    fileDataList = GenericDao().getAllResult(FileData, and_(FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("ERROR")), session)
+    #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.fileName == "edgar/data/1016708/0001477932-18-002398.txt"), session)
     threads = []    
     mainCache = initMainCache()
     executor = ThreadPoolExecutor(max_workers=threadNumber)

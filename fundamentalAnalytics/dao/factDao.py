@@ -75,11 +75,11 @@ class FactDao():
                             select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
                                     IFNULL(period.endDate, period.instant) date_, period.type as periodType, concept.defaultOrder as order_
                                  FROM fa_custom_fact fact
-                                     join fa_file_data fd on fd.OID = fact.fileDataOID
+                                     join fa_custom_fact_value factValue on factValue.customFactOID = fact.OID
+                                     join fa_file_data fd on fd.OID = factValue.fileDataOID
                                      join fa_company company on fd.companyOID = company.OID
                                      join fa_custom_concept concept on fact.customConceptOID = concept.OID
                                      join fa_custom_report report on fact.customReportOID = report.OID
-                                     join fa_custom_fact_value factValue on factValue.customFactOID = fact.OID
                                      join fa_period period on factValue.periodOID = period.OID
                                  where
                                     (:conceptName is null or concept.conceptName = :conceptName)

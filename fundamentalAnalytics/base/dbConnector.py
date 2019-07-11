@@ -5,7 +5,7 @@ Created on 20 ago. 2018
 '''
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import sessionmaker
-from sqlalchemy.pool.impl import QueuePool, SingletonThreadPool, NullPool
+from sqlalchemy.pool.impl import NullPool
 
 
 class DBConnector(object):

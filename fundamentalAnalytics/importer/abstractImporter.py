@@ -35,12 +35,12 @@ class AbstractImporter(object):
                 Dao().addObject(objectToAdd = self.fileData, session = self.session, doCommit = True)
                 logging.getLogger(Constant.LOGGER_GENERAL).info("*******************************FINISH AT " + str(datetime.now() - time1) +  " " + self.filename)
         except (FileNotFoundException, XSDNotFoundException) as e:
-            self.addOrModifyFDError1(e)
             logging.getLogger(Constant.LOGGER_GENERAL).debug("ERROR " + str(e))
+            self.addOrModifyFDError1(e)
         except Exception as e:
+            logging.getLogger(Constant.LOGGER_GENERAL).exception(e)
             self.session.rollback()
             self.addOrModifyFDError2(e)
-            logging.getLogger(Constant.LOGGER_GENERAL).exception(e)
         finally:
             self.session.commit()
             self.session.close()
