@@ -15,7 +15,7 @@ class DBConnector(object):
     
     def __init__(self):
         self.engine = create_engine('mysql+mysqlconnector://root:root@localhost/fundamentalanalytics', poolclass=NullPool)
-        self.session = sessionmaker(bind=self.engine, autoflush=False)
+        self.session = sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=False)
         self.session.trust_env = False
     
 #     def __new__(cls):

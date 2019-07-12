@@ -63,7 +63,7 @@ class CustomFactEngine():
         copiedValues += CustomFactEngine().copyToCustomFactYTD(ticker, customConcept, session)
         if(copiedValues > 0):
             print(customConcept.conceptName + "-> COPY -> COPIED: " + str(copiedValues))
-        
+            
     def copyToCustomFactYTD(self, ticker, customConcept, session=None):
         # Solo toma el Q1 en YTD y lo completa en QTD de los custom facts
         newFactValueDict = {}
@@ -170,3 +170,37 @@ class CustomFactEngine():
                 session.delete(itemToDelete)
             session.commit()
             print("DELETED " + str(len(customFactValueList)) + " FOR fillStrategy= " + fillStrategy)
+
+    def copyToCustomFact2(self, fileData, customConceptList, session):
+        newCFVDict = {}
+        customConceptCreated = [cfv.customFact.customConcept.conceptName for cfv in fileData.customFactValueList]
+        self.copyToCustomFactQTDINST2(fileData, customConceptList, customConceptCreated, newCFVDict, session)
+        self.copyToCustomFactYTD2(fileData, customConceptList, customConceptCreated, newCFVDict, session)
+        Dao().addObjectList(list(newCFVDict.values()), session)
+        return len(newCFVDict.values())
+            
+    def copyToCustomFactQTDINST2(self, fileData, customConceptList, customConceptCreated, newCFVDict, session):    
+        for customConcept in customConceptList:
+            if(customConcept.conceptName not in customConceptCreated):
+                for concept in customConcept.conceptList:
+                    factValueRS = FactDao().getFactValue3(ticker=fileData.company.ticker, periodType=customConcept.periodType, concept=concept, fileDataOID = fileData.OID, session=session)
+                    # print(factValueRS)
+                    for row in factValueRS:
+                        if(customConcept.conceptName not in newCFVDict.keys()):
+                            customFactValue = self.getNewCustomFactValue(value=row.value, origin='COPY', fileDataOID=fileData.OID, customConcept=customConcept, periodOID=row.periodOID, session=session)
+                            newCFVDict[customConcept.conceptName] = customFactValue
+    
+    def copyToCustomFactYTD2(self, fileData, customConceptList, customConceptCreated, newCFVDict, session):
+        # Solo toma el Q1 en YTD y lo completa en QTD de los custom facts
+        for customConcept in customConceptList:
+            if(customConcept.conceptName not in customConceptCreated):
+                for concept in customConcept.conceptList:
+                    factValueRS = FactDao().getFactValue3(ticker=fileData.company.ticker, periodType='YTD', concept=concept, fileDataOID = fileData.OID, session=session)
+                    for row in factValueRS:
+                        if (row.documentFiscalPeriodFocus == 'Q1'):
+                            if(customConcept.conceptName not in newCFVDict.keys()):
+                                customFactValue = self.getNewCustomFactValue(value=row.value, origin='COPY', fileDataOID=fileData.OID, customConcept=customConcept, endDate=row.endDate, session=session)
+                                newCFVDict[customConcept.conceptName] = customFactValue
+            else:
+                print("SKIPPED "+ customConcept.conceptName)
+        

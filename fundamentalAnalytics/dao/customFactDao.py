@@ -8,17 +8,20 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import or_, and_
 
 from base.dbConnector import DBConnector
-from dao.dao import Dao
+from dao.dao import Dao, GenericDao
 from modelClass.company import Company
 from modelClass.customConcept import CustomConcept
 from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
-from modelClass.factValue import FactValue
 from modelClass.fileData import FileData
 from modelClass.period import Period
 
 
 class CustomFactDao():
+    
+    def getCustomConcept(self, fillStrategy, session):
+        #"COPY_CALCULATE"
+        return GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == fillStrategy), session = session)
     
     @staticmethod
     def getCustomFactValue(ticker, customConceptName, periodType = None, session = None):

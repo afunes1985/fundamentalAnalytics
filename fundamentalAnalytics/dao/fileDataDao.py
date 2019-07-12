@@ -97,7 +97,7 @@ class FileDataDao():
         except NoResultFound:
             return None
     
-    def addOrModifyFileData(self, status = None, importStatus = None, entityStatus = None, priceStatus = None, expressionStatus = None, filename = None, externalSession = None, errorMessage = None, errorKey = None, fileData = None):
+    def addOrModifyFileData(self, status = None, importStatus = None, entityStatus = None, priceStatus = None, expressionStatus = None, copyStatus = None, filename = None, externalSession = None, errorMessage = None, errorKey = None, fileData = None):
         try:
             if (externalSession is None):
                 session = DBConnector().getNewSession()
@@ -116,6 +116,8 @@ class FileDataDao():
                 fileData.priceStatus = priceStatus    
             if importStatus is not None:
                 fileData.importStatus = importStatus
+            if copyStatus is not None:
+                fileData.copyStatus = copyStatus
             if expressionStatus is not None:
                 fileData.expressionStatus = expressionStatus
             self.setErrorMessage(errorMessage, errorKey, fileData)

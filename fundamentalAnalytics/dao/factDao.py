@@ -154,3 +154,23 @@ class FactDao():
             return objectResult
         except NoResultFound:
             return FactValue()
+        
+    def getFactValue3(self, ticker, periodType=None, concept=None, fileDataOID=None, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        objectResult = session.query(FactValue)\
+            .join(FactValue.fact)\
+            .join(Fact.concept)\
+            .join(Fact.report)\
+            .join(FactValue.period)\
+            .join(Fact.fileData)\
+            .join(FileData.company)\
+            .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), \
+                         FileData.OID == fileDataOID, \
+                         Concept.conceptName.__eq__(concept.conceptName)))\
+            .order_by(Period.endDate)\
+            .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, Fact.fileDataOID)\
+            .distinct()\
+            .all()
+        return objectResult

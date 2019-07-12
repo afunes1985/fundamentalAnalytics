@@ -51,13 +51,14 @@ class GenericDao():
             return None
         return objectResult
     
-    def getAllResult(self, objectClazz, condition = (1 == 1), session = None):
+    def getAllResult(self, objectClazz, condition = (1 == 1), session = None, limit = None):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
         objectResult = session.query(objectClazz)\
         .filter(condition)\
-        .all()#.limit(100)\
+        .limit(limit)\
+        .all()
         return objectResult
 
 

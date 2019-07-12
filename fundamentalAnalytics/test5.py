@@ -24,8 +24,8 @@ copy = False
 calculate = False
 createRatio = False
 deleteCopyCalculate = False
-deleteExpression = True
-deleteAllCustomFact = False
+deleteExpression = False
+deleteAllCustomFact = True
 
 if (masive):
     if(deleteAllCustomFact):
