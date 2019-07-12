@@ -5,23 +5,24 @@ Created on 22 ago. 2018
 '''
 from concurrent.futures.thread import ThreadPoolExecutor
 import logging
+import logging
 from threading import BoundedSemaphore
+import time
 
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from sqlalchemy.sql.expression import and_
 
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from dao.dao import GenericDao
+from importer.importerCopy import ImporterCopy
 from modelClass.customConcept import CustomConcept
+from modelClass.customFact import CustomFact
 from modelClass.fileData import FileData
 from tools.tools import createLog
 from valueobject.constant import Constant
-from importer.importerCopy import ImporterCopy
 
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
-import time
-import logging
 
 # logging.basicConfig()
 # logger = logging.getLogger("myapp.sqltime")
@@ -39,11 +40,11 @@ import logging
 #     total = time.time() - conn.info['query_start_time'].pop(-1)
 #     logger.debug("Query Complete!")
 #     logger.debug("Total Time: %f", total)
-
-
 def initMainCache(session):
-    customConceptList = GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = session)
-    return customConceptList
+    cacheDict = {}
+    cacheDict["customConceptList"] = GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = session)
+    cacheDict["customFactList"] = GenericDao().getAllResult(objectClazz = CustomFact, session = session)
+    return cacheDict
 
 if __name__ == "__main__":
     replace = False
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("ERROR")), session)
     #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.fileName == "edgar/data/1013488/0001564590-18-011253.txt"), session)
     threads = []    
-    customConceptList = initMainCache(session)
+    cacheDict = initMainCache(session)
     executor = ThreadPoolExecutor(max_workers=threadNumber)
     semaphore = BoundedSemaphore(maxProcessInQueue)
     logging.getLogger(Constant.LOGGER_GENERAL).info("READY TO IMPORT COPY CF " + str(len(fileDataList)) + " FILEDATA")
@@ -69,7 +70,7 @@ if __name__ == "__main__":
         try:
             try:
                 semaphore.acquire()
-                fi = ImporterCopy(fileData.fileName, replace, customConceptList)
+                fi = ImporterCopy(fileData.fileName, replace, cacheDict)
                 #fi.doImport()
                 future = executor.submit(fi.doImport)
             except Exception as e:

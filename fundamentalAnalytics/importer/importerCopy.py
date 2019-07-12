@@ -10,10 +10,10 @@ from valueobject.constant import Constant
 
 class ImporterCopy(AbstractImporter):
     
-    def __init__(self, filename, replace, customConceptList):
+    def __init__(self, filename, replace, cacheDict):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_COPY, filename, replace)
         self.customConceptList = []
-        for cc in customConceptList:
+        for cc in cacheDict["customConceptList"]:
             self.customConceptList.append(self.session.merge(cc))
     
     def doImport2(self):
