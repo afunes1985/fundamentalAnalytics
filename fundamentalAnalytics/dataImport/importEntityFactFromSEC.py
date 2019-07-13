@@ -16,7 +16,6 @@ import xmltodict
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from dao.dao import GenericDao
-from modelClass.company import Company
 from modelClass.fileData import FileData
 from tools.tools import createLog, getXSDFileFromCache
 from valueobject.constant import Constant
@@ -34,7 +33,7 @@ def initMainCache():
             xsdDF.head()
             mainCache[xsdFileName] = xsdDF
             print(xsdFileName)
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
     return mainCache
 
@@ -50,7 +49,7 @@ if __name__ == "__main__":
     createLog(Constant.LOGGER_NONEFACTVALUE, logging.INFO)
     createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
-    fileDataList = GenericDao().getAllResult(FileData, and_(FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("ERROR")), session)
+    fileDataList = GenericDao().getAllResult(FileData, and_(FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("INIT")), session)
     #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.fileName == "edgar/data/1016708/0001477932-18-002398.txt"), session)
     threads = []    
     mainCache = initMainCache()

@@ -27,7 +27,7 @@ class PeriodEngine():
             period.startDate = startDate
             period.endDate = endDate
             period.type = self.getPeriodType(startDate, endDate)
-            #Dao().addObject(objectToAdd = period, session = session, doFlush = True)
+            Dao().addObject(objectToAdd = period, session = session, doFlush = True)
         return period
     
     def getOrCreatePeriod3(self, instant, session):
@@ -36,7 +36,7 @@ class PeriodEngine():
             period = Period()
             period.instant = instant
             period.type = "INST"
-            #Dao().addObject(objectToAdd = period, session = session, doFlush = True)
+            Dao().addObject(objectToAdd = period, session = session, doFlush = True)
         return period
     
     def getPeriodType(self, startDate, endDate):

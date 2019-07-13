@@ -20,7 +20,7 @@ session = DBConnector().getNewSession()
 conceptName = 'EntityCommonStockSharesOutstanding'
 entityFactList = EntityFactDao().getEntityFactList(ticker="", conceptName = conceptName, priceStatus = Constant.STATUS_PENDING, session = session)
 for efv in entityFactList:
-    ipe = ImporterPrice(efv[0], efv[1], efv[2], efv[3], efv[4])
+    ipe = ImporterPrice(efv[0], efv[1], efv[2], efv[3], efv[4], False)
     semaphore.acquire()
     try:
         future = executor.submit(ipe.doImport)
