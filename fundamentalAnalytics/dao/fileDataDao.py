@@ -18,25 +18,24 @@ from valueobject.constant import Constant
 
 
 class FileDataDao():
+
     @staticmethod   
-    def getFileDataList(status = [], session = None):
+    def getFileDataList(status=[], session=None):
         try:
             dbconnector = DBConnector()
             if (session is None): 
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
-            .with_entities(FileData.fileName,FileData.status, FileData.importStatus)\
+            .with_entities(FileData.fileName, FileData.status, FileData.importStatus)\
             .filter(FileData.status.in_(status))
-            #.with_entities(FileData.fileName, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status)\
+            # .with_entities(FileData.fileName, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status)\
             objectResult = query.all()
             return objectResult
         except NoResultFound:
             return None
         
-        
-        
     @staticmethod   
-    def getFileDataList2(status = [], session = None):
+    def getFileDataList2(status=[], session=None):
         dbconnector = DBConnector()
         with dbconnector.engine.connect() as con:
             params = { 'status' : status}
@@ -56,22 +55,22 @@ class FileDataDao():
             return rs 
         
     @staticmethod   
-    def getFileDataList3(filename = '', ticker = '', session = None):
+    def getFileDataList3(filename='', ticker='', session=None):
         try:
             dbconnector = DBConnector()
             if (session is None): 
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
             .join(FileData.company)\
-            .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate,  FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.importStatus, FileData.status, FileData.entityStatus, FileData.priceStatus)\
+            .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.importStatus, FileData.status, FileData.entityStatus, FileData.priceStatus)\
             .order_by(FileData.documentPeriodEndDate)\
-            .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''),and_(Company.ticker.like('%' + ticker + '%'), ticker != '') ))
+            .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Company.ticker.like('%' + ticker + '%'), ticker != '')))
             objectResult = query.all()
             return objectResult
         except NoResultFound:
             return None
         
-    def getFileDataListWithoutConcept(self, ticker, customConceptOID, session = None):
+    def getFileDataListWithoutConcept(self, ticker, customConceptOID, session=None):
         try:
             dbconnector = DBConnector()
             fd2 = []
@@ -97,7 +96,7 @@ class FileDataDao():
         except NoResultFound:
             return None
     
-    def addOrModifyFileData(self, status = None, importStatus = None, entityStatus = None, priceStatus = None, expressionStatus = None, copyStatus = None, filename = None, externalSession = None, errorMessage = None, errorKey = None, fileData = None):
+    def addOrModifyFileData(self, status=None, importStatus=None, entityStatus=None, priceStatus=None, expressionStatus=None, copyStatus=None, calculateStatus=None, filename=None, externalSession=None, errorMessage=None, errorKey=None, fileData=None):
         try:
             if (externalSession is None):
                 session = DBConnector().getNewSession()
@@ -113,7 +112,9 @@ class FileDataDao():
             if (entityStatus is not None):
                 fileData.entityStatus = entityStatus
             if (priceStatus is not None):
-                fileData.priceStatus = priceStatus    
+                fileData.priceStatus = priceStatus
+            if (calculateStatus is not None):
+                fileData.calculateStatus = calculateStatus    
             if importStatus is not None:
                 fileData.importStatus = importStatus
             if copyStatus is not None:
@@ -121,7 +122,7 @@ class FileDataDao():
             if expressionStatus is not None:
                 fileData.expressionStatus = expressionStatus
             self.setErrorMessage(errorMessage, errorKey, fileData)
-            Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
+            Dao().addObject(objectToAdd=fileData, session=session, doCommit=True)
             if (externalSession is None):
                 session.close()
             return fileData
@@ -141,8 +142,8 @@ class FileDataDao():
                     fileData.errorMessageList.remove(em)
     
     @staticmethod   
-    def getFileData(filename, session = None):
-        return GenericDao().getOneResult(FileData, and_(FileData.fileName == filename), session, raiseNoResultFound = False)
+    def getFileData(filename, session=None):
+        return GenericDao().getOneResult(FileData, and_(FileData.fileName == filename), session, raiseNoResultFound=False)
         
     @staticmethod   
     def getFileDataYearPeriodList():

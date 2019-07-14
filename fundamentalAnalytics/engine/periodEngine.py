@@ -18,6 +18,7 @@ class PeriodEngine():
             period = Period()
             period.endDate = endDate
             period.type = periodType
+            Dao().addObject(objectToAdd = period, session = session, doFlush = True)
         return period
     
     def getOrCreatePeriod2(self, startDate, endDate, session):

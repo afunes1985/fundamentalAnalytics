@@ -26,6 +26,7 @@ class FileData(PersistenObject):
     entityStatus = Column(String(15), nullable=False)
     priceStatus = Column(String(15), nullable=False)
     copyStatus = Column(String(15), nullable=False)
+    calculateStatus = Column(String(15), nullable=False)
     expressionStatus = Column(String(15), nullable=False)
     factList = relationship("Fact", back_populates="fileData")
     entityFactValueList = relationship("EntityFactValue", back_populates="fileData")

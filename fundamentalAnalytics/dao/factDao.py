@@ -169,3 +169,19 @@ class FactDao():
             .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, Fact.fileDataOID)\
             .all()#.distinct()\#.order_by(Period.endDate)\
         return objectResult
+    
+    def getFactValue4(self, companyOID, periodType, conceptOID, documentFiscalYearFocus, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        objectResult = session.query(FactValue)\
+            .join(FactValue.fact)\
+            .join(FactValue.period)\
+            .join(Fact.fileData)\
+            .filter(and_(Period.type.__eq__(periodType), \
+                         FileData.documentFiscalYearFocus == documentFiscalYearFocus, \
+                         FileData.companyOID == companyOID, \
+                         Fact.conceptOID.__eq__(conceptOID)))\
+            .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, Fact.fileDataOID)\
+            .all()#.distinct()\#.order_by(Period.endDate)\
+        return objectResult
