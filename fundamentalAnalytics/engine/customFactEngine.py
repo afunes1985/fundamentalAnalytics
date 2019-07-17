@@ -17,6 +17,7 @@ from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
 from modelClass.customReport import CustomReport
 from valueobject.constant import Constant
+from valueobject.valueobject import CustomFactValueVO
 
 
 class CustomFactEngine():
@@ -216,7 +217,6 @@ class CustomFactEngine():
                     for concept in customConcept.conceptList:
                         factValueRS = FactDao().getFactValue3(periodType='YTD', conceptOID=concept.OID, fileDataOID=fileData.OID, session=session)
                         for row in factValueRS:
-                            
                                 if(customConcept.conceptName not in newCFVDict.keys()):
                                     customFactValue = self.getNewCustomFactValue(value=row.value, origin='COPY', fileDataOID=fileData.OID, customConcept=customConcept, endDate=row.endDate, session=session)
                                     newCFVDict[customConcept.conceptName] = customFactValue
@@ -224,26 +224,28 @@ class CustomFactEngine():
                     print("SKIPPED " + customConcept.conceptName)
         
     def calculateMissingQTDValues2(self, fileData, customConceptList, session):
-        newCustomFactValueList = []
-        customConceptCreated = [cfv.customFact.customConcept.conceptName for cfv in fileData.customFactValueList]
+        cfvVOList = []
+        ytdDict = {}
+        listYTD = FactDao().getFactValue4(companyOID=fileData.companyOID, periodType='YTD', documentFiscalYearFocus=fileData.documentFiscalYearFocus, session=session)
+        for itemYTD in listYTD:
+            ytdDict.setdefault(itemYTD.conceptOID, []).append(itemYTD)
+        
         for customConcept in customConceptList:
-            if customConcept.conceptName not in customConceptCreated:
-                for concept in customConcept.conceptList:
-                        listYTD = FactDao().getFactValue4(companyOID=fileData.company.OID, periodType='YTD', conceptOID=concept.OID, documentFiscalYearFocus=fileData.documentFiscalYearFocus, session=session)
-                        newCustomFactValue = None
-                        prevRow = None
-                        for itemYTD in listYTD:  # itero todos los YTD y cuando corresponde con un faltante busco el YTD anterior y se lo resto o busco los 3 QTD anteriores
-                            sumValue = 0
-                            if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100 and itemYTD.fileDataOID == fileData.OID:
-                                # estrategia de calculo usando el YTD
-                                print("NEW FACT VALUE1 " + customConcept.conceptName + " " + str(itemYTD.value - prevRow.value))
-                                customFactValue = self.getNewCustomFactValue(value=(itemYTD.value - prevRow.value), origin='CALCULATED', fileDataOID=itemYTD.fileDataOID,
-                                                                             customConcept=customConcept, session=session, endDate=itemYTD.endDate)
-                                newCustomFactValue = customFactValue
-                            else:
-                                prevRow = itemYTD
+            cfvVOListTemp = []
+            for relationConcept in customConcept.relationConceptList:
+                prevRow = None 
+                customFactValueVO = None
+                for itemYTD in ytdDict.get(relationConcept.concept.OID, []):  # itero todos los YTD y cuando corresponde con un faltante busco el YTD anterior y se lo resto o busco los 3 QTD anteriores
+                    if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100 and itemYTD.fileDataOID == fileData.OID:
+                        # estrategia de calculo usando el YTD
+                        print("NEW FACT VALUE1 " + customConcept.conceptName + " " + str(itemYTD.value - prevRow.value) + " " + relationConcept.concept.conceptName)
+                        customFactValueVO = CustomFactValueVO(value=(itemYTD.value - prevRow.value), origin='CALCULATED', 
+                                                              fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = relationConcept.order_ )
+                    else:
+                        prevRow = itemYTD
                         
 #                         if newCustomFactValue is None:
+                                #sumValue = 0
 #                                 # estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
 #                                 listQTD = CustomFactDao().getCustomFactValue4(companyOID=fileData.company.OID, documentFiscalYearFocus=fileData.documentFiscalYearFocus, customConceptOID=customConcept.OID, session=session)
 #                                 listQTD_2 = []
@@ -256,8 +258,16 @@ class CustomFactEngine():
 #                                     customFactValue = self.getNewCustomFactValue(value=(itemYTD.value - sumValue), origin='CALCULATED', fileDataOID=itemYTD.fileDataOID,
 #                                                                              customConcept=customConcept, session=session, endDate=itemYTD.endDate)
 #                                     newCustomFactValue = customFactValue
-                        if(newCustomFactValue is not None):
-                            newCustomFactValueList.append(newCustomFactValue)
-                            
-        Dao().addObjectList(newCustomFactValueList, session)
-        return len(newCustomFactValueList)
+                if(customFactValueVO is not None):
+                    cfvVOListTemp.append(customFactValueVO)
+            prevVO = None            
+            for cfvVO in cfvVOListTemp:
+                if(prevVO is None):
+                    prevVO = cfvVO
+                else:
+                    #if(cfvVO.order_ is not None and cfvVO.order_> prevVO.order_ and abs(cfvVO.value) > abs(prevVO.value)):
+                    if(cfvVO.order_ is None):
+                        raise Exception("Duplicated Fact" + str([x.concept.conceptName for x in customConcept.relationConceptList]))
+            if (prevVO is not None):
+                cfvVOList.append(prevVO)
+        return cfvVOList

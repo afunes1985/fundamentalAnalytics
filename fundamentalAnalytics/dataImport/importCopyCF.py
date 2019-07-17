@@ -5,12 +5,8 @@ Created on 22 ago. 2018
 '''
 from concurrent.futures.thread import ThreadPoolExecutor
 import logging
-import logging
 from threading import BoundedSemaphore
-import time
 
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
 from sqlalchemy.sql.expression import and_
 
 from base.dbConnector import DBConnector
@@ -58,7 +54,7 @@ if __name__ == "__main__":
     createLog(Constant.LOGGER_NONEFACTVALUE, logging.INFO)
     createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
-    fileDataList = GenericDao().getAllResult(FileData, and_(FileData.status.__eq__("OK"), FileData.copyStatus.__eq__("PENDING")), session)
+    fileDataList = GenericDao().getAllResult(FileData, and_(FileData.status.__eq__("OK"), FileData.copyStatus.__eq__("ERROR")), session)
     #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("ERROR")), session)
     #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.fileName == "edgar/data/1013488/0001564590-18-011253.txt"), session)
     threads = []    

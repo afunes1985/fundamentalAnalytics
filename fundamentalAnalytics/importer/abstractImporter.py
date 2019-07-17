@@ -16,12 +16,13 @@ from valueobject.constant import Constant
 
 class AbstractImporter(object):
 
-    def __init__(self, errorKey, filename, replace):
+    def __init__(self, errorKey, filename, replace, statusAttr):
         self.errorKey = errorKey
         self.filename = filename
         self.fileDataDao = FileDataDao()
         self.session = DBConnector().getNewSession()
         self.replace = replace
+        self.statusAttr = statusAttr
         
     def doImport(self):
         try:
@@ -31,13 +32,20 @@ class AbstractImporter(object):
             if(self.skipOrProcess()):
                 self.addOrModifyInit()
                 logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
-                self.doImport2()
+                voList = self.doImport2()
+                persistentList = self.getPersistentList(voList)
+                Dao().addObjectList(persistentList, self.session)
+                if(voList != 0):
+                    setattr(self.fileData , self.statusAttr, Constant.STATUS_OK)
+                else: 
+                    setattr(self.fileData , self.statusAttr, Constant.STATUS_NO_DATA) 
                 Dao().addObject(objectToAdd = self.fileData, session = self.session, doCommit = True)
                 logging.getLogger(Constant.LOGGER_GENERAL).info("*******************************FINISH AT " + str(datetime.now() - time1) +  " " + self.filename)
         except (FileNotFoundException, XSDNotFoundException) as e:
             logging.getLogger(Constant.LOGGER_GENERAL).debug("ERROR " + str(e))
             self.addOrModifyFDError1(e)
         except Exception as e:
+            logging.getLogger(Constant.LOGGER_GENERAL).info("ERROR " + self.filename)
             logging.getLogger(Constant.LOGGER_GENERAL).exception(e)
             self.session.rollback()
             self.addOrModifyFDError2(e)
@@ -65,3 +73,10 @@ class AbstractImporter(object):
     def skipOrProcess(self):
         pass
     
+    def getPersistentList(self, voList):
+        #customConceptCreated = [cfv.customFact.customConcept.conceptName for cfv in self.fileData.customFactValueList]
+        persistentList = []
+        for vo in voList:
+            #if(vo.customConcept.conceptName not in customConceptCreated):
+                persistentList.append(self.getPersistent(vo))
+        return persistentList

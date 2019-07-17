@@ -6,14 +6,13 @@ Created on Jul 6, 2019
 from sqlalchemy.sql.expression import and_
 
 from dao.dao import GenericDao, Dao
-from dao.periodDao import PeriodDao
 from modelClass.period import Period
 
 
 class PeriodEngine():
     
     def getOrCreatePeriod(self, periodType, endDate, session):
-        period = GenericDao().getOneResult(Period, and_(Period.endDate == endDate, Period.startDate == None), session, raiseNoResultFound = False)
+        period = GenericDao().getOneResult(Period, and_(Period.endDate == endDate, Period.startDate.is_(None)), session, raiseNoResultFound = False)
         if(period is None):
             period = Period()
             period.endDate = endDate

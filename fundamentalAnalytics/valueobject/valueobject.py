@@ -38,4 +38,19 @@ class FilterFactVO():
         self.CIK = None
         self.conceptName = None
         self.reportShortName = None
-        self.ticker = None     
+        self.ticker = None    
+        
+class CustomFactValueVO():
+    value = None
+    origin = None
+    fileDataOID = None
+    customConcept = None
+    endDate = None
+    order_ = None
+    def __init__(self, value, origin, fileDataOID, customConcept, endDate, order_):
+        self.value = value
+        self.origin = origin
+        self.fileDataOID = fileDataOID
+        self.customConcept = customConcept
+        self.endDate = endDate
+        self.order_ = order_

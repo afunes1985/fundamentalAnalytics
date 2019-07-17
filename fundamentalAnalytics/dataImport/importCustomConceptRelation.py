@@ -81,10 +81,10 @@ customConceptDict = {"REVENUE": ["Revenues", "RevenueFromContractWithCustomerExc
                      "OPERATING_INCOME": ["OperatingIncomeLoss"],
                      "INTERES_EXPENSE": ["InterestExpense"],
                      "GAIN_LOSS_SALE_ASSETS": ["GainLossOnInvestments"],
-                     "OTHER_INCOME_LOSS": ["NonoperatingIncomeExpense", "OtherNonoperatingIncomeExpense"],
+                     "OTHER_INCOME_LOSS": ["NonoperatingIncomeExpense", "OtherNonoperatingIncomeExpense"],  # ORDER 1, 2
                      "INCOME_BEFORE_TAX": ["IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments", "IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest"],
                      "INCOME_TAX_PAID": ["IncomeTaxExpenseBenefit"],
-                     "NET_INCOME": ["NetIncomeLoss", "ProfitLoss"],
+                     "NET_INCOME": ["NetIncomeLoss", "ProfitLoss"], # ORDER 1, 2
                      "EARNINGS_PER_SHARE_BASIC": ["EarningsPerShareBasic"],
                      "EARNINGS_PER_SHARE_DILUTED": ["EarningsPerShareDiluted"],
                      

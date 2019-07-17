@@ -58,13 +58,14 @@ class FactDao():
             
             query = text("""select * from(
                             select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
-                                    IFNULL(period.endDate, period.instant) date_, period.type as periodType, fact.order_ as order_
+                                    IFNULL(period.endDate, period.instant) date_, period.type as periodType, frf.order_ as order_
                                  FROM fa_fact fact
                                      join fa_file_data fd on fd.OID = fact.fileDataOID
                                      join fa_company company on fd.companyOID = company.OID
                                      join fa_concept concept on fact.conceptOID = concept.OID
-                                     join fa_report report on fact.reportOID = report.OID
-                                     join fa_fact_value factValue on factValue.factOID = fact.OID
+                                     join fa_fact_report_relation frf on frf.factOID =fact.OID
+                                     join fa_report report on frf.reportOID = report.OID
+                                     join fa_fact_value factValue on factValue.OID = fact.factValueOID
                                      join fa_period period on factValue.periodOID = period.OID
                                  where 
                                     (:conceptName is null or concept.conceptName = :conceptName)
@@ -160,7 +161,7 @@ class FactDao():
         if (session is None): 
             session = dbconnector.getNewSession()
         objectResult = session.query(FactValue)\
-            .join(FactValue.fact)\
+            .join(FactValue.factList)\
             .join(FactValue.period)\
             .join(Fact.fileData)\
             .filter(and_(Period.type.__eq__(periodType), \
@@ -170,18 +171,18 @@ class FactDao():
             .all()#.distinct()\#.order_by(Period.endDate)\
         return objectResult
     
-    def getFactValue4(self, companyOID, periodType, conceptOID, documentFiscalYearFocus, session=None):
+    def getFactValue4(self, companyOID, periodType, documentFiscalYearFocus, session=None):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
         objectResult = session.query(FactValue)\
-            .join(FactValue.fact)\
+            .join(FactValue.factList)\
             .join(FactValue.period)\
             .join(Fact.fileData)\
             .filter(and_(Period.type.__eq__(periodType), \
                          FileData.documentFiscalYearFocus == documentFiscalYearFocus, \
-                         FileData.companyOID == companyOID, \
-                         Fact.conceptOID.__eq__(conceptOID)))\
-            .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, Fact.fileDataOID)\
-            .all()#.distinct()\#.order_by(Period.endDate)\
+                         FileData.companyOID == companyOID))\
+            .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, Fact.fileDataOID, Fact.conceptOID)\
+            .order_by(Period.endDate)\
+            .all()#\#.order_by(Period.endDate).distinct()\
         return objectResult

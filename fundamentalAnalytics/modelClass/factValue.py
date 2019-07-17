@@ -13,6 +13,5 @@ class FactValue(PersistenObject):
     __tablename__ = 'fa_fact_value'
     periodOID = Column(Integer, ForeignKey('fa_period.OID'))
     period = relationship("Period", back_populates="factValueList")
-    factOID = Column(Integer, ForeignKey('fa_fact.OID'))
-    fact = relationship("Fact", back_populates="factValueList")
+    factList = relationship("Fact", back_populates="factValue")
     value = Column(Float(), nullable=False)

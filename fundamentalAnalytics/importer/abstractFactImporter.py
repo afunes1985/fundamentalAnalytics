@@ -210,7 +210,7 @@ class AbstractFactImporter(object):
                 if(endDate is not None and PeriodEngine().getDaysBetweenDates(documentPeriodEndDate, endDate) < 5):
                     period =  PeriodEngine().getOrCreatePeriod2(startDate, endDate, session)
                     periodDict[item['@id']] = period
-                elif(instant is not None):
+                elif(instant is not None and PeriodEngine().getDaysBetweenDates(documentPeriodEndDate, instant) < 5):
                     period =  PeriodEngine().getOrCreatePeriod3(instant, session)
                     periodDict[item['@id']] = period
         return periodDict
