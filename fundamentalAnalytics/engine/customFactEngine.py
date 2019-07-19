@@ -183,45 +183,38 @@ class CustomFactEngine():
     def copyToCustomFact2(self, fileData, customConceptList, session):
         newCFVDict = {}
         logging.info("START")
-        customConceptCreated = [cfv.customFact.customConcept.conceptName for cfv in fileData.customFactValueList]
+        #customConceptCreated = [cfv.customFact.customConcept.conceptName for cfv in fileData.customFactValueList]
         time1 = datetime.now()
-        self.copyToCustomFactQTDINST2(fileData, customConceptList, customConceptCreated, newCFVDict, session)
+        self.copyToCustomFactQTDINST2(fileData, customConceptList, newCFVDict, session)
         # logging.getLogger(Constant.LOGGER_GENERAL).info("*******************************FINISH STEP 1 " + str(datetime.now() - time1) )
         time1 = datetime.now()
-        self.copyToCustomFactYTD2(fileData, customConceptList, customConceptCreated, newCFVDict, session)
+        self.copyToCustomFactYTD2(fileData, customConceptList, newCFVDict, session)
         # logging.getLogger(Constant.LOGGER_GENERAL).info("*******************************FINISH STEP 2 " + str(datetime.now() - time1) )
         time1 = datetime.now()
-        Dao().addObjectList(list(newCFVDict.values()), session)
         # logging.getLogger(Constant.LOGGER_GENERAL).info("*******************************FINISH STEP 3 " + str(datetime.now() - time1) )
-        return len(newCFVDict.values())
+        return newCFVDict.values()
             
-    def copyToCustomFactQTDINST2(self, fileData, customConceptList, customConceptCreated, newCFVDict, session):    
+    def copyToCustomFactQTDINST2(self, fileData, customConceptList, newCFVDict, session):    
         for customConcept in customConceptList:
-            time1 = datetime.now()
-            if(customConcept.conceptName not in customConceptCreated):
-                for concept in customConcept.conceptList:
-                    factValueRS = FactDao().getFactValue3(periodType=customConcept.periodType, conceptOID=concept.OID, fileDataOID=fileData.OID, session=session)
-                    time2 = datetime.now()
-                    for row in factValueRS:
-                        if(customConcept.conceptName not in newCFVDict.keys()):
-                            customFactValue = self.getNewCustomFactValue(value=row.value, origin='COPY', fileDataOID=fileData.OID, customConcept=customConcept, periodOID=row.periodOID, session=session)
-                            newCFVDict[customConcept.conceptName] = customFactValue
-                    # logging.getLogger(Constant.LOGGER_GENERAL).info("*******************************FINISH STEP 1.2 " + str(datetime.now() - time2) )
-            # logging.getLogger(Constant.LOGGER_GENERAL).info("*******************************FINISH STEP 1.1 " + str(datetime.now() - time1) )
+            for relationConcept in customConcept.relationConceptList:
+                factValueRS = FactDao().getFactValue3(periodType=customConcept.periodType, conceptOID=relationConcept.conceptOID, fileDataOID=fileData.OID, session=session)
+                for row in factValueRS:
+                    if(customConcept.conceptName not in newCFVDict.keys()):
+                        cfvVO = CustomFactValueVO(value=row.value, origin='COPY',fileDataOID=fileData.OID, 
+                                          customConcept=customConcept, periodOID=row.periodOID, order_ = relationConcept.order_ )
+                        newCFVDict[customConcept.conceptName] = cfvVO
     
-    def copyToCustomFactYTD2(self, fileData, customConceptList, customConceptCreated, newCFVDict, session):
+    def copyToCustomFactYTD2(self, fileData, customConceptList, newCFVDict, session):
         # Solo toma el Q1 en YTD y lo completa en QTD de los custom facts
         if (fileData.documentFiscalPeriodFocus == 'Q1'):
             for customConcept in customConceptList:
-                if(customConcept.conceptName not in customConceptCreated):
-                    for concept in customConcept.conceptList:
-                        factValueRS = FactDao().getFactValue3(periodType='YTD', conceptOID=concept.OID, fileDataOID=fileData.OID, session=session)
-                        for row in factValueRS:
-                                if(customConcept.conceptName not in newCFVDict.keys()):
-                                    customFactValue = self.getNewCustomFactValue(value=row.value, origin='COPY', fileDataOID=fileData.OID, customConcept=customConcept, endDate=row.endDate, session=session)
-                                    newCFVDict[customConcept.conceptName] = customFactValue
-                else:
-                    print("SKIPPED " + customConcept.conceptName)
+                for relationConcept in customConcept.relationConceptList:
+                    factValueRS = FactDao().getFactValue3(periodType='YTD', conceptOID=relationConcept.conceptOID, fileDataOID=fileData.OID, session=session)
+                    for row in factValueRS:
+                        if(customConcept.conceptName not in newCFVDict.keys()):
+                            cfvVO = CustomFactValueVO(value=row.value, origin='COPY',fileDataOID=fileData.OID, 
+                                          customConcept=customConcept, endDate=row.endDate, order_ = relationConcept.order_ )
+                            newCFVDict[customConcept.conceptName] = cfvVO
         
     def calculateMissingQTDValues2(self, fileData, customConceptList, session):
         cfvVOList = []

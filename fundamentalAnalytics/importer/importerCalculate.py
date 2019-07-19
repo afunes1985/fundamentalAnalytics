@@ -11,7 +11,7 @@ from valueobject.constant import Constant
 class ImporterCalculate(AbstractImporter):
 
     def __init__(self, filename, replace, cacheDict):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_CALCULATE, filename, replace, 'calculateStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_CALCULATE, filename, replace, 'copyStatus', 'calculateStatus')
         self.customConceptList = []
         for cc in cacheDict["customConceptList"]:
             self.customConceptList.append(self.session.merge(cc))
@@ -25,20 +25,8 @@ class ImporterCalculate(AbstractImporter):
     def addOrModifyInit(self):
         self.fileDataDao.addOrModifyFileData(calculateStatus = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey)   
             
-    def skipOrProcess(self):
-        if((self.fileData.copyStatus == Constant.STATUS_OK and getattr(self.fileData, self.statusAttr) != Constant.STATUS_OK) or self.replace == True):
-            return True
-        else:
-            return False 
-    
     def getPersistent(self, cfvVO):
         customFactValue = CustomFactEngine().getNewCustomFactValue(value=cfvVO.value, origin=cfvVO.origin, fileDataOID=cfvVO.fileDataOID,
                                     customConcept=cfvVO.customConcept,  endDate=cfvVO.endDate, session=self.session)
         return customFactValue  
-    
-    def getStatusAttr(self):
-        return self.fileData.calculateStatus  
-
-            
-        
         

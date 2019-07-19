@@ -3,19 +3,26 @@ Created on 8 sep. 2018
 
 @author: afunes
 '''
+
+
 class ContextRef():
+
     def __init__(self):
         self.context = None
         self.starDate = None
         self.endDate = None
 
+
 class FactValueVO():
+
     def __init__(self):
         self.contextRef = None
         self.unitRef = None
         self.value = None
+
     
 class FactVO():
+
     def __init__(self):
         self.xlink_href = None
         self.conceptName = None
@@ -28,17 +35,22 @@ class FactVO():
     
     def getConceptID(self):
         return self.xlink_href[self.xlink_href.find("#", 0) + 1:len(self.xlink_href)]
+
     
 class CompanyVO():
+
     def __init__(self):
         self.CIK = None
+
         
 class FilterFactVO():
+
     def __init__(self):
         self.CIK = None
         self.conceptName = None
         self.reportShortName = None
         self.ticker = None    
+
         
 class CustomFactValueVO():
     value = None
@@ -47,10 +59,13 @@ class CustomFactValueVO():
     customConcept = None
     endDate = None
     order_ = None
-    def __init__(self, value, origin, fileDataOID, customConcept, endDate, order_):
+    periodOID = None
+
+    def __init__(self, value, origin, fileDataOID, customConcept, order_, periodOID=None, endDate=None):
         self.value = value
         self.origin = origin
         self.fileDataOID = fileDataOID
         self.customConcept = customConcept
         self.endDate = endDate
         self.order_ = order_
+        self.periodOID = periodOID

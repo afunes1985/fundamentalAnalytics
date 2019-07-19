@@ -16,13 +16,14 @@ from valueobject.constant import Constant
 
 class AbstractImporter(object):
 
-    def __init__(self, errorKey, filename, replace, statusAttr):
+    def __init__(self, errorKey, filename, replace, previousStatus, actualStatus):
         self.errorKey = errorKey
         self.filename = filename
         self.fileDataDao = FileDataDao()
         self.session = DBConnector().getNewSession()
         self.replace = replace
-        self.statusAttr = statusAttr
+        self.previousStatus = previousStatus
+        self.actualStatus = actualStatus
         
     def doImport(self):
         try:
@@ -36,9 +37,9 @@ class AbstractImporter(object):
                 persistentList = self.getPersistentList(voList)
                 Dao().addObjectList(persistentList, self.session)
                 if(voList != 0):
-                    setattr(self.fileData , self.statusAttr, Constant.STATUS_OK)
+                    setattr(self.fileData , self.actualStatus, Constant.STATUS_OK)
                 else: 
-                    setattr(self.fileData , self.statusAttr, Constant.STATUS_NO_DATA) 
+                    setattr(self.fileData , self.actualStatus, Constant.STATUS_NO_DATA) 
                 Dao().addObject(objectToAdd = self.fileData, session = self.session, doCommit = True)
                 logging.getLogger(Constant.LOGGER_GENERAL).info("*******************************FINISH AT " + str(datetime.now() - time1) +  " " + self.filename)
         except (FileNotFoundException, XSDNotFoundException) as e:
@@ -71,7 +72,10 @@ class AbstractImporter(object):
     
     @abstractmethod
     def skipOrProcess(self):
-        pass
+        if((getattr(self.fileData, self.previousStatus)  == Constant.STATUS_OK and getattr(self.fileData, self.actualStatus) != Constant.STATUS_OK) or self.replace == True):
+            return True
+        else:
+            return False  
     
     def getPersistentList(self, voList):
         #customConceptCreated = [cfv.customFact.customConcept.conceptName for cfv in self.fileData.customFactValueList]
