@@ -10,13 +10,17 @@ import logging
 from base.dbConnector import DBConnector
 from dao.dao import Dao
 from dao.fileDataDao import FileDataDao
-from tools.tools import FileNotFoundException, XSDNotFoundException
+from tools.tools import FileNotFoundException, XSDNotFoundException, createLog
 from valueobject.constant import Constant
 
 
 class AbstractImporter(object):
 
+    cacheDict = {}
+    logger = None
+    
     def __init__(self, errorKey, filename, replace, previousStatus, actualStatus):
+        self.initLogger()
         self.errorKey = errorKey
         self.filename = filename
         self.fileDataDao = FileDataDao()
@@ -24,6 +28,9 @@ class AbstractImporter(object):
         self.replace = replace
         self.previousStatus = previousStatus
         self.actualStatus = actualStatus
+        if(not AbstractImporter.cacheDict):
+            self.initCache()
+        
         
     def doImport(self):
         try:
@@ -32,7 +39,7 @@ class AbstractImporter(object):
             self.fileData = FileDataDao.getFileData(self.filename, self.session)
             if(self.skipOrProcess()):
                 self.addOrModifyInit()
-                logging.getLogger(Constant.LOGGER_GENERAL).debug("*******************************START - Processing filename " + self.filename)
+                self.logger.debug("**********START - Processing filename " + self.filename)
                 voList = self.doImport2()
                 persistentList = self.getPersistentList(voList)
                 Dao().addObjectList(persistentList, self.session)
@@ -41,13 +48,13 @@ class AbstractImporter(object):
                 else: 
                     setattr(self.fileData , self.actualStatus, Constant.STATUS_NO_DATA) 
                 Dao().addObject(objectToAdd = self.fileData, session = self.session, doCommit = True)
-                logging.getLogger(Constant.LOGGER_GENERAL).info("*******************************FINISH AT " + str(datetime.now() - time1) +  " " + self.filename)
+                self.logger.info("***********FINISH AT " + str(datetime.now() - time1) +  " " + self.filename)
         except (FileNotFoundException, XSDNotFoundException) as e:
-            logging.getLogger(Constant.LOGGER_GENERAL).debug("ERROR " + str(e))
+            self.logger.debug("ERROR " + str(e))
             self.addOrModifyFDError1(e)
         except Exception as e:
-            logging.getLogger(Constant.LOGGER_GENERAL).info("ERROR " + self.filename)
-            logging.getLogger(Constant.LOGGER_GENERAL).exception(e)
+            self.logger.info("ERROR " + self.filename)
+            self.logger.exception(e)
             self.session.rollback()
             self.addOrModifyFDError2(e)
         finally:
@@ -77,6 +84,7 @@ class AbstractImporter(object):
         else:
             return False  
     
+    @abstractmethod
     def getPersistentList(self, voList):
         #customConceptCreated = [cfv.customFact.customConcept.conceptName for cfv in self.fileData.customFactValueList]
         persistentList = []
@@ -84,3 +92,12 @@ class AbstractImporter(object):
             #if(vo.customConcept.conceptName not in customConceptCreated):
                 persistentList.append(self.getPersistent(vo))
         return persistentList
+    
+    @abstractmethod
+    def initCache(self):
+        pass
+    
+    @abstractmethod
+    def initLogger(self):
+        if (AbstractImporter.logger is None):
+            AbstractImporter.logger = createLog(self.__class__.__name__, logging.INFO)

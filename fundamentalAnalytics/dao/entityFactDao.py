@@ -60,24 +60,21 @@ class EntityFactDao():
         return GenericDao().getOneResult(EntityFact, and_(EntityFact.conceptOID == conceptOID, EntityFact.reportOID == reportOID, EntityFact.order_ == order_), session, raiseNoResultFound = False)
         
     def getEntityFactList(self, ticker, conceptName, priceStatus, session):
-        try:
-            if (session is None): 
-                dbconnector = DBConnector()
-                session = dbconnector.getNewSession()
-            query = session.query(EntityFactValue)\
-                .join(EntityFactValue.entityFact)\
-                .join(EntityFact.concept)\
-                .join(EntityFactValue.fileData)\
-                .join(EntityFactValue.period)\
-                .join(FileData.company)\
-                .filter(and_(Concept.conceptName.__eq__(conceptName), FileData.priceStatus == priceStatus, or_(ticker == "", Company.ticker == ticker), Company.ticker.isnot(None)))\
-                .order_by(Period.endDate)\
-                .with_entities(Company.ticker, FileData.fileName, EntityFactValue.periodOID, Period.instant, EntityFactValue.fileDataOID)\
-                .distinct()
-            objectResult = query.all()
-            return objectResult
-        except NoResultFound:
-            return None
+        if (session is None): 
+            dbconnector = DBConnector()
+            session = dbconnector.getNewSession()
+        query = session.query(EntityFactValue)\
+            .join(EntityFactValue.entityFact)\
+            .join(EntityFact.concept)\
+            .join(EntityFactValue.fileData)\
+            .join(EntityFactValue.period)\
+            .join(FileData.company)\
+            .filter(and_(Concept.conceptName.__eq__(conceptName), FileData.priceStatus == priceStatus, or_(ticker == "", Company.ticker == ticker), Company.ticker.isnot(None)))\
+            .order_by(Period.endDate)\
+            .with_entities(Company.ticker, FileData.fileName, EntityFactValue.periodOID, Period.instant, EntityFactValue.fileDataOID)\
+            .distinct()
+        objectResult = query.all()
+        return objectResult
         
     def getEntityFactValueList(self, fileDataOID, conceptOID, session):
         try:
@@ -91,4 +88,18 @@ class EntityFactDao():
             return objectResult
         except NoResultFound:
             return None
+        
+    def getEntityFactList2(self, ticker, session):
+        if (session is None): 
+            dbconnector = DBConnector()
+            session = dbconnector.getNewSession()
+        query = session.query(EntityFactValue)\
+            .join(EntityFactValue.entityFact)\
+            .join(EntityFact.concept)\
+            .join(EntityFactValue.fileData)\
+            .join(EntityFactValue.period)\
+            .join(FileData.company)\
+            .filter(or_(ticker == "", Company.ticker == ticker))
+        objectResult = query.all()
+        return objectResult
     

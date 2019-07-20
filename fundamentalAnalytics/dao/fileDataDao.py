@@ -156,4 +156,17 @@ class FileDataDao():
                     order by fd.CIK, fd.documentFiscalYearFocus, fd.documentFiscalPeriodFocus""")
             rs = con.execute(query)
             return rs 
+        
+    def getFileData2(self, ticker, statusAttr, statusValue, session):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        
+        query = session.query(FileData)\
+        .join(FileData.company)\
+        .order_by(FileData.documentPeriodEndDate)\
+        .filter(and_(getattr(FileData,statusAttr) == statusValue, Company.ticker == ticker))
+        
+        objectResult = query.all()
+        return objectResult
     

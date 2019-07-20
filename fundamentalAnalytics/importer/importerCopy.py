@@ -3,18 +3,18 @@ Created on Jul 11, 2019
 
 @author: afunes
 '''
+from dao.dao import GenericDao
 from engine.customFactEngine import CustomFactEngine
 from importer.abstractImporter import AbstractImporter
+from modelClass.customConcept import CustomConcept
 from valueobject.constant import Constant
 
 
 class ImporterCopy(AbstractImporter):
     
-    def __init__(self, filename, replace, cacheDict):
+    def __init__(self, filename, replace):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_COPY, filename, replace, 'status', 'copyStatus')
-        self.customConceptList = []
-        for cc in cacheDict["customConceptList"]:
-            self.customConceptList.append(self.session.merge(cc))
+        self.customConceptList = GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = self.session)
     
     def doImport2(self):
         return CustomFactEngine().copyToCustomFact2(fileData=self.fileData, customConceptList=self.customConceptList, session=self.session)
@@ -28,4 +28,4 @@ class ImporterCopy(AbstractImporter):
     def getPersistent(self, cfvVO):
         customFactValue = CustomFactEngine().getNewCustomFactValue(value=cfvVO.value, origin=cfvVO.origin, fileDataOID=cfvVO.fileDataOID,
                                     customConcept=cfvVO.customConcept,  endDate=cfvVO.endDate, periodOID = cfvVO.periodOID, session=self.session)
-        return customFactValue   
+        return customFactValue

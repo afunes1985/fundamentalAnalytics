@@ -4,25 +4,27 @@ Created on 19 sep. 2018
 @author: afunes
 '''
 import logging
+from nt import listdir
 
 import pandas
+import xmltodict
 
 from dao.dao import Dao
 from dao.entityFactDao import EntityFactDao
 from engine.companyEngine import CompanyEngine
+from engine.periodEngine import PeriodEngine
+from importer.abstractFactImporter import AbstractFactImporter
 from importer.abstractImporter import AbstractImporter
-from tools.tools import getXMLDictFromGZCache
+from tools.tools import getXMLDictFromGZCache, getXSDFileFromCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO
-from importer.abstractFactImporter import AbstractFactImporter
 
 
 class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
 
-    def __init__(self, filename, replace, mainCache, conceptName=None):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace)
+    def __init__(self, filename, replace, conceptName=None):
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'status', 'entityStatus')
         self.processCache = None
-        self.mainCache = mainCache
         self.conceptName = conceptName
             
     def doImport2(self):
@@ -31,10 +33,7 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         factVOList = self.getFactByConcept(reportDict, self.processCache, self.conceptName)
         factVOList = self.setFactValues(factVOList, self.processCache)
         EntityFactDao().addEntityFact(factVOList, self.fileData.OID , reportDict, self.session, self.replace)
-        if(len(factVOList) != 0):
-            self.fileData.entityStatus = Constant.STATUS_OK
-        else: 
-            self.fileData.entityStatus = Constant.STATUS_NO_DATA
+        return factVOList
             
     def addOrModifyFDError1(self, e):
         self.fileDataDao.addOrModifyFileData(entityStatus=e.status, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey)
@@ -45,12 +44,25 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
     def addOrModifyInit(self):
         self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_INIT, priceStatus=Constant.STATUS_PENDING, filename=self.filename, errorKey=self.errorKey)   
             
-    def skipOrProcess(self):
-        if((self.fileData.status == Constant.STATUS_OK and self.fileData.entityStatus != Constant.STATUS_OK) or self.replace == True):
-            return True
-        else:
-            return False    
+    def getPersistentList(self, voList):
+        return []       
             
+    def initCache(self):
+        xsdCache = {}
+        for xsdFileName in listdir(Constant.CACHE_FOLDER + "xsd"):
+            try:
+                xsdFile = getXSDFileFromCache(Constant.CACHE_FOLDER + "xsd//" + xsdFileName, None)
+                xsdDict = xmltodict.parse(xsdFile)
+                xsdDF = pandas.DataFrame(xsdDict["xs:schema"]["xs:element"])
+                xsdDF.set_index("@id", inplace=True)
+                xsdDF.head()
+                xsdCache[xsdFileName] = xsdDF
+                print(xsdFileName)
+            except Exception as e:
+                self.logger.exception(e)
+        AbstractImporter.cacheDict["XSD_CACHE"] = xsdCache
+        
+                
     def getFactByReport(self, reportDict, processCache, session):
         factVOList = []
         # Obtengo para cada reporte sus conceptos
@@ -91,7 +103,7 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         
     def initProcessCache(self, filename, session):
         processCache = {}
-        processCache.update(self.mainCache)
+        processCache.update(self.cacheDict.get("XSD_CACHE", None))
         schDF = pandas.DataFrame(self.getListFromElement(Constant.ELEMENT, self.getElementFromElement(Constant.SCHEMA, getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
         schDF.set_index("@id", inplace=True)
         schDF.head()
@@ -161,3 +173,15 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
                         factVOList.append(factVO)
                         return factVOList
         return factVOList
+    
+    def getPeriodDict(self, xmlDictRoot, session):
+        periodDict = {}
+        for item in self.getListFromElement(Constant.XBRL_CONTEXT, xmlDictRoot):
+            entityElement = self.getElementFromElement(Constant.XBRL_ENTITY, item)
+            if(self.getElementFromElement(Constant.XBRL_SEGMENT, entityElement, False) is None):
+                periodElement = self.getElementFromElement(Constant.XBRL_PERIOD, item)
+                instant = self.getValueAsDate(Constant.XBRL_INSTANT, periodElement) 
+                if(instant is not None):
+                    period =  PeriodEngine().getOrCreatePeriod3(instant, session)
+                    periodDict[item['@id']] = period
+        return periodDict

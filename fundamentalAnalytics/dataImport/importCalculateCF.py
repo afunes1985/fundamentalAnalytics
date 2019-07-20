@@ -6,49 +6,39 @@ Created on 22 ago. 2018
 from concurrent.futures.thread import ThreadPoolExecutor
 import logging
 from threading import BoundedSemaphore
-import time
 
-from sqlalchemy import event
-from sqlalchemy.engine.base import Engine
-from sqlalchemy.sql.expression import and_
 
 from base.dbConnector import DBConnector
 from base.initializer import Initializer
-from dao.dao import GenericDao
+from dao.fileDataDao import FileDataDao
 from importer.importerCalculate import ImporterCalculate
-from importer.importerCopy import ImporterCopy
-from modelClass.customConcept import CustomConcept
-from modelClass.customFact import CustomFact
-from modelClass.fileData import FileData
 from tools.tools import createLog
 from valueobject.constant import Constant
+
 
 # 
 # logging.basicConfig()
 # logger = logging.getLogger("myapp.sqltime")
 # logger.setLevel(logging.DEBUG)
-#  
+#    
 # @event.listens_for(Engine, "before_cursor_execute")
 # def before_cursor_execute(conn, cursor, statement,
 #                         parameters, context, executemany):
 #     conn.info.setdefault('query_start_time', []).append(time.time())
-#     logger.debug("Start Query: %s", statement)
-#  
+#     #logger.debug("Start Query: %s", statement)
+#    
 # @event.listens_for(Engine, "after_cursor_execute")
 # def after_cursor_execute(conn, cursor, statement,
 #                         parameters, context, executemany):
 #     total = time.time() - conn.info['query_start_time'].pop(-1)
-#     logger.debug("Query Complete!")
+#     #if (total > 1):
+#     logger.debug("Query: %s", statement)
+#     logger.debug("Parameters: %s", parameters)
 #     logger.debug("Total Time: %f", total)
-def initMainCache(session):
-    cacheDict = {}
-    cacheDict["customConceptList"] = GenericDao().getAllResult(objectClazz = CustomConcept, condition = and_(CustomConcept.fillStrategy == "COPY_CALCULATE", CustomConcept.periodType == 'QTD'), session = session)
-    cacheDict["customFactList"] = GenericDao().getAllResult(objectClazz = CustomFact, session = session)
-    return cacheDict
-
+#     
 if __name__ == "__main__":
     replace = False
-    threadNumber = 5
+    threadNumber = 1
     conceptName = None
     maxProcessInQueue = 5
     Initializer()
@@ -58,28 +48,28 @@ if __name__ == "__main__":
     createLog(Constant.LOGGER_NONEFACTVALUE, logging.INFO)
     createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
-    fileDataList = GenericDao().getAllResult(FileData, and_(FileData.copyStatus.__eq__("OK"), FileData.calculateStatus.__eq__("PENDING")), session)
+    #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.copyStatus.__eq__("OK"), FileData.calculateStatus.__eq__("PENDING")), session)
     #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("ERROR")), session)
-    #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.fileName == "edgar/data/320193/0001628280-16-020309.txt"), session)
+    #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.fileName == "edgar/data/894315/0001564590-17-001905.txt"), session)
+    fileDataList = FileDataDao().getFileData2('SGC', 'calculateStatus', 'PENDING', session)
     threads = []    
-    cacheDict = initMainCache(session)
     executor = ThreadPoolExecutor(max_workers=threadNumber)
     semaphore = BoundedSemaphore(maxProcessInQueue)
-    logging.getLogger(Constant.LOGGER_GENERAL).info("READY TO IMPORT COPY CF " + str(len(fileDataList)) + " FILEDATA")
+    logging.getLogger(Constant.LOGGER_GENERAL).info("READY TO IMPORT CALCULATE CF " + str(len(fileDataList)) + " FILEDATA")
     for fileData in fileDataList:
         try:
             try:
                 semaphore.acquire()
-                fi = ImporterCalculate(fileData.fileName, replace, cacheDict)
-                #fi.doImport()
-                future = executor.submit(fi.doImport)
+                fi = ImporterCalculate(fileData.fileName, replace)
+                fi.doImport()
+                #future = executor.submit(fi.doImport)
             except Exception as e:
                 semaphore.release()
                 logging.getLogger(Constant.LOGGER_GENERAL).exception(e)
             else:
-                future.add_done_callback(lambda x: semaphore.release())
-                #pass
-                #semaphore.release()
+                #future.add_done_callback(lambda x: semaphore.release())
+                pass
+                semaphore.release()
         except Exception as e:
                 logging.getLogger(Constant.LOGGER_ERROR).exception("ERROR " + fileData.fileName + " " + str(e))
             

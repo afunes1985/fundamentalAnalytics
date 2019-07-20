@@ -97,6 +97,7 @@ def createLog(logName, level):
     fh.setLevel(level)
     fh.setFormatter(logging.Formatter('%(levelname)s:%(message)s'))
     logger.addHandler(fh)
+    return logger
     
 
 class LoggingException(Exception):

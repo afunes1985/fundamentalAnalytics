@@ -18,6 +18,7 @@ from modelClass.customFact import CustomFact
 from modelClass.fileData import FileData
 from tools.tools import createLog
 from valueobject.constant import Constant
+from dao.fileDataDao import FileDataDao
 
 
 # logging.basicConfig()
@@ -36,11 +37,6 @@ from valueobject.constant import Constant
 #     total = time.time() - conn.info['query_start_time'].pop(-1)
 #     logger.debug("Query Complete!")
 #     logger.debug("Total Time: %f", total)
-def initMainCache(session):
-    cacheDict = {}
-    cacheDict["customConceptList"] = GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = session)
-    cacheDict["customFactList"] = GenericDao().getAllResult(objectClazz = CustomFact, session = session)
-    return cacheDict
 
 if __name__ == "__main__":
     replace = False
@@ -49,16 +45,10 @@ if __name__ == "__main__":
     maxProcessInQueue = 5
     Initializer()
     session = DBConnector().getNewSession()
-    createLog(Constant.LOGGER_GENERAL, logging.INFO)
-    createLog(Constant.LOGGER_ERROR, logging.INFO)
-    createLog(Constant.LOGGER_NONEFACTVALUE, logging.INFO)
-    createLog(Constant.LOGGER_ADDTODB, logging.INFO)
     logging.info("START")
-    fileDataList = GenericDao().getAllResult(FileData, and_(FileData.status.__eq__("OK"), FileData.copyStatus.__eq__("ERROR")), session)
-    #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.importStatus.__eq__("OK"), FileData.status.__eq__("OK"), FileData.entityStatus.__eq__("ERROR")), session)
-    #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.fileName == "edgar/data/1013488/0001564590-18-011253.txt"), session)
+    #fileDataList = GenericDao().getAllResult(FileData, and_(FileData.fileName == "edgar/data/95574/0001437749-12-010410.txt"), session)
+    fileDataList = FileDataDao().getFileData2('SGC', 'copyStatus', 'PENDING', session)
     threads = []    
-    cacheDict = initMainCache(session)
     executor = ThreadPoolExecutor(max_workers=threadNumber)
     semaphore = BoundedSemaphore(maxProcessInQueue)
     logging.getLogger(Constant.LOGGER_GENERAL).info("READY TO IMPORT COPY CF " + str(len(fileDataList)) + " FILEDATA")
@@ -66,7 +56,7 @@ if __name__ == "__main__":
         try:
             try:
                 semaphore.acquire()
-                fi = ImporterCopy(fileData.fileName, replace, cacheDict)
+                fi = ImporterCopy(fileData.fileName, replace)
                 #fi.doImport()
                 future = executor.submit(fi.doImport)
             except Exception as e:

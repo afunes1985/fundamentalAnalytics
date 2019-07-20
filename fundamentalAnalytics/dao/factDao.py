@@ -133,30 +133,7 @@ class FactDao():
     def getFact(concept, report, fileData, session):
         return GenericDao().getOneResult(Fact, and_(Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session, raiseNoResultFound=False)
     
-    def getFactValue2(self, ticker, periodType=None, documentType=None, concept=None, session=None):
-        try:
-            dbconnector = DBConnector()
-            if (session is None): 
-                session = dbconnector.getNewSession()
-            objectResult = session.query(FactValue)\
-                .join(FactValue.fact)\
-                .join(Fact.concept)\
-                .join(Fact.report)\
-                .join(FactValue.period)\
-                .join(Fact.fileData)\
-                .join(FileData.company)\
-                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), \
-                             or_(FileData.documentType.__eq__(documentType), documentType == None), \
-                             Concept.conceptName.__eq__(concept.conceptName)))\
-                .order_by(Period.endDate)\
-                .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, Fact.fileDataOID)\
-                .distinct()\
-                .all()
-            return objectResult
-        except NoResultFound:
-            return FactValue()
-        
-    def getFactValue3(self, periodType=None, conceptOID=None, fileDataOID=None, session=None):
+    def getFactValue3(self, periodTypeList=None, fileDataOID=None, session=None):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
@@ -164,10 +141,9 @@ class FactDao():
             .join(FactValue.factList)\
             .join(FactValue.period)\
             .join(Fact.fileData)\
-            .filter(and_(Period.type.__eq__(periodType), \
-                         FileData.OID == fileDataOID, \
-                         Fact.conceptOID.__eq__(conceptOID)))\
-            .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, Fact.fileDataOID)\
+            .filter(and_(Period.type.in_(periodTypeList), \
+                         FileData.OID == fileDataOID))\
+            .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, Fact.fileDataOID, Fact.conceptOID, Period.type)\
             .all()#.distinct()\#.order_by(Period.endDate)\
         return objectResult
     

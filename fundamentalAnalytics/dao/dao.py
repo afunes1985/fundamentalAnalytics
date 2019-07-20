@@ -6,21 +6,14 @@ Created on 20 ago. 2018
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import text, and_
+from sqlalchemy.sql.expression import  and_
 
 from base.dbConnector import DBConnector
 from modelClass.abstractConcept import AbstractConcept
-from modelClass.company import Company
 from modelClass.concept import Concept
 from modelClass.customConcept import CustomConcept
-from modelClass.customFact import CustomFact
-from modelClass.customFactValue import CustomFactValue
 from modelClass.customReport import CustomReport
-from modelClass.expression import Expression
-from modelClass.fact import Fact
 from modelClass.factValue import FactValue
-from modelClass.fileData import FileData
-from modelClass.period import Period
 from modelClass.report import Report
 from valueobject.constant import Constant
 
