@@ -17,3 +17,7 @@
 /NoneFactValue.log
 /importGeneral.log
 /ImporterEntityFact.log
+/ImporterCalculate.log
+/ImporterCopy.log
+/ImporterExpression.log
+/ImporterExecutor.log

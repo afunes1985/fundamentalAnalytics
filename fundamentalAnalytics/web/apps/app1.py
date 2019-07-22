@@ -1,10 +1,8 @@
-from dash import dash
 from dash.dependencies import Input, Output, State
 from pandas.core.frame import DataFrame
 
 from base.initializer import Initializer
 from dao.companyDao import CompanyDao
-from dao.dao import Dao
 from dao.factDao import FactDao
 import dash_core_components as dcc
 import dash_html_components as html

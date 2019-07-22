@@ -85,6 +85,10 @@ class AbstractImporter(object):
             return False  
     
     @abstractmethod
+    def getPersistent(self, vo):
+        pass
+    
+    @abstractmethod
     def getPersistentList(self, voList):
         #customConceptCreated = [cfv.customFact.customConcept.conceptName for cfv in self.fileData.customFactValueList]
         persistentList = []

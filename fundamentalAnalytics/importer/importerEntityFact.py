@@ -22,10 +22,10 @@ from valueobject.valueobject import FactVO
 
 class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
 
-    def __init__(self, filename, replace, conceptName=None):
+    def __init__(self, filename, replace):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'status', 'entityStatus')
         self.processCache = None
-        self.conceptName = conceptName
+        self.conceptName = 'EntityCommonStockSharesOutstanding'
             
     def doImport2(self):
         self.processCache = self.initProcessCache(self.filename, self.session)

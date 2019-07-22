@@ -22,9 +22,10 @@ session = DBConnector().getNewSession()
 ticker = 'SGC'
 
 deleteCopyCalculate = False
-deleteExpression = False
+deleteEntityFact = False
+deleteExpression = True
 deleteAllCustomFact = False
-deleteEntityFact = True
+
 
 if(deleteAllCustomFact):
     CustomFactEngine().deleteCustomFactByStrategy("COPY_CALCULATE", session)
