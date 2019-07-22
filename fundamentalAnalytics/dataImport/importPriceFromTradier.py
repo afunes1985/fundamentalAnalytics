@@ -14,7 +14,7 @@ from importer.importerPrice import ImporterPrice
 Initializer()
 session = DBConnector().getNewSession()
 conceptName = 'EntityCommonStockSharesOutstanding'
-entityFactList = EntityFactDao().getEntityFactList(ticker="SGC", conceptName = conceptName, priceStatus = "OK", session = session)
+entityFactList = EntityFactDao().getEntityFactList(ticker="SGC", conceptName = conceptName, priceStatus = "PENDING", session = session)
 for efv in entityFactList:
-    ipe = ImporterPrice(efv[0], efv[1], efv[2], efv[3], efv[4], False)
+    ipe = ImporterPrice(efv[0], efv[1], efv[2], efv[3], efv[4], True)
     ipe.doImport()

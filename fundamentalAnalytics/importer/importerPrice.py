@@ -10,6 +10,7 @@ from requests.exceptions import ReadTimeout
 from base.dbConnector import DBConnector
 from dao.dao import Dao
 from dao.fileDataDao import FileDataDao
+from dao.priceDao import PriceDao
 from importer.abstractImporter import AbstractImporter
 from modelClass.price import Price
 from valueobject.constant import Constant
@@ -44,9 +45,8 @@ class ImporterPrice(AbstractImporter):
             FileDataDao().addOrModifyFileData(priceStatus = Constant.PRICE_STATUS_TIMEOUT, filename = self.fileName, externalSession = self.session)
         return priceList
     
-    def deleteImportedObject2(self):
-        self.deleteImportedObject(self.fileData.priceList)
-        self.fileData.priceList = []
+    def deleteImportedObject(self):
+        PriceDao().deletePriceByFD(self.fileData.OID, self.session)
 
     def getPersistent(self, vo):
         return vo

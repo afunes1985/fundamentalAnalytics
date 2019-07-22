@@ -16,6 +16,6 @@ if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
     fileDataList = FileDataDao().getFileData2('SGC', 'entityStatus', 'INIT', session)
-    importerExecutor = ImporterExecutor(threadNumber = 1, maxProcessInQueue = 5, replace = False, isSequential = True, importerClass= ImporterEntityFact)
+    importerExecutor = ImporterExecutor(threadNumber = 1, maxProcessInQueue = 5, replace = True, isSequential = True, importerClass= ImporterEntityFact)
     importerExecutor.execute(fileDataList)
             

@@ -12,7 +12,7 @@ from importer.importerCopy import ImporterCopy
 if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
-    fileDataList = FileDataDao().getFileData2('SGC', 'copyStatus', 'PENDING', session)
-    importerExecutor = ImporterExecutor(threadNumber = 1, maxProcessInQueue = 5, replace = False, isSequential = True, importerClass= ImporterCopy)
+    fileDataList = FileDataDao().getFileData2('SGC', 'copyStatus', 'OK', session)
+    importerExecutor = ImporterExecutor(threadNumber = 1, maxProcessInQueue = 5, replace = True, isSequential = True, importerClass= ImporterCopy)
     importerExecutor.execute(fileDataList)
     

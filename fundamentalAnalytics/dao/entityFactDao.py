@@ -3,7 +3,6 @@ Created on Apr 19, 2019
 
 @author: afunes
 '''
-import logging
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.elements import and_, or_
@@ -16,7 +15,6 @@ from modelClass.entityFact import EntityFact
 from modelClass.entityFactValue import EntityFactValue
 from modelClass.fileData import FileData
 from modelClass.period import Period
-from valueobject.constant import Constant
 from engine.conceptEngine import ConceptEngine
 
 
@@ -40,7 +38,7 @@ class EntityFactDao():
                     entityFact.conceptOID = concept.OID
                     entityFact.report = reportDict[factVO.reportRole]
                     entityFact.order_ = factVO.order
-                    Dao().addObject(objectToAdd = entityFact, session = session, doFlush = True)
+                    Dao().addObject(objectToAdd=entityFact, session=session, doFlush=True)
                 
                 for factValueVO in factVO.factValueList:
                     factValueKey = str(fileDataOID) + "-" + str(concept.OID)
@@ -53,11 +51,11 @@ class EntityFactDao():
                         entityFactValueList.append(entityFactValue)
                         objectAlreadyAdded[factValueKey] = ""
         for efv in entityFactValueList:
-            Dao().addObject(objectToAdd = efv, session = session)            
+            Dao().addObject(objectToAdd=efv, session=session)            
         session.commit()
         
     def getEntityFact(self, conceptOID, reportOID, order_, session):
-        return GenericDao().getOneResult(EntityFact, and_(EntityFact.conceptOID == conceptOID, EntityFact.reportOID == reportOID, EntityFact.order_ == order_), session, raiseNoResultFound = False)
+        return GenericDao().getOneResult(EntityFact, and_(EntityFact.conceptOID == conceptOID, EntityFact.reportOID == reportOID, EntityFact.order_ == order_), session, raiseNoResultFound=False)
         
     def getEntityFactList(self, ticker, conceptName, priceStatus, session):
         if (session is None): 
@@ -102,4 +100,10 @@ class EntityFactDao():
             .filter(or_(ticker == "", Company.ticker == ticker))
         objectResult = query.all()
         return objectResult
+    
+    def deleteEFVByFD(self, fileDataOID, session=None):
+        if (session is None): 
+            dbconnector = DBConnector()
+            session = dbconnector.getNewSession()
+        session.query(EntityFactValue).filter(and_(EntityFactValue.fileDataOID == fileDataOID)).delete()
     

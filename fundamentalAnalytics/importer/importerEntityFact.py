@@ -36,16 +36,19 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         return factVOList
             
     def addOrModifyFDError1(self, e):
-        self.fileDataDao.addOrModifyFileData(entityStatus=e.status, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey)
+        self.fileDataDao.addOrModifyFileData(entityStatus=e.status, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey, externalSession=self.session)
     
     def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey)         
+        self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey, externalSession=self.session)         
             
     def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_INIT, priceStatus=Constant.STATUS_PENDING, filename=self.filename, errorKey=self.errorKey)   
+        self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_INIT, priceStatus=Constant.STATUS_PENDING, filename=self.filename, errorKey=self.errorKey, externalSession=self.session)   
             
     def getPersistentList(self, voList):
         return []       
+    
+    def deleteImportedObject(self):
+        EntityFactDao().deleteEFVByFD(self.fileData.OID, self.session)
             
     def initCache(self):
         xsdCache = {}

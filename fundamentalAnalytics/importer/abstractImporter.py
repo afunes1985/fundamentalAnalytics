@@ -40,7 +40,7 @@ class AbstractImporter(object):
             if(self.skipOrProcess()):
                 self.addOrModifyInit()
                 if(self.replace):
-                    self.deleteImportedObject2()
+                    self.deleteImportedObject()
                 self.logger.debug("**********START - Processing filename " + self.filename)
                 voList = self.doImport2()
                 persistentList = self.getPersistentList(voList)
@@ -104,14 +104,8 @@ class AbstractImporter(object):
         pass
     
     @abstractmethod
-    def deleteImportedObject2(self):
+    def deleteImportedObject(self):
         pass
-        
-    @abstractmethod
-    def deleteImportedObject(self, itemListToDelete):
-        for itemToDelete in itemListToDelete:
-            self.session.delete(itemToDelete)
-        self.session.flush()
     
     @abstractmethod
     def initLogger(self):

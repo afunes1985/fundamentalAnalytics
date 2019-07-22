@@ -3,6 +3,7 @@ Created on Jul 12, 2019
 
 @author: afunes
 '''
+from dao.customFactDao import CustomFactDao
 from dao.dao import GenericDao
 from engine.customFactEngine import CustomFactEngine
 from importer.abstractImporter import AbstractImporter
@@ -20,12 +21,15 @@ class ImporterCalculate(AbstractImporter):
         return CustomFactEngine().calculateMissingQTDValues2(fileData = self.fileData, customConceptList = self.customConceptList, session=self.session)
 
     def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(calculateStatus = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey)         
+        self.fileDataDao.addOrModifyFileData(calculateStatus = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey, externalSession = self.session)         
        
     def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(calculateStatus = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey)   
+        self.fileDataDao.addOrModifyFileData(calculateStatus = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey, externalSession = self.session)   
             
     def getPersistent(self, cfvVO):
         customFactValue = CustomFactEngine().getNewCustomFactValue(value=cfvVO.value, origin=cfvVO.origin, fileDataOID=cfvVO.fileDataOID,
                                     customConcept=cfvVO.customConcept,  endDate=cfvVO.endDate, session=self.session)
         return customFactValue  
+    
+    def deleteImportedObject(self):
+        CustomFactDao().deleteCFVByFD(self.fileData.OID, "CALCULATED", self.session)

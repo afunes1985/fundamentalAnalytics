@@ -114,3 +114,9 @@ class CustomFactDao():
             .order_by(FileData.documentPeriodEndDate)
         objectResult = query.all()
         return objectResult
+    
+    def deleteCFVByFD(self, fileDataOID, origin, session = None):
+        if (session is None): 
+            dbconnector = DBConnector()
+            session = dbconnector.getNewSession()
+        session.query(CustomFactValue).filter(and_(CustomFactValue.fileDataOID==fileDataOID, CustomFactValue.origin == origin)).delete()
