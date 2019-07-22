@@ -63,10 +63,6 @@ class Dao():
                 Dao().addObject(objectToAdd=obj, session=session) 
             session.commit()
     
-    @staticmethod
-    def getFactValue(fact, period, session):
-        return GenericDao().getOneResult(FactValue, and_(FactValue.fact.__eq__(fact), FactValue.period.__eq__(period)), session, raiseNoResultFound = False)
-        
     def getConcept(self, conceptName, session = None):
         return GenericDao().getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session, raiseNoResultFound = False)
     

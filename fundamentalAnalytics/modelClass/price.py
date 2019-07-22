@@ -16,5 +16,5 @@ class Price(PersistenObject):
     periodOID = Column(Integer, ForeignKey('fa_period.OID'))
     period = relationship("Period", back_populates="priceList")
     fileDataOID = Column(Integer, ForeignKey('fa_file_data.OID'))
-    #fileData = relationship("FileData", back_populates="entityFactList")
+    fileData = relationship("FileData", back_populates="priceList")
     value = Column(Float(), nullable=False)

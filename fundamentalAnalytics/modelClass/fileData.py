@@ -31,6 +31,7 @@ class FileData(PersistenObject):
     factList = relationship("Fact", back_populates="fileData")
     entityFactValueList = relationship("EntityFactValue", back_populates="fileData")
     customFactValueList = relationship("CustomFactValue", back_populates="fileData")
+    priceList = relationship("Price", back_populates="fileData")
     errorMessageList = relationship("ErrorMessage", back_populates="fileData", cascade="all, delete-orphan")
     companyOID = Column(Integer, ForeignKey('fa_company.OID'))
     company = relationship('Company', back_populates="fileDataList")
