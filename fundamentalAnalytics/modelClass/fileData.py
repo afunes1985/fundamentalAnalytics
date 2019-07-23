@@ -9,6 +9,7 @@ from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import Boolean, Integer
 
 from modelClass import PersistenObject
+from valueobject.constant import Constant
 
 
 class FileData(PersistenObject):
@@ -21,6 +22,7 @@ class FileData(PersistenObject):
     documentFiscalPeriodFocus = Column(String(45), nullable=False)
     entityCentralIndexKey = Column(String(45), nullable=False)
     CIK = Column(Integer, nullable=False)
+    #status
     status = Column(String(15), nullable=False)
     importStatus = Column(String(15), nullable=False)
     entityStatus = Column(String(15), nullable=False)
@@ -28,6 +30,7 @@ class FileData(PersistenObject):
     copyStatus = Column(String(15), nullable=False)
     calculateStatus = Column(String(15), nullable=False)
     expressionStatus = Column(String(15), nullable=False)
+    #relation
     factList = relationship("Fact", back_populates="fileData")
     entityFactValueList = relationship("EntityFactValue", back_populates="fileData")
     customFactValueList = relationship("CustomFactValue", back_populates="fileData")
@@ -35,3 +38,12 @@ class FileData(PersistenObject):
     errorMessageList = relationship("ErrorMessage", back_populates="fileData", cascade="all, delete-orphan")
     companyOID = Column(Integer, ForeignKey('fa_company.OID'))
     company = relationship('Company', back_populates="fileDataList")
+    
+    def __init__(self):
+        self.status = Constant.STATUS_PENDING
+        self.importStatus = Constant.STATUS_PENDING
+        self.entityStatus = Constant.STATUS_PENDING
+        self.priceStatus = Constant.STATUS_PENDING
+        self.copyStatus = Constant.STATUS_PENDING
+        self.calculateStatus = Constant.STATUS_PENDING
+        self.expressionStatus = Constant.STATUS_PENDING

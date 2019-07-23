@@ -60,20 +60,20 @@ class ImporterExecutor(object):
         if (ImporterExecutor.logger is None):
             ImporterExecutor.logger = createLog(self.__class__.__name__, logging.INFO)
             
-logging.basicConfig()
-logger = logging.getLogger("myapp.sqltime")
-logger.setLevel(logging.DEBUG)
-   
-@event.listens_for(Engine, "before_cursor_execute")
-def before_cursor_execute(conn, cursor, statement,
-                        parameters, context, executemany):
-    conn.info.setdefault('query_start_time', []).append(time.time())
-    logger.debug("Start Query: %s, %s", statement, parameters)
-   
-@event.listens_for(Engine, "after_cursor_execute")
-def after_cursor_execute(conn, cursor, statement,
-                        parameters, context, executemany):
-    total = time.time() - conn.info['query_start_time'].pop(-1)
-    #logger.debug("Query Complete!")
-    logger.debug("Total Time: %f", total)
+# logging.basicConfig()
+# logger = logging.getLogger("myapp.sqltime")
+# logger.setLevel(logging.DEBUG)
+#    
+# @event.listens_for(Engine, "before_cursor_execute")
+# def before_cursor_execute(conn, cursor, statement,
+#                         parameters, context, executemany):
+#     conn.info.setdefault('query_start_time', []).append(time.time())
+#     logger.debug("Start Query: %s, %s", statement, parameters)
+#    
+# @event.listens_for(Engine, "after_cursor_execute")
+# def after_cursor_execute(conn, cursor, statement,
+#                         parameters, context, executemany):
+#     total = time.time() - conn.info['query_start_time'].pop(-1)
+#     #logger.debug("Query Complete!")
+#     logger.debug("Total Time: %f", total)
             

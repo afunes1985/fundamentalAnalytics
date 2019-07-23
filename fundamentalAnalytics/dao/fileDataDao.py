@@ -157,15 +157,15 @@ class FileDataDao():
             rs = con.execute(query)
             return rs 
         
-    def getFileData2(self, ticker, statusAttr, statusValue, session):
+    def getFileData2(self, statusAttr, statusValue, ticker = '', session = None):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
         
         query = session.query(FileData)\
-        .join(FileData.company)\
+        .outerjoin(FileData.company)\
         .order_by(FileData.documentPeriodEndDate)\
-        .filter(and_(getattr(FileData,statusAttr) == statusValue, Company.ticker == ticker))
+        .filter(and_(getattr(FileData,statusAttr) == statusValue, or_(ticker == '', Company.ticker == ticker)))
         
         objectResult = query.all()
         return objectResult
