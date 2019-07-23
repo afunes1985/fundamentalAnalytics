@@ -12,7 +12,6 @@ from base.initializer import Initializer
 from dao.fileDataDao import FileDataDao
 import dash_core_components as dcc
 import dash_html_components as html
-from dataImport.importFactFromSEC import initMainCache
 from engine.factEngine import FactEngine
 from engine.importFileEngine import ImportFileEngine
 from web.app import app
@@ -72,10 +71,10 @@ def doReprocess(n_clicks, rows, selected_rows):
         print(rows)
         print(selected_rows)
         if(selected_rows is not None and len(selected_rows) != 0):
-            mainCache = initMainCache()
+            #mainCache = initMainCache()
             fileName = rows[selected_rows[0]]["fileName"]
-            fi = ImporterFact(fileName, True, mainCache)
-            fi.doImport()
+            fi = ImporterFact(fileName, True)
+            #fi.doImport() FIXME
  
 @app.callback(
     Output('hidden-div2', "children"),

@@ -5,15 +5,19 @@ Created on Jul 8, 2019
 '''
 from datetime import datetime
 import logging
+from nt import listdir
 
 import pandas
 from pandas.core.series import Series
+import xmltodict
 
 from dao.dao import Dao
 from engine.companyEngine import CompanyEngine
 from engine.periodEngine import PeriodEngine
+from importer.abstractImporter import AbstractImporter
 from modelClass.report import Report
-from tools.tools import getXMLDictFromGZCache, XSDNotFoundException
+from tools.tools import getXMLDictFromGZCache, XSDNotFoundException, \
+    getXSDFileFromCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
 
@@ -43,7 +47,7 @@ class AbstractFactImporter(object):
                             factVO.order = self.getValueFromElement( ["@order"], presentationDF.loc[factVO.labelID], True) 
                             tempFactVOList.append(factVO)
                         except Exception as e:
-                            logging.getLogger(Constant.LOGGER_ERROR).debug("Error " + str(e))
+                            self.logger.debug("Error " + str(e))
                     if(self.isReportAllowed2(factVO.xlink_href)):
                         isReportAllowed = True
                 
@@ -60,7 +64,7 @@ class AbstractFactImporter(object):
         
     def initProcessCache(self, filename, session):
         processCache = {}
-        processCache.update(self.mainCache)
+        processCache.update(self.cacheDict.get("XSD_CACHE", None))
         schDF = pandas.DataFrame(self.getListFromElement(Constant.ELEMENT, self.getElementFromElement(Constant.SCHEMA, getXMLDictFromGZCache(filename, Constant.DOCUMENT_SCH))))
         schDF.set_index("@id", inplace=True)
         schDF.head()
@@ -88,7 +92,7 @@ class AbstractFactImporter(object):
     def setFactValues(self, factToAddList, processCache):
         insXMLDict = processCache[Constant.DOCUMENT_INS]
         periodDict = processCache[Constant.PERIOD_DICT]
-        logging.getLogger(Constant.LOGGER_GENERAL).debug("periodDict " + str(periodDict))
+        self.logger.debug("periodDict " + str(periodDict))
         objectToDelete = []
         for factVO in factToAddList:
             conceptID = factVO.xlink_href[factVO.xlink_href.find("#", 0) + 1:len(factVO.xlink_href)]
@@ -149,7 +153,7 @@ class AbstractFactImporter(object):
                     reportDict[reportRole] = report
                 except Exception:
                     pass
-        logging.getLogger(Constant.LOGGER_GENERAL).debug("REPORT LIST " + str(reportDict))
+        self.logger.debug("REPORT LIST " + str(reportDict))
         return reportDict
     
     def completeFileData(self, fileData, processCache, filename, session):
@@ -354,4 +358,3 @@ class AbstractFactImporter(object):
             raise Exception("Value for elementID is not str "  + str(attrIDList) + " " +  str(element)[0:50])
         else:
             return obj
-        

@@ -12,7 +12,6 @@ from importer.importerEntityFact import ImporterEntityFact
 
 
 if __name__ == "__main__":
-    conceptName = 'EntityCommonStockSharesOutstanding'
     Initializer()
     session = DBConnector().getNewSession()
     fileDataList = FileDataDao().getFileData2('SGC', 'entityStatus', 'INIT', session)

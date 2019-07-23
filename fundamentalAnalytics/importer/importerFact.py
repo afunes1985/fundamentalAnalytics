@@ -4,19 +4,23 @@ Created on 19 sep. 2018
 @author: afunes
 '''
 
+from nt import listdir
+
+import pandas
+import xmltodict
+
 from dao.factDao import FactDao
-from importer.abstractImporter import AbstractImporter
-from valueobject.constant import Constant
 from importer.abstractFactImporter import AbstractFactImporter
+from importer.abstractImporter import AbstractImporter
+from tools.tools import getXSDFileFromCache
+from valueobject.constant import Constant
 
 
 class ImporterFact(AbstractImporter, AbstractFactImporter):
 
-    def __init__(self, filename, replace, mainCache, conceptName = None):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_FACT, filename, replace)
+    def __init__(self, filename, replace):
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_FACT, filename, replace, 'importStatus', 'status')
         self.processCache = None
-        self.mainCache = mainCache
-        self.conceptName = conceptName
             
     def doImport2(self):
         self.processCache = self.initProcessCache(self.filename, self.session)
@@ -25,24 +29,32 @@ class ImporterFact(AbstractImporter, AbstractFactImporter):
         factVOList = self.getFactByReport(reportDict, self.processCache, self.session)
         factVOList = self.setFactValues(factVOList, self.processCache)
         FactDao().addFact(factVOList, self.fileData, reportDict, self.session, self.replace)
-        if(len(factVOList) != 0):
-            self.fileData.status = Constant.STATUS_OK
-        else: 
-            self.fileData.status = Constant.STATUS_NO_DATA
+        return factVOList
+    
+    def getPersistentList(self, voList):
+        return []    
     
     def addOrModifyFDError1(self, e):
         self.fileDataDao.addOrModifyFileData(status = e.status, filename = self.filename, errorMessage=str(e), errorKey = self.errorKey)
     
     def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:190], errorKey = self.errorKey)         
+        self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey)         
        
     def addOrModifyInit(self):
         self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey)   
-            
-    def skipOrProcess(self):
-        if((self.fileData.importStatus == Constant.STATUS_OK and self.fileData.status != Constant.STATUS_OK) or self.replace == True):
-            return True
-        else:
-            return False        
-            
+        
+    def initCache(self):
+        xsdCache = {}
+        for xsdFileName in listdir(Constant.CACHE_FOLDER + "xsd"):
+            try:
+                xsdFile = getXSDFileFromCache(Constant.CACHE_FOLDER + "xsd//" + xsdFileName, None)
+                xsdDict = xmltodict.parse(xsdFile)
+                xsdDF = pandas.DataFrame(xsdDict["xs:schema"]["xs:element"])
+                xsdDF.set_index("@id", inplace=True)
+                xsdDF.head()
+                xsdCache[xsdFileName] = xsdDF
+                print(xsdFileName)
+            except Exception as e:
+                self.logger.exception(e)
+        AbstractImporter.cacheDict["XSD_CACHE"] = xsdCache
     

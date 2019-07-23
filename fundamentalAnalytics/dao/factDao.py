@@ -14,7 +14,7 @@ from dao.dao import Dao, GenericDao
 from engine.conceptEngine import ConceptEngine
 from modelClass.company import Company
 from modelClass.concept import Concept
-from modelClass.fact import Fact
+from modelClass.fact import Fact, RelFactReport
 from modelClass.factValue import FactValue
 from modelClass.fileData import FileData
 from modelClass.period import Period
@@ -93,45 +93,37 @@ class FactDao():
         
     def addFact(self, factVOList, fileData, reportDict, session, replace):
         objectAlreadyAdded = {}
+        factList = []
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
                 concept = ConceptEngine().getOrCreateConcept(factVO.conceptName, session)
-                factKey = str(concept.OID) + "-" + str(reportDict[factVO.reportRole].OID) + "-" + str(fileData.OID)
-                if(objectAlreadyAdded.get(factKey, None) is None):
-                    fact = FactDao.getFact(concept, reportDict[factVO.reportRole], fileData, session)
-                    if(fact is None):
-                        fact = Fact()
-                        fact.conceptOID = concept.OID
-                        fact.reportOID = reportDict[factVO.reportRole].OID
-                        fact.fileDataOID = fileData.OID
-                        fact.order_ = factVO.order
-#                     if(replace):
-#                         for itemToDelete in fact.factValueList:
-#                             session.delete(itemToDelete)
-                        Dao().addObject(objectToAdd=fact, session=session, doFlush=True)
-                    else:
-                        for factValue in fact.factValueList:
-                            factValuekey = str(factValue.periodOID) + "-" + str(fact.OID)
-                            objectAlreadyAdded[factValuekey] = ""
-                    
-                    for factValueVO in factVO.factValueList:
-                        factValuekey = str(factValueVO.period.OID) + "-" + str(fact.OID)
-                        if(objectAlreadyAdded.get(factValuekey, None) is None):
-                            factValue = FactValue()
-                            factValue.value = factValueVO.value
-                            factValue.period = factValueVO.period
-                            fact.factValueList.append(factValue)
-                            objectAlreadyAdded[factValuekey] = ""
-                    objectAlreadyAdded[factKey] = "" 
-                    logging.getLogger(Constant.LOGGER_ADDTODB).debug("Added fact" + str(factVO.conceptName))
-                    # print("STEP 3.1 " + str(datetime.now() - time1))
-                    if(len(factVO.factValueList) == 0):
-                        logging.getLogger(Constant.LOGGER_NONEFACTVALUE).debug("NoneFactValue " + fact.concept.conceptName + " " + fileData.fileName)
+                fact = FactDao().getFact(concept, fileData, session)
+                if(fact is None):
+                    fact = Fact()
+                    fact.conceptOID = concept.OID
+                    fact.fileDataOID = fileData.OID
+                    frRelation = RelFactReport()
+                    frRelation.reportOID = reportDict[factVO.reportRole].OID
+                    frRelation.order_ = factVO.order
+                    fact.relationReportList.append(frRelation)
+                    #Dao().addObject(objectToAdd=fact, session=session, doFlush=True)
+                
+                for factValueVO in factVO.factValueList:
+                    #factValuekey = str(factValueVO.period.OID) + "-" + str(fact.OID)
+                    #if(objectAlreadyAdded.get(factValuekey, None) is None):
+                    factValue = FactValue()
+                    factValue.value = factValueVO.value
+                    factValue.period = factValueVO.period
+                    factValue.factList.append(fact)
+                        #objectAlreadyAdded[factValuekey] = factValue
+                factList.append(fact)
+        for fv in objectAlreadyAdded.values():
+            Dao().addObject(objectToAdd=fv, session=session)            
         session.commit()
+
         
-    @staticmethod
-    def getFact(concept, report, fileData, session):
-        return GenericDao().getOneResult(Fact, and_(Fact.concept == concept, Fact.report == report, Fact.fileData == fileData), session, raiseNoResultFound=False)
+    def getFact(self, concept, fileData, session):
+        return GenericDao().getOneResult(Fact, and_(Fact.concept == concept, Fact.fileData == fileData), session, raiseNoResultFound=False)
     
     def getFactValue3(self, periodTypeList=None, fileDataOID=None, session=None):
         dbconnector = DBConnector()
