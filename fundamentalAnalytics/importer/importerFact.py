@@ -28,20 +28,23 @@ class ImporterFact(AbstractImporter, AbstractFactImporter):
         reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
         factVOList = self.getFactByReport(reportDict, self.processCache, self.session)
         factVOList = self.setFactValues(factVOList, self.processCache)
-        FactDao().addFact(factVOList, self.fileData, reportDict, self.session, self.replace)
+        FactDao().addFact(factVOList, self.fileData, reportDict, self.session)
         return factVOList
     
     def getPersistentList(self, voList):
         return []    
     
     def addOrModifyFDError1(self, e):
-        self.fileDataDao.addOrModifyFileData(status = e.status, filename = self.filename, errorMessage=str(e), errorKey = self.errorKey)
+        self.fileDataDao.addOrModifyFileData(status = e.status, filename = self.filename, errorMessage=str(e), errorKey = self.errorKey, externalSession=self.session)
     
     def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey)         
+        self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey, externalSession=self.session)         
        
     def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey)   
+        self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey, externalSession=self.session)   
+        
+    def deleteImportedObject(self):
+        FactDao().deleteFactByFD(self.fileData.OID, self.session)
         
     def initCache(self):
         xsdCache = {}

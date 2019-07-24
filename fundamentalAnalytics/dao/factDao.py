@@ -91,14 +91,15 @@ class FactDao():
             rs = con.execute(query, params)
             return rs 
         
-    def addFact(self, factVOList, fileData, reportDict, session, replace):
+    def addFact(self, factVOList, fileData, reportDict, session):
         objectAlreadyAdded = {}
+        factAlreadyAdded = {}
         factList = []
         for factVO in factVOList:
             if (len(factVO.factValueList) > 0):
                 concept = ConceptEngine().getOrCreateConcept(factVO.conceptName, session)
-                fact = FactDao().getFact(concept, fileData, session)
-                if(fact is None):
+                factKey = "F-"+str(concept.OID)+"-"+str(reportDict[factVO.reportRole].OID)
+                if(factAlreadyAdded.get(factKey, None)is None):
                     fact = Fact()
                     fact.conceptOID = concept.OID
                     fact.fileDataOID = fileData.OID
@@ -106,17 +107,19 @@ class FactDao():
                     frRelation.reportOID = reportDict[factVO.reportRole].OID
                     frRelation.order_ = factVO.order
                     fact.relationReportList.append(frRelation)
-                    #Dao().addObject(objectToAdd=fact, session=session, doFlush=True)
-                
-                for factValueVO in factVO.factValueList:
-                    #factValuekey = str(factValueVO.period.OID) + "-" + str(fact.OID)
-                    #if(objectAlreadyAdded.get(factValuekey, None) is None):
-                    factValue = FactValue()
-                    factValue.value = factValueVO.value
-                    factValue.period = factValueVO.period
-                    factValue.factList.append(fact)
-                        #objectAlreadyAdded[factValuekey] = factValue
-                factList.append(fact)
+                    factAlreadyAdded[factKey] = ""
+                    for factValueVO in factVO.factValueList:
+                        factValuekey = "FV-"+str(factValueVO.period.OID) + "-" + str(fact.conceptOID)
+                        factValue = objectAlreadyAdded.get(factValuekey, None)
+                        if(factValue is None):
+                            factValue = FactValue()
+                            factValue.value = factValueVO.value
+                            factValue.period = factValueVO.period
+                            factValue.factList.append(fact)
+                            objectAlreadyAdded[factValuekey] = factValue
+                        else:
+                            factValue.factList.append(fact)
+                    factList.append(fact)
         for fv in objectAlreadyAdded.values():
             Dao().addObject(objectToAdd=fv, session=session)            
         session.commit()
@@ -154,3 +157,11 @@ class FactDao():
             .order_by(Period.endDate)\
             .all()#\#.order_by(Period.endDate).distinct()\
         return objectResult
+    
+    def deleteFactByFD(self, fileDataOID, session = None):
+        params = { 'fileDataOID' : fileDataOID}
+        query = text("""DELETE fa_fact, fa_fact_value
+                        FROM fa_fact
+                        INNER JOIN fa_fact_value ON fa_fact.factValueOID = fa_fact_value.OID
+                        WHERE fa_fact.fileDataOID = :fileDataOID""")
+        session.execute(query, params)
