@@ -144,13 +144,13 @@ class AbstractFactImporter(object):
             if(menuCategory is None or menuCategory in menuCategoryAllowed):
                 try:
                     reportRole = report["Role"]
-                    #if(self.isReportAllowed(reportRole)):
-                    reportShortName = report["ShortName"]
-                    report = Dao().getReport(reportShortName, session)
-                    if(report is None):
-                        report = Report()
-                        report.shortName = reportShortName[0:299]
-                    reportDict[reportRole] = report
+                    if(self.isReportAllowed(reportRole)):
+                        reportShortName = report["ShortName"]
+                        report = Dao().getReport(reportShortName, session)
+                        if(report is None):
+                            report = Report()
+                            report.shortName = reportShortName[0:299]
+                        reportDict[reportRole] = report
                 except Exception:
                     pass
         self.logger.debug("REPORT LIST " + str(reportDict))

@@ -116,7 +116,6 @@ class CustomFactEngine():
             ytdDict.setdefault(itemYTD.conceptOID, []).append(itemYTD)
         
         for customConcept in customConceptList:
-            cfvVOListTemp = []
             for relationConcept in customConcept.relationConceptList:
                 prevRow = None 
                 customFactValueVO = None
@@ -125,34 +124,26 @@ class CustomFactEngine():
                         # estrategia de calculo usando el YTD
                         print("NEW FACT VALUE1 " + customConcept.conceptName + " " + str(itemYTD.value - prevRow.value) + " " + relationConcept.concept.conceptName)
                         customFactValueVO = CustomFactValueVO(value=(itemYTD.value - prevRow.value), origin='CALCULATED', 
-                                                              fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = relationConcept.order_ )
+                                                              fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+                        break
                     else:
                         prevRow = itemYTD
                         
-#                         if newCustomFactValue is None:
-                                #sumValue = 0
-#                                 # estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
-#                                 listQTD = CustomFactDao().getCustomFactValue4(companyOID=fileData.company.OID, documentFiscalYearFocus=fileData.documentFiscalYearFocus, customConceptOID=customConcept.OID, session=session)
-#                                 listQTD_2 = []
-#                                 for itemQTD in listQTD:
-#                                     if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285:
-#                                         sumValue += itemQTD.value
-#                                         listQTD_2.append(itemQTD)
-#                                 if(len(listQTD_2) == 3 and itemYTD.fileDataOID == fileData.OID):
-#                                     print("NEW FACT VALUE2 " + customConcept.conceptName + " " + str(itemYTD.value - sumValue))
-#                                     customFactValue = self.getNewCustomFactValue(value=(itemYTD.value - sumValue), origin='CALCULATED', fileDataOID=itemYTD.fileDataOID,
-#                                                                              customConcept=customConcept, session=session, endDate=itemYTD.endDate)
-#                                     newCustomFactValue = customFactValue
+                    if customFactValueVO is None:
+                            sumValue = 0
+                            # estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
+                            listQTD = CustomFactDao().getCustomFactValue4(companyOID=fileData.company.OID, documentFiscalYearFocus=fileData.documentFiscalYearFocus, customConceptOID=customConcept.OID, session=session)
+                            listQTD_2 = []
+                            for itemQTD in listQTD:
+                                if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285:
+                                    sumValue += itemQTD.value
+                                    listQTD_2.append(itemQTD)
+                            if(len(listQTD_2) == 3 and itemYTD.fileDataOID == fileData.OID):
+                                print("NEW FACT VALUE2 " + customConcept.conceptName + " " + str(itemYTD.value - sumValue))
+                                customFactValueVO = CustomFactValueVO(value=(itemYTD.value - sumValue), origin='CALCULATED', 
+                                                                  fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+                                break
                 if(customFactValueVO is not None):
-                    cfvVOListTemp.append(customFactValueVO)
-            prevVO = None            
-            for cfvVO in cfvVOListTemp:
-                if(prevVO is None):
-                    prevVO = cfvVO
-                else:
-                    #if(cfvVO.order_ is not None and cfvVO.order_> prevVO.order_ and abs(cfvVO.value) > abs(prevVO.value)):
-                    if(cfvVO.order_ is None):
-                        raise Exception("Duplicated Fact" + str([x.concept.conceptName for x in customConcept.relationConceptList]))
-            if (prevVO is not None):
-                cfvVOList.append(prevVO)
+                    cfvVOList.append(customFactValueVO)
+                    break
         return cfvVOList

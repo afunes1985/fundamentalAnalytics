@@ -49,7 +49,7 @@ if (len(rows) != 0):
 def doSubmitShowFact(n_clicks, rows, selected_rows):
     if (selected_rows is not None and len(selected_rows) != 0):
         for selected_row in selected_rows:
-            df2 = getFactValues(rows[selected_row]["CIK"], rows[selected_row]["ticker"], None)
+            df2 = getFactValues(rows[selected_row]["CIK"], rows[selected_row]["ticker"])
             dt2 = dt.DataTable(
                 id='dt-factList',
                 columns=[
@@ -80,7 +80,7 @@ def doSubmitShowFact(n_clicks, rows, selected_rows):
                  ])
             return dt2
  
-def getFactValues(CIK, ticker, conceptName2):
+def getFactValues(CIK, ticker):
     rs = FactDao.getFactValues2(CIK = CIK, ticker = ticker, conceptName = None)
     rows = rs.fetchall()
     df = DataFrame(columns=['reportName', 'conceptName'])
