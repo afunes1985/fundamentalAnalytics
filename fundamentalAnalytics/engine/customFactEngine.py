@@ -47,7 +47,7 @@ class CustomFactEngine():
     
     def getNewCustomFactValue(self, value, origin, fileDataOID, customConcept, session, endDate=None, periodOID=None):
         customFactValue = CustomFactValue()
-        if(periodOID is None):
+        if(periodOID is None and endDate is not None):
             customFactValue.period = PeriodEngine().getOrCreatePeriod('QTD', endDate, session)
         else:
             customFactValue.periodOID = periodOID
@@ -122,7 +122,7 @@ class CustomFactEngine():
                 for itemYTD in ytdDict.get(relationConcept.concept.OID, []):  # itero todos los YTD y cuando corresponde con un faltante busco el YTD anterior y se lo resto o busco los 3 QTD anteriores
                     if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100 and itemYTD.fileDataOID == fileData.OID:
                         # estrategia de calculo usando el YTD
-                        print("NEW FACT VALUE1 " + customConcept.conceptName + " " + str(itemYTD.value - prevRow.value) + " " + relationConcept.concept.conceptName)
+                        print("NEW FACT VALUE 1 " + customConcept.conceptName + " " + str(itemYTD.value - prevRow.value) + " " + relationConcept.concept.conceptName)
                         customFactValueVO = CustomFactValueVO(value=(itemYTD.value - prevRow.value), origin='CALCULATED', 
                                                               fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
                         break
@@ -130,16 +130,28 @@ class CustomFactEngine():
                         prevRow = itemYTD
                         
                     if customFactValueVO is None:
-                            sumValue = 0
+                        listQTD = CustomFactDao().getCustomFactValue4(companyOID=fileData.company.OID, documentFiscalYearFocus=fileData.documentFiscalYearFocus, customConceptOID=customConcept.OID, session=session)
+                        sumValue = 0
+                        listQTD_2 = []
+                        if itemYTD.documentFiscalPeriodFocus == 'Q2':
+                            for itemQTD in listQTD:
+                                if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285 and itemQTD.fileData.documentFiscalPeriodFocus == 'Q1':
+                                    sumValue += itemQTD.value
+                                    listQTD_2.append(itemQTD)
+                                    break
+                            if(len(listQTD_2) == 1 and itemYTD.fileDataOID == fileData.OID):
+                                print("NEW FACT VALUE 2 " + customConcept.conceptName + " " + str(itemYTD.value - sumValue))
+                                customFactValueVO = CustomFactValueVO(value=(itemYTD.value - sumValue), origin='CALCULATED', 
+                                                                  fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+                                break
+                        else:
                             # estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
-                            listQTD = CustomFactDao().getCustomFactValue4(companyOID=fileData.company.OID, documentFiscalYearFocus=fileData.documentFiscalYearFocus, customConceptOID=customConcept.OID, session=session)
-                            listQTD_2 = []
                             for itemQTD in listQTD:
                                 if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285:
                                     sumValue += itemQTD.value
                                     listQTD_2.append(itemQTD)
                             if(len(listQTD_2) == 3 and itemYTD.fileDataOID == fileData.OID):
-                                print("NEW FACT VALUE2 " + customConcept.conceptName + " " + str(itemYTD.value - sumValue))
+                                print("NEW FACT VALUE 3 " + customConcept.conceptName + " " + str(itemYTD.value - sumValue))
                                 customFactValueVO = CustomFactValueVO(value=(itemYTD.value - sumValue), origin='CALCULATED', 
                                                                   fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
                                 break

@@ -6,7 +6,7 @@ Created on 20 ago. 2018
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import  and_
+from sqlalchemy.sql.expression import  and_, text
 
 from base.dbConnector import DBConnector
 from modelClass.abstractConcept import AbstractConcept
@@ -20,7 +20,7 @@ from valueobject.constant import Constant
 
 class GenericDao():
     
-    def getFirstResult(self, objectClazz, condition, session = None):
+    def getFirstResult(self, objectClazz, condition, session=None):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
@@ -30,7 +30,7 @@ class GenericDao():
         .first()
         return objectResult
     
-    def getOneResult(self, objectClazz, condition =  (1 == 1), session = None, raiseNoResultFound = True):
+    def getOneResult(self, objectClazz, condition=(1 == 1), session=None, raiseNoResultFound=True):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
@@ -44,7 +44,7 @@ class GenericDao():
             return None
         return objectResult
     
-    def getAllResult(self, objectClazz, condition = (1 == 1), session = None, limit = None):
+    def getAllResult(self, objectClazz, condition=(1 == 1), session=None, limit=None):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
@@ -63,13 +63,13 @@ class Dao():
                 Dao().addObject(objectToAdd=obj, session=session) 
             session.commit()
     
-    def getConcept(self, conceptName, session = None):
-        return GenericDao().getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session, raiseNoResultFound = False)
+    def getConcept(self, conceptName, session=None):
+        return GenericDao().getOneResult(Concept, Concept.conceptName.__eq__(conceptName), session, raiseNoResultFound=False)
     
     def getReport(self, reportShortName, session):
-        return GenericDao().getOneResult(Report, and_(Report.shortName == reportShortName), session, raiseNoResultFound = False)
+        return GenericDao().getOneResult(Report, and_(Report.shortName == reportShortName), session, raiseNoResultFound=False)
     
-    def addObject(self, objectToAdd, session = None, doCommit = False, doFlush = False):
+    def addObject(self, objectToAdd, session=None, doCommit=False, doFlush=False):
         if(session is None):
             internalSession = DBConnector().getNewSession()
         else:
@@ -86,16 +86,58 @@ class Dao():
     @staticmethod     
     def addAbstractConcept(factVO, session):
         try:
-            abstractConcept =  GenericDao().getOneResult(AbstractConcept, and_(AbstractConcept.conceptName == factVO.conceptName), session)
+            abstractConcept = GenericDao().getOneResult(AbstractConcept, and_(AbstractConcept.conceptName == factVO.conceptName), session)
         except NoResultFound:
             abstractConcept = AbstractConcept()
             abstractConcept.conceptName = factVO.conceptName
-            Dao().addObject(objectToAdd = abstractConcept, session = session, doCommit = False)
+            Dao().addObject(objectToAdd=abstractConcept, session=session, doCommit=False)
         factVO.abstractConcept = abstractConcept
         return factVO
     
-    def getCustomConcept(self, customConceptName, session = None):
-        return GenericDao().getOneResult(CustomConcept, CustomConcept.conceptName.__eq__(customConceptName), session, raiseNoResultFound = False)
+    def getCustomConcept(self, customConceptName, session=None):
+        return GenericDao().getOneResult(CustomConcept, CustomConcept.conceptName.__eq__(customConceptName), session, raiseNoResultFound=False)
 
-    def getCustomReport(self, reportShortName, session = None):
-        return GenericDao().getOneResult(CustomReport, and_(CustomReport.shortName == reportShortName), session, raiseNoResultFound = False)
+    def getCustomReport(self, reportShortName, session=None):
+        return GenericDao().getOneResult(CustomReport, and_(CustomReport.shortName == reportShortName), session, raiseNoResultFound=False)
+    
+    def getValuesForExpression(self, fileDataOID, session):
+        params = { 'fileDataOID' : fileDataOID}
+        query = text(""" select concept.conceptName,  fv.value, period.OID as periodOID
+                        FROM fa_custom_fact fact
+                            join fa_custom_fact_value fv on fv.customFactOID = fact.OID
+                            join fa_custom_concept concept on fact.customConceptOID = concept.OID
+                            join fa_period period on fv.periodOID = period.OID
+                        where fv.fileDataOID = :fileDataOID
+                        union
+                        select concept.conceptName,  efv.value, null as periodOID
+                        FROM fa_entity_fact ef
+                            join fa_entity_fact_value efv on ef.oid = efv.entityFactOID
+                            join fa_concept concept on ef.conceptOID = concept.OID
+                        where efv.fileDataOID = :fileDataOID
+                        union
+                        select 'PRICE', p.value, null as periodOID
+                        from fa_price p
+                        where p.fileDataOID = :fileDataOID""")
+        return session.execute(query, params)
+    
+    def getValuesForApp4(self, ticker, session = None):
+        if (session is None): 
+            dbconnector = DBConnector()
+            session = dbconnector.getNewSession()
+        params = { 'ticker' : ticker}
+        query = text(""" select concept.conceptName,  efv.value, p.instant as endDate
+                        FROM fa_entity_fact ef
+                            join fa_entity_fact_value efv on ef.oid = efv.entityFactOID
+                            join fa_concept concept on ef.conceptOID = concept.OID
+                            join fa_period p on p.oid = efv.periodOID
+                            join fa_file_Data fd on fd.oid = efv.fileDataOID
+                            join fa_company c on c.oid = fd.companyOID
+                        where c.ticker = :ticker
+                        union
+                        select 'PRICE', pri.value, p.instant as endDate
+                        from fa_price pri
+                            join fa_period p on p.oid = pri.periodOID
+                            join fa_file_Data fd on fd.oid = pri.fileDataOID
+                            join fa_company c on c.oid = fd.companyOID
+                        where c.ticker = :ticker""")
+        return session.execute(query, params)

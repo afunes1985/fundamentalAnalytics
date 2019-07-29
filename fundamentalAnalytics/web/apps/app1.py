@@ -1,7 +1,6 @@
 from dash.dependencies import Input, Output, State
 from pandas.core.frame import DataFrame
 
-from base.initializer import Initializer
 from dao.companyDao import CompanyDao
 from dao.factDao import FactDao
 import dash_core_components as dcc
@@ -11,9 +10,6 @@ from engine.plotlyEngineInterface import PlotlyEngineInterface
 from valueobject.valueobject import FilterFactVO
 from web.app import app
 
-
-
-Initializer()
 rs = CompanyDao().getCompanyList()
 rows = rs.fetchall()
 if (len(rows) != 0):
@@ -30,7 +26,7 @@ if (len(rows) != 0):
                 sort_mode="multi",
                 row_selectable="multi",
                 page_current= 0,
-                page_size= 10,
+                page_size= 10
         ),
     html.Div(id='dt-companyList-container'),
     html.Button(id='btn-submit-showFact', n_clicks=0, children='Submit'),
@@ -60,6 +56,7 @@ def doSubmitShowFact(n_clicks, rows, selected_rows):
                 sort_action="native",
                 sort_mode="multi",
                 row_selectable="multi",
+                page_action = 'none',
                 style_table={'overflowX': 'scroll'},
                 fixed_rows={ 'headers': True, 'data': 0 },
                 style_cell={
@@ -68,10 +65,10 @@ def doSubmitShowFact(n_clicks, rows, selected_rows):
                     'textOverflow': 'ellipsis',
                     'overflow': 'hidden',
                 },
-                css=[{
-                    'selector': '.dash-cell div.dash-cell-value',
-                    'rule': 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
-                }],
+#                 css=[{
+#                     'selector': '.dash-cell div.dash-cell-value',
+#                     'rule': 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
+#                 }],
                 style_cell_conditional=[
                      {'if': {'column_id': 'reportName'},
                          'textAlign': 'left'},
@@ -83,7 +80,6 @@ def doSubmitShowFact(n_clicks, rows, selected_rows):
 def getFactValues(CIK, ticker):
     rs = FactDao.getFactValues2(CIK = CIK, ticker = ticker, conceptName = None)
     rows = rs.fetchall()
-    df = DataFrame(columns=['reportName', 'conceptName'])
     rows_list = []
     rowDict = {}
     columnNameForDate = []
@@ -91,10 +87,10 @@ def getFactValues(CIK, ticker):
         reportName = row[0]
         conceptName = row[1]
         value = getNumberValueAsString(row[3])
-        reportDate = row[4]
+        valueDate = row[4]
         periodType = row[5]
         order = row[6]
-        #print(conceptName + " " + str(value) + " " + str(reportDate))
+        #print(conceptName + " " + str(value) + " " + str(valueDate))
         if(rowDict.get('conceptName', None) != conceptName or rowDict.get('periodType', None) != periodType):
             if(rowDict.get('conceptName', None) is not None):
                 rows_list.append(rowDict)
@@ -103,9 +99,9 @@ def getFactValues(CIK, ticker):
             rowDict['conceptName'] = conceptName
             rowDict['periodType'] = periodType
             rowDict['order'] = order
-        rowDict[reportDate.strftime('%d-%m-%Y')] = value
-        if reportDate not in columnNameForDate:
-            columnNameForDate.append(reportDate)
+        rowDict[valueDate.strftime('%d-%m-%Y')] = value
+        if valueDate not in columnNameForDate:
+            columnNameForDate.append(valueDate)
     rows_list.append(rowDict)     
     columnKeys = ['reportName', 'conceptName', 'periodType', 'order']
     columnNameForDate.sort()

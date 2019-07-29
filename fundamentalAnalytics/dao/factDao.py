@@ -150,7 +150,7 @@ class FactDao():
             .filter(and_(Period.type.__eq__(periodType), \
                          FileData.documentFiscalYearFocus == documentFiscalYearFocus, \
                          FileData.companyOID == companyOID))\
-            .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, Fact.fileDataOID, Fact.conceptOID)\
+            .with_entities(FactValue.value, FactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, Fact.fileDataOID, Fact.conceptOID)\
             .order_by(Period.endDate)\
             .all()#\#.order_by(Period.endDate).distinct()\
         return objectResult

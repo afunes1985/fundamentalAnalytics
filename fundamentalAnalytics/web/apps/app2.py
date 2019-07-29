@@ -8,7 +8,6 @@ import webbrowser
 from dash.dependencies import Output, Input, State
 from pandas.core.frame import DataFrame
 import dash_table as dt
-from base.initializer import Initializer
 from dao.fileDataDao import FileDataDao
 import dash_core_components as dcc
 import dash_html_components as html
@@ -17,8 +16,6 @@ from engine.importFileEngine import ImportFileEngine
 from web.app import app
 from importer.importerFact import ImporterFact
 
-
-Initializer()
 
 layout = html.Div([
     dcc.Input(id='txt-filename', value='', type='text'),

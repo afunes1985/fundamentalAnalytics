@@ -2,7 +2,7 @@ from base.dbConnector import DBConnector
 from base.initializer import Initializer
 from dao.dao import Dao
 from engine.customFactEngine import CustomFactEngine
-
+from modelClass.customConcept import RelCustomConceptConcept
 
 Initializer()
 session = DBConnector().getNewSession()
@@ -22,13 +22,13 @@ if(createCustomConcept):
     ccList.append(customFactEngine.createCustomConcept("DEPRECIATION", "CUSTOM_INCOME", 6, 'QTD', "COPY_CALCULATE", session));
     ccList.append(customFactEngine.createCustomConcept("OPERATING_INCOME", "CUSTOM_INCOME", 7, 'QTD', "COPY_CALCULATE", session));
     ccList.append(customFactEngine.createCustomConcept("INTERES_EXPENSE", "CUSTOM_INCOME", 8, 'QTD', "COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("GAIN_LOSS_SALE_ASSETS", "CUSTOM_INCOME", 9, 'QTD',"COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("OTHER_INCOME_LOSS", "CUSTOM_INCOME", 10, 'QTD',"COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("INCOME_BEFORE_TAX", "CUSTOM_INCOME", 11, 'QTD',"COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("INCOME_TAX_PAID", "CUSTOM_INCOME", 12, 'QTD',"COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("NET_INCOME", "CUSTOM_INCOME", 13, 'QTD',"COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("EARNINGS_PER_SHARE_BASIC", "CUSTOM_INCOME", 14, 'QTD',"COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("EARNINGS_PER_SHARE_DILUTED", "CUSTOM_INCOME", 15, 'QTD',"COPY_CALCULATE", session));
+    ccList.append(customFactEngine.createCustomConcept("GAIN_LOSS_SALE_ASSETS", "CUSTOM_INCOME", 9, 'QTD', "COPY_CALCULATE", session));
+    ccList.append(customFactEngine.createCustomConcept("OTHER_INCOME_LOSS", "CUSTOM_INCOME", 10, 'QTD', "COPY_CALCULATE", session));
+    ccList.append(customFactEngine.createCustomConcept("INCOME_BEFORE_TAX", "CUSTOM_INCOME", 11, 'QTD', "COPY_CALCULATE", session));
+    ccList.append(customFactEngine.createCustomConcept("INCOME_TAX_PAID", "CUSTOM_INCOME", 12, 'QTD', "COPY_CALCULATE", session));
+    ccList.append(customFactEngine.createCustomConcept("NET_INCOME", "CUSTOM_INCOME", 13, 'QTD', "COPY_CALCULATE", session));
+    ccList.append(customFactEngine.createCustomConcept("EARNINGS_PER_SHARE_BASIC", "CUSTOM_INCOME", 14, 'QTD', "COPY_CALCULATE", session));
+    ccList.append(customFactEngine.createCustomConcept("EARNINGS_PER_SHARE_DILUTED", "CUSTOM_INCOME", 15, 'QTD', "COPY_CALCULATE", session));
     
     ccList.append(customFactEngine.createCustomConcept("CASH_AND_CASH_EQUIVALENTS", "CUSTOM_BALANCE", 1, 'INST', "COPY_CALCULATE", session));
     ccList.append(customFactEngine.createCustomConcept("INVENTORY", "CUSTOM_BALANCE", 2, 'INST', "COPY_CALCULATE", session));
@@ -66,25 +66,28 @@ if(createCustomConcept):
     ccList.append(customFactEngine.createCustomConcept("NET_INCOME_MARGIN", "CUSTOM_RATIO", 5, 'QTD', "EXPRESSION", session));
     ccList.append(customFactEngine.createCustomConcept("INCOME_BEFORE_TAX_BY_SHARES", "CUSTOM_RATIO", 6, 'QTD', "EXPRESSION", session));
     ccList.append(customFactEngine.createCustomConcept("NET_INCOME_BY_SHARES", "CUSTOM_RATIO", 7, 'QTD', "EXPRESSION", session));
+    ccList.append(customFactEngine.createCustomConcept("INCOME_PRE_TAX_YIELD", "CUSTOM_RATIO", 8, 'QTD', "EXPRESSION", session));
+    ccList.append(customFactEngine.createCustomConcept("REVENUE_PER_SHARE", "CUSTOM_RATIO", 9, 'QTD', "EXPRESSION", session));
     
     for itemToAdd in ccList:
-        Dao().addObject(objectToAdd = itemToAdd, session = session, doCommit = True) 
+        Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
 
-customConceptDict = {"REVENUE": ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet"],
-                     "COST_OF_REVENUE": ["CostOfRevenue", "CostOfGoodsAndServicesSold"],
+customConceptDict = {"REVENUE": ["Revenues", "SalesRevenueNet", "RevenueFromContractWithCustomerExcludingAssessedTax"], #1,2,3
+                     "COST_OF_REVENUE": ["CostOfRevenue", "CostOfGoodsAndServicesSold"],  # 1,2
                      "GROSS_PROFIT": ["GrossProfit"],
                      "SELLING_AND_MARKETING_EXPENSE": ["SellingAndMarketingExpense"],
                      "GENERAL_AND_ADMINISTRATIVE_EXPENSE": ["GeneralAndAdministrativeExpense"],
                      "SGA_EXPENSE": ["SellingGeneralAndAdministrativeExpense"],
                      "RESEARCH_AND_DEVELOPMENT_EXPENSE": ["ResearchAndDevelopmentExpense"],
-                     "DEPRECIATION": ["DepreciationAmortizationAndOther", "DepreciationAndAmortization", "AmortizationofAcquisitionRelatedIntangibleAssets", "Depreciation"],
+                     "DEPRECIATION": ["DepreciationAmortizationAndOther", "Depreciation", "DepreciationAndAmortization", "AmortizationofAcquisitionRelatedIntangibleAssets" ],#1,2
                      "OPERATING_INCOME": ["OperatingIncomeLoss"],
                      "INTERES_EXPENSE": ["InterestExpense"],
                      "GAIN_LOSS_SALE_ASSETS": ["GainLossOnInvestments"],
-                     "OTHER_INCOME_LOSS": ["NonoperatingIncomeExpense", "OtherNonoperatingIncomeExpense"],  # ORDER 1, 2
-                     "INCOME_BEFORE_TAX": ["IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments", "IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest"],
+                     "OTHER_INCOME_LOSS": ["NonoperatingIncomeExpense", "OtherNonoperatingIncomeExpense"],  # 1, 2
+                     "INCOME_BEFORE_TAX": ["IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+                                           "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments"], #1,2
                      "INCOME_TAX_PAID": ["IncomeTaxExpenseBenefit"],
-                     "NET_INCOME": ["NetIncomeLoss", "ProfitLoss"], # ORDER 1, 2
+                     "NET_INCOME": ["NetIncomeLoss", "ProfitLoss"],  # 1, 2
                      "EARNINGS_PER_SHARE_BASIC": ["EarningsPerShareBasic"],
                      "EARNINGS_PER_SHARE_DILUTED": ["EarningsPerShareDiluted"],
                      
@@ -117,13 +120,21 @@ customConceptDict = {"REVENUE": ["Revenues", "RevenueFromContractWithCustomerExc
                      "TOTAL_SHAREHOLDERS_EQUITY": ["StockholdersEquity"],
                      "SHARES_OUTSTANDING": ["CommonStockSharesOutstanding"]}
 
+
+session.query(RelCustomConceptConcept).delete()
+session.flush()
+
 for customConceptName, conceptList in customConceptDict.items():
     print ("Configuring " + customConceptName)
-    customConcept = Dao.getCustomConcept(customConceptName, session)
-    customConcept.conceptList = []
+    customConcept = Dao().getCustomConcept(customConceptName, session)
+    orderCount = 0
     for conceptName in conceptList:
-        concept = Dao.getConcept(conceptName, session)
-        print("    Concept added " +  concept.conceptName)
-        customConcept.conceptList.append(concept)
-    Dao().addObject(objectToAdd = customConcept, session = session, doCommit = True)
+        orderCount += 1
+        concept = Dao().getConcept(conceptName, session)
+        relCCC = RelCustomConceptConcept()
+        relCCC.concept = concept
+        relCCC.order_ = orderCount
+        customConcept.relationConceptList.append(relCCC)
+        print("    Concept added " + conceptName)
+    Dao().addObject(objectToAdd=customConcept, session=session, doCommit=True)
 

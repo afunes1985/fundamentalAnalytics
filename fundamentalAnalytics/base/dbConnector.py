@@ -13,9 +13,13 @@ class DBConnector(object):
     session = None
     engine = None
     
-    def __init__(self):
-        self.engine = create_engine('mysql+mysqlconnector://root:root@localhost/fundamentalanalytics', poolclass=NullPool)
-        self.session = sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=False)
+    def __init__(self, isNullPool = False):
+        if(isNullPool):
+            self.engine = create_engine('mysql+mysqlconnector://root:root@localhost/fundamentalanalytics', poolclass=NullPool)
+            self.session = sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=False)
+        else:
+            self.engine = create_engine('mysql+mysqlconnector://root:root@localhost/fundamentalanalytics')
+            self.session = sessionmaker(bind=self.engine, autoflush=False)
         self.session.trust_env = False
     
 #     def __new__(cls):

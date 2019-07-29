@@ -14,19 +14,4 @@ from modelClass.fileData import FileData
 from modelClass.period import Period
 
 class PeriodDao():
-    
-    def getPeriodByFact3(self, ticker, periodType, endDate, session = None):
-        try:
-            dbconnector = DBConnector()
-            if (session is None): 
-                session = dbconnector.getNewSession()
-            query = session.query(Period)\
-                .join(Period.factValueList)\
-                .join(FactValue.fact)\
-                .join(Fact.fileData)\
-                .join(FileData.company)\
-                .filter(and_(Company.ticker.__eq__(ticker), Period.type.__eq__(periodType), Period.endDate == endDate))
-            objectResult = query.one()
-            return objectResult
-        except NoResultFound:
-            return None   
+    pass

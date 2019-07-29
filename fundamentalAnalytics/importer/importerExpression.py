@@ -36,7 +36,7 @@ class ImporterExpression(AbstractImporter):
     
     def getPersistent(self, vo):
         customFactValue = CustomFactEngine().getNewCustomFactValue(value=vo.value, origin=vo.origin, fileDataOID=vo.fileDataOID,
-                                    customConcept=vo.customConcept, endDate=vo.endDate, periodOID=vo.periodOID, session=self.session)
+                                    customConcept=vo.customConcept, periodOID=vo.periodOID, session=self.session)
         return customFactValue
     
     def deleteImportedObject(self):

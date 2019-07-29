@@ -20,22 +20,27 @@ class ExpressionEngine(object):
         returnList = []
         cfvDict = {}
         errorList = []
-        for cfv in fileData.customFactValueList:
-            cfvDict[cfv.customFact.customConcept.conceptName] = cfv
+        rs = Dao().getValuesForExpression(fileData.OID, session)
+        for row in rs:
+            cfvDict[row.conceptName] = dict(row.items())
                 
         for expression, expr in expressionDict.items():
             if (expression.customConcept.conceptName not in cfvDict.keys()):
                 symbolList = list(expr.free_symbols)
                 symbolList = [str(x) for x in symbolList]
                 try:
-                    periodOID = cfvDict[symbolList[0]].periodOID
+                    periodOID = None
+                    for symbol in symbolList:
+                        if(periodOID is None):
+                            periodOID = cfvDict[symbol]["periodOID"]
                     if(len(symbolList) == 2):
-                        value = expr.subs([(symbolList[0], cfvDict[symbolList[0]].value), (symbolList[1], cfvDict[symbolList[1]].value)])
+                        value = expr.subs([(symbolList[0], cfvDict[symbolList[0]]["value"]), (symbolList[1], cfvDict[symbolList[1]]["value"])])
                     elif(len(symbolList) == 3):
-                        value = expr.subs([(symbolList[0], cfvDict[symbolList[0]].value), (symbolList[1], cfvDict[symbolList[1]].value), (symbolList[2], cfvDict[symbolList[2]].value)])
+                        value = expr.subs([(symbolList[0], cfvDict[symbolList[0]]["value"]), (symbolList[1], cfvDict[symbolList[1]]["value"]), (symbolList[2], cfvDict[symbolList[2]]["value"])])
                     origin = 'CALCULATED_BY_RULE'
                     fileDataOID = fileData.OID
                     cfv = CustomFactValueVO(value, origin, fileDataOID, expression.customConcept, expression.customConcept.defaultOrder, periodOID)
+                    cfvDict[expression.customConcept.conceptName] = {"value": value, "periodOID" : periodOID}
                     returnList.append(cfv)
                 except KeyError as e:
                     errorList.append(expression.customConcept.conceptName + " fail for " + str(e)) 

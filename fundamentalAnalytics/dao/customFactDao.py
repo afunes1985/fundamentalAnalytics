@@ -10,7 +10,8 @@ from sqlalchemy.sql.expression import or_, and_
 from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
 from modelClass.company import Company
-from modelClass.customConcept import CustomConcept
+from modelClass.concept import Concept
+from modelClass.customConcept import CustomConcept, RelCustomConceptConcept
 from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
 from modelClass.fileData import FileData
@@ -120,3 +121,15 @@ class CustomFactDao():
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
         session.query(CustomFactValue).filter(and_(CustomFactValue.fileDataOID==fileDataOID, CustomFactValue.origin == origin)).delete()
+        
+    def getCConceptAndConcept(self, session = None):
+        if (session is None): 
+            dbconnector = DBConnector()
+            session = dbconnector.getNewSession()
+        query = session.query(CustomConcept)\
+            .join(CustomConcept.relationConceptList)\
+            .join(RelCustomConceptConcept.concept)\
+            .with_entities(CustomConcept.conceptName.label("CustomConceptName"), Concept.conceptName, RelCustomConceptConcept.order_)\
+            .order_by(CustomConcept.conceptName, RelCustomConceptConcept.order_)
+        objectResult = query.all()
+        return objectResult

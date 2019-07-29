@@ -12,7 +12,7 @@ from importer.importerExpression import ImporterExpression
 if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
-    fileDataList = FileDataDao().getFileData2('SGC', 'expressionStatus', 'OK', session)
+    fileDataList = FileDataDao().getFileData2(ticker='MSFT', statusAttr='copyStatus', statusValue='OK', session=session)
     importerExecutor = ImporterExecutor(threadNumber=1, maxProcessInQueue=5, replace=True, isSequential=True, importerClass=ImporterExpression)
     importerExecutor.execute(fileDataList)
     
