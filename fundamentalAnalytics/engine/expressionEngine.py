@@ -5,8 +5,6 @@ Created on 18 ago. 2018
 '''
 
 from dao.dao import Dao
-from engine.customFactEngine import CustomFactEngine
-from modelClass.customFactValue import CustomFactValue
 from valueobject.valueobject import CustomFactValueVO
 
 

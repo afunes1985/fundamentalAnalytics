@@ -24,7 +24,7 @@ if(createCustomConcept):
     ccList.append(customFactEngine.createCustomConcept("INTERES_EXPENSE", "CUSTOM_INCOME", 8, 'QTD', "COPY_CALCULATE", session));
     ccList.append(customFactEngine.createCustomConcept("GAIN_LOSS_SALE_ASSETS", "CUSTOM_INCOME", 9, 'QTD', "COPY_CALCULATE", session));
     ccList.append(customFactEngine.createCustomConcept("OTHER_INCOME_LOSS", "CUSTOM_INCOME", 10, 'QTD', "COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("INCOME_BEFORE_TAX", "CUSTOM_INCOME", 11, 'QTD', "COPY_CALCULATE", session));
+    ccList.append(customFactEngine.createCustomConcept("INCOME_PRE_TAX", "CUSTOM_INCOME", 11, 'QTD', "COPY_CALCULATE", session));
     ccList.append(customFactEngine.createCustomConcept("INCOME_TAX_PAID", "CUSTOM_INCOME", 12, 'QTD', "COPY_CALCULATE", session));
     ccList.append(customFactEngine.createCustomConcept("NET_INCOME", "CUSTOM_INCOME", 13, 'QTD', "COPY_CALCULATE", session));
     ccList.append(customFactEngine.createCustomConcept("EARNINGS_PER_SHARE_BASIC", "CUSTOM_INCOME", 14, 'QTD', "COPY_CALCULATE", session));
@@ -64,8 +64,8 @@ if(createCustomConcept):
     ccList.append(customFactEngine.createCustomConcept("RES_AND_DEV_EXPENSE_MARGIN", "CUSTOM_RATIO", 3, 'QTD', "EXPRESSION", session));
     ccList.append(customFactEngine.createCustomConcept("DEPRECIATION_MARGIN", "CUSTOM_RATIO", 4, 'QTD', "EXPRESSION", session));
     ccList.append(customFactEngine.createCustomConcept("NET_INCOME_MARGIN", "CUSTOM_RATIO", 5, 'QTD', "EXPRESSION", session));
-    ccList.append(customFactEngine.createCustomConcept("INCOME_BEFORE_TAX_BY_SHARES", "CUSTOM_RATIO", 6, 'QTD', "EXPRESSION", session));
-    ccList.append(customFactEngine.createCustomConcept("NET_INCOME_BY_SHARES", "CUSTOM_RATIO", 7, 'QTD', "EXPRESSION", session));
+    ccList.append(customFactEngine.createCustomConcept("INCOME_PRE_TAX_PER_SHARE", "CUSTOM_RATIO", 6, 'QTD', "EXPRESSION", session));
+    ccList.append(customFactEngine.createCustomConcept("NET_INCOME_PER_SHARE (EPS)", "CUSTOM_RATIO", 7, 'QTD', "EXPRESSION", session));
     ccList.append(customFactEngine.createCustomConcept("INCOME_PRE_TAX_YIELD", "CUSTOM_RATIO", 8, 'QTD', "EXPRESSION", session));
     ccList.append(customFactEngine.createCustomConcept("REVENUE_PER_SHARE", "CUSTOM_RATIO", 9, 'QTD', "EXPRESSION", session));
     
@@ -84,7 +84,7 @@ customConceptDict = {"REVENUE": ["Revenues", "SalesRevenueNet", "RevenueFromCont
                      "INTERES_EXPENSE": ["InterestExpense"],
                      "GAIN_LOSS_SALE_ASSETS": ["GainLossOnInvestments"],
                      "OTHER_INCOME_LOSS": ["NonoperatingIncomeExpense", "OtherNonoperatingIncomeExpense"],  # 1, 2
-                     "INCOME_BEFORE_TAX": ["IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+                     "INCOME_PRE_TAX": ["IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
                                            "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments"], #1,2
                      "INCOME_TAX_PAID": ["IncomeTaxExpenseBenefit"],
                      "NET_INCOME": ["NetIncomeLoss", "ProfitLoss"],  # 1, 2

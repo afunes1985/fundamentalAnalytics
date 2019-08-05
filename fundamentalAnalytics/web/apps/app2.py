@@ -27,11 +27,15 @@ layout = html.Div([
     html.Button(id='btn-reprocess', n_clicks=0, children='Reprocess'),
     html.Button(id='btn-delete', n_clicks=0, children='Delete'),
     html.Button(id='btn-goToSECURL', n_clicks=0, children='GO TO SEC'),
+    html.Button(id='btn-showError', n_clicks=0, children='Show Errors'),
+    html.Div(dt.DataTable(data=[{}], id='dt-errorMessage'), style={'display': 'none'}),
+    html.Div(id='dt-errorMessage-container'),
     dcc.Link('Go to Fact Report', href='/apps/app1'),
     html.Div(id='hidden-div2', style={'display':'none'}),
     html.Div(id='hidden-div1', style={'display':'none'}),
     html.Div(id='hidden-div3', style={'display':'none'}),
-    html.Div(id='hidden-div4', style={'display':'none'})
+    html.Div(id='hidden-div4', style={'display':'none'}),
+    html.Div(id='hidden-div5', style={'display':'none'})
 ])
 
 @app.callback(
@@ -58,6 +62,32 @@ def doSubmit(n_clicks, filename, ticker):
                     ) 
                 return dt2
 
+@app.callback(
+    Output('dt-errorMessage-container', "children"),
+    [Input('btn-showError', 'n_clicks')],
+    [State('dt-fileData', "derived_virtual_data"),
+     State('dt-fileData', "derived_virtual_selected_rows")])
+def showErrors(n_clicks, rows, selected_rows):
+    if (n_clicks > 0):
+        print(rows)
+        print(selected_rows)
+        if(selected_rows is not None and len(selected_rows) != 0):
+            fileName = rows[selected_rows[0]]["fileName"]
+            rs2 = FileDataDao().getErrorList(fileName)
+            if (len(rs2) != 0):
+                df2 = DataFrame(rs2)
+                dt2 = dt.DataTable(
+                    id='dt-errorMessage',
+                    columns=[
+                        {"name": i, "id": i, "deletable": False} for i in df2.columns
+                    ],
+                    data=df2.to_dict("rows"),
+                    filter_action="native",
+                    sort_action="native",
+                    sort_mode="multi"
+                    ) 
+                return dt2
+        
 @app.callback(
     Output('hidden-div1', "children"),
     [Input('btn-reprocess', 'n_clicks')],

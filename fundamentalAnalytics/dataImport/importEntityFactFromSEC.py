@@ -10,11 +10,10 @@ from dao.fileDataDao import FileDataDao
 from dataImport.importerExecutor import ImporterExecutor
 from importer.importerEntityFact import ImporterEntityFact
 
-
 if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
-    fileDataList = FileDataDao().getFileData2('SGC', 'entityStatus', 'INIT', session)
-    importerExecutor = ImporterExecutor(threadNumber = 1, maxProcessInQueue = 5, replace = True, isSequential = True, importerClass= ImporterEntityFact)
+    fileDataList = FileDataDao().getFileData2(ticker='INTC', statusAttr='status', statusValue='OK', session=session)
+    importerExecutor = ImporterExecutor(threadNumber=1, maxProcessInQueue=5, replace=True, isSequential=True, importerClass=ImporterEntityFact)
     importerExecutor.execute(fileDataList)
             

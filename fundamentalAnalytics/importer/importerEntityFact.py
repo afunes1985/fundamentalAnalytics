@@ -9,13 +9,11 @@ from nt import listdir
 import pandas
 import xmltodict
 
-from dao.dao import Dao
 from dao.entityFactDao import EntityFactDao
-from engine.companyEngine import CompanyEngine
 from engine.periodEngine import PeriodEngine
 from importer.abstractFactImporter import AbstractFactImporter
 from importer.abstractImporter import AbstractImporter
-from tools.tools import getXMLDictFromGZCache, getXSDFileFromCache
+from tools.tools import  getXSDFileFromCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO
 
@@ -42,7 +40,7 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey, externalSession=self.session)         
             
     def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_INIT, priceStatus=Constant.STATUS_PENDING, filename=self.filename, errorKey=self.errorKey, externalSession=self.session)   
+        self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_INIT, filename=self.filename, errorKey=self.errorKey, externalSession=self.session)   
             
     def getPersistentList(self, voList):
         return []       
@@ -61,6 +59,14 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
                     period =  PeriodEngine().getOrCreatePeriod3(instant, session)
                     periodDict[item['@id']] = period
         return periodDict
+
+    def isReportAllowed(self, reportRole):
+        keyList = ["DocumentAndEntityInformation"]
+        for key in keyList:
+            if key.upper() in reportRole.upper(): 
+                return True
+        return False
+
 
     def initCache(self):
         xsdCache = {}

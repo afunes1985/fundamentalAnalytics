@@ -14,7 +14,7 @@ if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
     #statusAttr='documentFiscalYearFocus', statusValue='2018'
-    fileDataList = FileDataDao().getFileData2( statusAttr='documentFiscalYearFocus', statusValue='2016', session=session, limit=None)
+    fileDataList = FileDataDao().getFileData2( statusAttr='status', statusValue='PENDING', session=session, limit=None)
     importerExecutor = ImporterExecutor(threadNumber=1, maxProcessInQueue=5, replace=True, isSequential=True, importerClass=ImporterFact)
     importerExecutor.execute(fileDataList)
             

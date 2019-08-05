@@ -174,12 +174,21 @@ class FileDataDao():
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
-        
         query = session.query(FileData)\
-        .outerjoin(FileData.company)\
-        .order_by(FileData.documentPeriodEndDate)\
-        .filter(and_(getattr(FileData, statusAttr) == statusValue, or_(ticker == '', Company.ticker == ticker)))\
-        .limit(limit)
+            .outerjoin(FileData.company)\
+            .order_by(FileData.documentPeriodEndDate)\
+            .filter(and_(getattr(FileData, statusAttr) == statusValue, or_(ticker == '', Company.ticker == ticker)))\
+            .limit(limit)
         objectResult = query.all()
         return objectResult
     
+    def getErrorList(self, fileName, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(FileData)\
+            .outerjoin(FileData.errorMessageList)\
+            .order_by(ErrorMessage.errorKey)\
+            .filter(FileData.fileName == fileName)\
+            .with_entities(ErrorMessage.errorKey, ErrorMessage.errorMessage)
+        return query.all()      
