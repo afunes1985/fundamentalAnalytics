@@ -75,17 +75,14 @@ class EntityFactDao():
         return objectResult
         
     def getEntityFactValueList(self, fileDataOID, conceptOID, session):
-        try:
-            if (session is None): 
-                dbconnector = DBConnector()
-                session = dbconnector.getNewSession()
-            query = session.query(EntityFactValue)\
-                .join(EntityFactValue.fileData)\
-                .filter(and_(Concept.OID.__eq__(conceptOID), EntityFactValue.fileDataOID == fileDataOID))
-            objectResult = query.all()
-            return objectResult
-        except NoResultFound:
-            return None
+        if (session is None): 
+            dbconnector = DBConnector()
+            session = dbconnector.getNewSession()
+        query = session.query(EntityFactValue)\
+            .join(EntityFactValue.fileData)\
+            .filter(and_(Concept.OID.__eq__(conceptOID), EntityFactValue.fileDataOID == fileDataOID))
+        objectResult = query.all()
+        return objectResult
         
     def getEntityFactList2(self, ticker, session):
         if (session is None): 
@@ -107,3 +104,13 @@ class EntityFactDao():
             session = dbconnector.getNewSession()
         session.query(EntityFactValue).filter(and_(EntityFactValue.fileDataOID == fileDataOID)).delete()
     
+    
+    def getEntityFact2(self, fileDataOID, conceptName, session):
+        if (session is None): 
+            dbconnector = DBConnector()
+            session = dbconnector.getNewSession()
+        query = session.query(EntityFactValue)\
+            .join(EntityFactValue.fileData)\
+            .filter(and_(Concept.conceptName.__eq__(conceptName), EntityFactValue.fileDataOID == fileDataOID))
+        objectResult = query.one()
+        return objectResult

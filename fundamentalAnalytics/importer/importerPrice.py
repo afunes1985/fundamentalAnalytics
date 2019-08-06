@@ -4,11 +4,14 @@ Created on Jun 29, 2019
 @author: afunes
 '''
 
+from datetime import timedelta
+
 import requests
 from requests.exceptions import ReadTimeout
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao
+from dao.entityFactDao import EntityFactDao
 from dao.fileDataDao import FileDataDao
 from dao.priceDao import PriceDao
 from importer.abstractImporter import AbstractImporter
@@ -18,29 +21,47 @@ from valueobject.constant import Constant
 
 class ImporterPrice(AbstractImporter):
 
-    def __init__(self, ticker, filename, periodOID, dateToImport, fileDataOID, replace):
+    def __init__(self, filename, replace, ticker = None, periodOID = None, dateToImport = None, fileDataOID = None):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_PRICE, filename, replace, 'entityStatus', 'priceStatus')
-        self.ticker = ticker
-        self.periodOID = periodOID
-        self.dateToImport = dateToImport
-        self.fileDataOID = fileDataOID
+        if (ticker is None):
+            fileData = FileDataDao().getFileData(filename, self.session)
+            self.ticker = fileData.company.ticker
+        else:
+            self.ticker = ticker
+        if(periodOID is None):
+            conceptName = 'EntityCommonStockSharesOutstanding'
+            entityFact = EntityFactDao().getEntityFact2(fileData.OID, conceptName, self.session)
+            self.periodOID = entityFact.periodOID
+            self.dateToImport = entityFact.period.getKeyDate()
+        else:
+            self.periodOID = periodOID
+            self.dateToImport = dateToImport
+        if(fileDataOID is None):
+            self.fileDataOID = fileData.OID
+        else:
+            self.fileDataOID = fileDataOID
 
     def doImport2(self):
         try:
             self.webSession = requests.Session()
             self.webSession.headers.update({"Accept":"application/json","Authorization":"Bearer XGabnWN7VqBkIuSVvS6QrhwtiQcK"})
             self.webSession.trust_env = False
-            url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(self.dateToImport).strftime("%Y-%m-%d")+ '&end=' + (self.dateToImport).strftime("%Y-%m-%d")
-            response = self.webSession.get(url, timeout=2)
-            r = response.json()
             priceList = []
-            if(r["history"] is not None):
-                price = Price()
-                price.fileDataOID = self.fileDataOID
-                price.periodOID = self.periodOID
-                price.value =  r["history"]["day"]["close"]
-                if (isinstance(price.value, float)):
-                    priceList.append(price)
+            for i in range(0,5):
+                self.dateToImport = self.dateToImport + timedelta(days=(i*-1))
+                url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(self.dateToImport).strftime("%Y-%m-%d")+ '&end=' + (self.dateToImport).strftime("%Y-%m-%d")
+                response = self.webSession.get(url, timeout=2)
+                r = response.json()
+                if(r["history"] is not None):
+                    price = Price()
+                    price.fileDataOID = self.fileDataOID
+                    price.periodOID = self.periodOID
+                    price.value =  r["history"]["day"]["close"]
+                    if (isinstance(price.value, float)):
+                        priceList.append(price)
+                        break
+            if len(priceList) == 0:
+                raise Exception("Price not found for " + self.ticker + " " + self.dateToImport.strftime("%Y-%m-%d"))
         except ReadTimeout:
             FileDataDao().addOrModifyFileData(priceStatus = Constant.PRICE_STATUS_TIMEOUT, filename = self.fileName, externalSession = self.session)
         return priceList
