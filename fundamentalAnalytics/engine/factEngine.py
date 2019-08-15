@@ -12,8 +12,8 @@ from valueobject.constant import Constant
 
 
 class FactEngine(object):
-    @staticmethod
-    def deleteFactByFileData(filename, session = None):
+
+    def deleteFactByFileData(self, filename, session = None):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()

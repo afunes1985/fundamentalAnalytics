@@ -9,8 +9,6 @@ from datetime import timedelta
 import requests
 from requests.exceptions import ReadTimeout
 
-from base.dbConnector import DBConnector
-from dao.dao import Dao
 from dao.entityFactDao import EntityFactDao
 from dao.fileDataDao import FileDataDao
 from dao.priceDao import PriceDao
@@ -63,7 +61,7 @@ class ImporterPrice(AbstractImporter):
             if len(priceList) == 0:
                 raise Exception("Price not found for " + self.ticker + " " + self.dateToImport.strftime("%Y-%m-%d"))
         except ReadTimeout:
-            FileDataDao().addOrModifyFileData(priceStatus = Constant.PRICE_STATUS_TIMEOUT, filename = self.fileName, externalSession = self.session)
+            FileDataDao().addOrModifyFileData(priceStatus = Constant.PRICE_STATUS_TIMEOUT, filename = self.filename, externalSession = self.session)
         return priceList
     
     def deleteImportedObject(self):
