@@ -29,6 +29,7 @@ class AbstractImporter(object):
         self.replace = replace
         self.previousStatus = previousStatus
         self.actualStatus = actualStatus
+        self.fileData = FileDataDao.getFileData(self.filename, self.session)
         if(not AbstractImporter.cacheDict):
             self.initCache()
         
@@ -36,7 +37,6 @@ class AbstractImporter(object):
         try:
             logging.info("START")
             time1 = datetime.now()
-            self.fileData = FileDataDao.getFileData(self.filename, self.session)
             if(self.skipOrProcess()):
                 self.addOrModifyInit()
                 if(self.replace):
@@ -118,3 +118,10 @@ class AbstractImporter(object):
     def initLogger(self):
         if (AbstractImporter.logger is None):
             AbstractImporter.logger = createLog(self.__class__.__name__, logging.INFO)
+            
+    def doCommit(self):
+        self.session.commit()
+        
+    def addOrModifyFDPending(self):
+        setattr(self.fileData , self.actualStatus, Constant.STATUS_PENDING)
+        Dao().addObject(objectToAdd=self.fileData, session=self.session, doCommit=True)   
