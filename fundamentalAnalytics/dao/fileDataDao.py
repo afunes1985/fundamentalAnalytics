@@ -64,7 +64,7 @@ class FileDataDao():
             .join(FileData.company)\
             .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.importStatus, FileData.status, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
             .order_by(FileData.documentPeriodEndDate)\
-            .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Company.ticker.like('%' + ticker + '%'), ticker != '')))
+            .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Company.ticker == ticker, ticker != '')))
             objectResult = query.all()
             return objectResult
         except NoResultFound:

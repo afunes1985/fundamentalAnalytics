@@ -33,6 +33,7 @@ layout = html.Div([
     html.Div(id='dt-fileData-container'),
     dcc.RadioItems(id="rb-action",
         options=[
+            {'label': 'Process', 'value': 'Process'},
             {'label': 'Reprocess', 'value': 'Reprocess'},
             {'label': 'Delete', 'value': 'Delete'}
         ], value='Reprocess',
@@ -164,10 +165,14 @@ def doAction(n_clicks, rows, selected_rows, rbValue, importerClass):
             if(selected_rows is not None and len(selected_rows) != 0):
                 for rowIndex in selected_rows:
                     fileName = rows[rowIndex]["fileName"]
-                    importer = importerClass(filename=fileName, replace=True)
                     if rbValue == 'Reprocess':
+                        importer = importerClass(filename=fileName, replace=True)
+                        importer.doImport()
+                    elif rbValue == 'Process':
+                        importer = importerClass(filename=fileName, replace=False)
                         importer.doImport()
                     elif rbValue == 'Delete':
+                        importer = importerClass(filename=fileName, replace=True)
                         importer.deleteImportedObject()
                         importer.addOrModifyFDPending()
             else:
@@ -175,8 +180,13 @@ def doAction(n_clicks, rows, selected_rows, rbValue, importerClass):
                     fileName = row["fileName"]
                     importer = importerClass(filename=fileName, replace=True)
                     if rbValue == 'Reprocess':
+                        importer = importerClass(filename=fileName, replace=True)
+                        importer.doImport()
+                    elif rbValue == 'Process':
+                        importer = importerClass(filename=fileName, replace=False)
                         importer.doImport()
                     elif rbValue == 'Delete':
+                        importer = importerClass(filename=fileName, replace=True)
                         importer.deleteImportedObject()
                         importer.addOrModifyFDPending()
             
