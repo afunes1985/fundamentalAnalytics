@@ -2,7 +2,6 @@ import logging
 
 from dash.dependencies import Input, Output
 
-from base.initializer import Initializer
 import dash_core_components as dcc
 import dash_html_components as html
 from tools.tools import createLog

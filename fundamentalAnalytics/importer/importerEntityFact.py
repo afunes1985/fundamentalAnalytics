@@ -61,7 +61,7 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         return periodDict
 
     def isReportAllowed(self, reportRole):
-        keyList = ["DocumentAndEntityInformation"]
+        keyList = ["DocumentAndEntityInformation", "CoverPage"]
         for key in keyList:
             if key.upper() in reportRole.upper(): 
                 return True
