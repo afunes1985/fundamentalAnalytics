@@ -3,7 +3,6 @@ Created on 19 sep. 2018
 
 @author: afunes
 '''
-import logging
 from nt import listdir
 
 import pandas
@@ -15,7 +14,6 @@ from importer.abstractFactImporter import AbstractFactImporter
 from importer.abstractImporter import AbstractImporter
 from tools.tools import  getXSDFileFromCache
 from valueobject.constant import Constant
-from valueobject.valueobject import FactVO
 
 
 class ImporterEntityFact(AbstractImporter, AbstractFactImporter):

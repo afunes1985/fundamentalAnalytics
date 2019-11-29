@@ -21,6 +21,7 @@ class ImporterPrice(AbstractImporter):
 
     def __init__(self, filename, replace, ticker = None, periodOID = None, dateToImport = None, fileDataOID = None):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_PRICE, filename, replace, 'entityStatus', 'priceStatus')
+        self.dateToImport = None
         if (ticker is None):
             fileData = FileDataDao().getFileData(filename, self.session)
             self.ticker = fileData.company.ticker
@@ -29,8 +30,11 @@ class ImporterPrice(AbstractImporter):
         if(periodOID is None):
             conceptName = 'EntityCommonStockSharesOutstanding'
             entityFact = EntityFactDao().getEntityFact2(fileData.OID, conceptName, self.session)
-            self.periodOID = entityFact.periodOID
-            self.dateToImport = entityFact.period.getKeyDate()
+            if entityFact is not None:
+                self.periodOID = entityFact.periodOID
+                self.dateToImport = entityFact.period.getKeyDate()
+            else:
+                raise Exception("EntityFact not found")
         else:
             self.periodOID = periodOID
             self.dateToImport = dateToImport
@@ -46,18 +50,19 @@ class ImporterPrice(AbstractImporter):
             self.webSession.trust_env = False
             priceList = []
             for i in range(0,5):
-                self.dateToImport = self.dateToImport + timedelta(days=(i*-1))
-                url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(self.dateToImport).strftime("%Y-%m-%d")+ '&end=' + (self.dateToImport).strftime("%Y-%m-%d")
-                response = self.webSession.get(url, timeout=2)
-                r = response.json()
-                if(r["history"] is not None):
-                    price = Price()
-                    price.fileDataOID = self.fileDataOID
-                    price.periodOID = self.periodOID
-                    price.value =  r["history"]["day"]["close"]
-                    if (isinstance(price.value, float)):
-                        priceList.append(price)
-                        break
+                if self.dateToImport is not None:
+                    self.dateToImport = self.dateToImport + timedelta(days=(i*-1))
+                    url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(self.dateToImport).strftime("%Y-%m-%d")+ '&end=' + (self.dateToImport).strftime("%Y-%m-%d")
+                    response = self.webSession.get(url, timeout=2)
+                    r = response.json()
+                    if(r["history"] is not None):
+                        price = Price()
+                        price.fileDataOID = self.fileDataOID
+                        price.periodOID = self.periodOID
+                        price.value =  r["history"]["day"]["close"]
+                        if (isinstance(price.value, float)):
+                            priceList.append(price)
+                            break
             if len(priceList) == 0:
                 raise Exception("Price not found for " + self.ticker + " " + self.dateToImport.strftime("%Y-%m-%d"))
         except ReadTimeout:
