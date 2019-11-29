@@ -14,6 +14,7 @@ from modelClass.concept import Concept
 from modelClass.customConcept import CustomConcept, RelCustomConceptConcept
 from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
+from modelClass.customReport import CustomReport
 from modelClass.fileData import FileData
 from modelClass.period import Period
 
@@ -129,7 +130,8 @@ class CustomFactDao():
         query = session.query(CustomConcept)\
             .join(CustomConcept.relationConceptList)\
             .join(RelCustomConceptConcept.concept)\
-            .with_entities(CustomConcept.conceptName.label("CustomConceptName"), Concept.conceptName, RelCustomConceptConcept.order_)\
-            .order_by(CustomConcept.conceptName, RelCustomConceptConcept.order_)
+            .join(CustomConcept.defaultCustomReport)\
+            .with_entities(CustomReport.shortName,CustomConcept.conceptName.label("CustomConceptName"), Concept.conceptName, RelCustomConceptConcept.order_)\
+            .order_by(CustomReport.shortName, CustomConcept.conceptName, RelCustomConceptConcept.order_)
         objectResult = query.all()
         return objectResult

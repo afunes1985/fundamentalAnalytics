@@ -109,8 +109,11 @@ class EntityFactDao():
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
-        query = session.query(EntityFactValue)\
-            .join(EntityFactValue.fileData)\
-            .filter(and_(Concept.conceptName.__eq__(conceptName), EntityFactValue.fileDataOID == fileDataOID))
-        objectResult = query.one()
+        try:
+            query = session.query(EntityFactValue)\
+                .join(EntityFactValue.fileData)\
+                .filter(and_(Concept.conceptName.__eq__(conceptName), EntityFactValue.fileDataOID == fileDataOID))
+            objectResult = query.one()
+        except NoResultFound:
+            objectResult = None
         return objectResult
