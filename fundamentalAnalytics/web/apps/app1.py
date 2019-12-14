@@ -28,14 +28,14 @@ if (len(rows) != 0):
                 page_current= 0,
                 page_size= 10
         ),
-    html.Div(id='dt-companyList-container'),
-    html.Button(id='btn-submit-showFact', n_clicks=0, children='Submit'),
-    html.Div(dt.DataTable(data=[{}], id='dt-factList'), style={'display': 'none'}),
-    html.Div(id='dt-factList-container'),
-    html.Button(id='btn-submit-sendPlotlyData', n_clicks=0, children='Submit'),
-    dcc.Link('Go to Fact Import', href='/apps/app2'),
-    html.Div(id='hidden-div', style={'display':'none'})
-])
+        html.Div(id='dt-companyList-container'),
+        html.Button(id='btn-submit-showFact', n_clicks=0, children='Submit'),
+        html.Div(dt.DataTable(data=[{}], id='dt-factList'), style={'display': 'none'}),
+        html.Div(id='dt-factList-container'),
+        html.Button(id='btn-submit-sendPlotlyData', n_clicks=0, children='Submit'),
+        dcc.Link('Go to Fact Import', href='/apps/app2'),
+        html.Div(id='hidden-div', style={'display':'none'})
+    ])
 
 @app.callback(
     Output('dt-factList-container', "children"),
@@ -60,15 +60,15 @@ def doSubmitShowFact(n_clicks, rows, selected_rows):
                 style_table={'overflowX': 'scroll'},
                 fixed_rows={ 'headers': True, 'data': 0 },
                 style_cell={
-                    'minWidth': '90px', 'maxWidth': '220px',
+                    'minWidth': '110px', 'maxWidth': '220px',
                     'whiteSpace': 'no-wrap',
                     'textOverflow': 'ellipsis',
                     'overflow': 'hidden',
                 },
-#                 css=[{
-#                     'selector': '.dash-cell div.dash-cell-value',
-#                     'rule': 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
-#                 }],
+#                  css=[{
+#                      'selector': '.dash-cell div.dash-cell-value',
+#                      'rule': 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
+#                  }],
                 style_cell_conditional=[
                      {'if': {'column_id': 'reportName'},
                          'textAlign': 'left'},
@@ -84,7 +84,7 @@ def getFactValues(CIK, ticker):
     rowDict = {}
     columnNameForDate = []
     for row in rows:
-        reportName = row[0]
+        reportName = row[0][0:70]
         conceptName = row[1]
         value = getNumberValueAsString(row[3])
         valueDate = row[4]

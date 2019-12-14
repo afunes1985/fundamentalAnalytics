@@ -191,4 +191,17 @@ class FileDataDao():
             .order_by(ErrorMessage.errorKey)\
             .filter(FileData.fileName == fileName)\
             .with_entities(ErrorMessage.errorKey, ErrorMessage.errorMessage)
-        return query.all()      
+        return query.all()  
+    
+    def getStatusCount(self):
+        session = DBConnector().getNewSession()
+        query = text("""
+                        SELECT null as parent, null as id, importStatus as label, count(*) as values_ 
+                                FROM fundamentalanalytics.fa_file_data
+                                group by importStatus
+                        union                                
+                        SELECT importStatus as parent, CONCAT(importStatus, " - ", status) as id, status as label, count(*) as values_ 
+                                FROM fundamentalanalytics.fa_file_data
+                                group by importStatus, status""")
+        return session.execute(query, '')
+        

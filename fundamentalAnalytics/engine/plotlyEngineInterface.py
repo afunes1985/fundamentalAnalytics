@@ -13,8 +13,8 @@ from pandas.core.frame import DataFrame
 
 from base.initializer import Initializer
 from dao.factDao import FactDao
-import plotly.graph_objs as go
-import plotly.plotly as py
+import plotly.graph_objects as go
+import chart_studio.plotly as py
 
 class PlotlyEngineInterface():
     @staticmethod
