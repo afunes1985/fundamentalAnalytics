@@ -57,7 +57,7 @@ class AbstractImporter(object):
         except MemoryError as e:
             self.logger.info("ERROR " + self.filename)
             self.logger.exception(e)
-            FileDataDao().addOrModifyFileData(importStatus=Constant.STATUS_ERROR, filename=self.fileName, errorMessage='MemoryError', errorKey=self.errorKey)
+            FileDataDao().addOrModifyFileData(fileStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage='MemoryError', errorKey=self.errorKey)
         except Exception as e:
             self.logger.info("ERROR " + self.filename)
             self.logger.exception(e)

@@ -19,7 +19,7 @@ from valueobject.constant import Constant
 class ImporterFact(AbstractImporter, AbstractFactImporter):
 
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_FACT, filename, replace, 'importStatus', 'status')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_FACT, filename, replace, 'fileStatus', 'status')
         self.processCache = None
             
     def doImport2(self):

@@ -26,7 +26,7 @@ class FileDataDao():
             if (session is None): 
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
-            .with_entities(FileData.fileName, FileData.status, FileData.importStatus)\
+            .with_entities(FileData.fileName, FileData.status, FileData.fileStatus)\
             .filter(FileData.status.in_(status))
             # .with_entities(FileData.fileName, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status)\
             objectResult = query.all()
@@ -62,7 +62,7 @@ class FileDataDao():
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
             .join(FileData.company)\
-            .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.importStatus, FileData.status, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
+            .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.fileStatus, FileData.status, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Company.ticker == ticker, ticker != '')))
             objectResult = query.all()
@@ -96,7 +96,7 @@ class FileDataDao():
         except NoResultFound:
             return None
     
-    def addOrModifyFileData(self, status=None, importStatus=None, entityStatus=None, priceStatus=None, expressionStatus=None, copyStatus=None, calculateStatus=None, filename=None, externalSession=None, errorMessage=None, errorKey=None, fileData=None):
+    def addOrModifyFileData(self, status=None, fileStatus=None, entityStatus=None, priceStatus=None, expressionStatus=None, copyStatus=None, calculateStatus=None, filename=None, externalSession=None, errorMessage=None, errorKey=None, fileData=None):
         try:
             if (externalSession is None):
                 session = DBConnector().getNewSession()
@@ -115,8 +115,8 @@ class FileDataDao():
                 fileData.priceStatus = priceStatus
             if (calculateStatus is not None):
                 fileData.calculateStatus = calculateStatus    
-            if importStatus is not None:
-                fileData.importStatus = importStatus
+            if fileStatus is not None:
+                fileData.fileStatus = fileStatus
             if copyStatus is not None:
                 fileData.copyStatus = copyStatus
             if expressionStatus is not None:
@@ -161,12 +161,11 @@ class FileDataDao():
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
-        
         query = session.query(FileData)\
-        .outerjoin(FileData.company)\
-        .order_by(FileData.documentPeriodEndDate)\
-        .filter(and_(getattr(FileData, statusAttr) == statusValue, getattr(FileData, statusAttr2) == statusValue2, or_(ticker == '', Company.ticker == ticker)))\
-        .limit(limit)
+            .outerjoin(FileData.company)\
+            .order_by(FileData.documentPeriodEndDate)\
+            .filter(and_(getattr(FileData, statusAttr) == statusValue, getattr(FileData, statusAttr2) == statusValue2, or_(ticker == '', Company.ticker == ticker)))\
+            .limit(limit)
         objectResult = query.all()
         return objectResult
     
@@ -196,12 +195,12 @@ class FileDataDao():
     def getStatusCount(self):
         session = DBConnector().getNewSession()
         query = text("""
-                        SELECT null as parent, null as id, importStatus as label, count(*) as values_ 
+                        SELECT null as parent, null as id, fileStatus as label, count(*) as values_ 
                                 FROM fundamentalanalytics.fa_file_data
-                                group by importStatus
+                                group by fileStatus
                         union                                
-                        SELECT importStatus as parent, CONCAT(importStatus, " - ", status) as id, status as label, count(*) as values_ 
+                        SELECT fileStatus as parent, CONCAT(fileStatus, " - ", status) as id, status as label, count(*) as values_ 
                                 FROM fundamentalanalytics.fa_file_data
-                                group by importStatus, status""")
+                                group by fileStatus, status""")
         return session.execute(query, '')
         

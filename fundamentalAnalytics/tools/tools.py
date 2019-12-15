@@ -109,19 +109,19 @@ class LoggingException(Exception):
         logging.getLogger(self.loggerName).debug(self.message)
         
 class FileNotFoundException(Exception):
-    importStatus = "FNF"
+    fileStatus = "FNF"
     status = "FNF"
     def __init__(self, fileName):
         self.fileName = fileName
 
 class XSDNotFoundException(Exception):
-    importStatus = Constant.STATUS_XSD_FNF
+    fileStatus = Constant.STATUS_XSD_FNF
     status = Constant.STATUS_XSD_FNF
     def __init__(self, fileName):
         self.fileName = fileName
         
 class XMLNotFoundException(Exception):
-    importStatus = Constant.FILE_STATUS_XML_FNF
+    fileStatus = Constant.FILE_STATUS_XML_FNF
     def __init__(self, fileName):
         self.fileName = fileName
            

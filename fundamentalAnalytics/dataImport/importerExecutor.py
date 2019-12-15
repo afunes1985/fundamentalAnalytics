@@ -36,7 +36,7 @@ class ImporterExecutor(object):
         if (self.isSequential):
             for fileData in fileDataList:
                 try:
-                    fi = self.importerClass(fileData.fileName, self.replace)
+                    fi = self.importerClass(filename=fileData.fileName, replace=self.replace)
                     fi.doImport()
                 except Exception as e:
                     self.logger.exception(e)
@@ -45,7 +45,7 @@ class ImporterExecutor(object):
                 try:
                     try:
                         self.semaphore.acquire()
-                        fi = ImporterCopy(fileData.fileName, self.replace)
+                        fi = self.importerClass(fileData.fileName, self.replace)
                         future = self.executor.submit(fi.doImport)
                     except Exception as e:
                         self.semaphore.release()

@@ -24,7 +24,7 @@ class FileData(PersistenObject):
     CIK = Column(Integer, nullable=False)
     #status
     status = Column(String(15), nullable=False)
-    importStatus = Column(String(15), nullable=False)
+    fileStatus = Column(String(15), nullable=False)
     entityStatus = Column(String(15), nullable=False)
     priceStatus = Column(String(15), nullable=False)
     copyStatus = Column(String(15), nullable=False)
@@ -41,7 +41,7 @@ class FileData(PersistenObject):
     
     def __init__(self):
         self.status = Constant.STATUS_PENDING
-        self.importStatus = Constant.STATUS_PENDING
+        self.fileStatus = Constant.STATUS_PENDING
         self.entityStatus = Constant.STATUS_PENDING
         self.priceStatus = Constant.STATUS_PENDING
         self.copyStatus = Constant.STATUS_PENDING

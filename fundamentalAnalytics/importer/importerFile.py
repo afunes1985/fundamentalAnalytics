@@ -17,7 +17,7 @@ from valueobject.constant import Constant
 class ImporterFile(AbstractImporter):
     
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_EXPRESSION, filename, replace, None, 'importStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_EXPRESSION, filename, replace, None, 'fileStatus')
     
     def doImport2(self):
         fullFileName = Constant.CACHE_FOLDER + self.filename
@@ -45,13 +45,13 @@ class ImporterFile(AbstractImporter):
             self.saveFile(fileText,"TYPE", Constant.DOCUMENT_PRE, "XBRL",fullFileName) 
     
     def addOrModifyFDError1(self, e):
-        self.fileDataDao.addOrModifyFileData(importStatus = e.importStatus, filename = self.filename, errorMessage=str(e), errorKey = self.errorKey, externalSession = self.session)
+        self.fileDataDao.addOrModifyFileData(fileStatus = e.fileStatus, filename = self.filename, errorMessage=str(e), errorKey = self.errorKey, externalSession = self.session)
     
     def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(importStatus = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey, externalSession = self.session)
+        self.fileDataDao.addOrModifyFileData(fileStatus = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey, externalSession = self.session)
           
     def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(importStatus = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey, externalSession = self.session)
+        self.fileDataDao.addOrModifyFileData(fileStatus = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey, externalSession = self.session)
     
     def validateIfSomeFilesNotExits(self, folder):
         if not os.path.exists(folder + "//" + Constant.DOCUMENT_INS + ".gz"):
