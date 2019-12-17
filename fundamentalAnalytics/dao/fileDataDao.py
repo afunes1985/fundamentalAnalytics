@@ -203,4 +203,12 @@ class FileDataDao():
                                 FROM fundamentalanalytics.fa_file_data
                                 group by fileStatus, status""")
         return session.execute(query, '')
+    
+    def getStatusCount2(self):
+        session = DBConnector().getNewSession()
+        query = text("""
+                SELECT fileStatus, status, entityStatus, count(*) as values_ 
+                    FROM fundamentalanalytics.fa_file_data
+                    group by fileStatus, status""")
+        return session.execute(query, '')
         
