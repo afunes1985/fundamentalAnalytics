@@ -27,24 +27,25 @@ class ImporterPrice(AbstractImporter):
             self.ticker = fileData.company.ticker
         else:
             self.ticker = ticker
-        if(periodOID is None):
-            conceptName = 'EntityCommonStockSharesOutstanding'
-            entityFact = EntityFactDao().getEntityFact2(fileData.OID, conceptName, self.session)
-            if entityFact is not None:
-                self.periodOID = entityFact.periodOID
-                self.dateToImport = entityFact.period.getKeyDate()
-            else:
-                raise Exception("EntityFact not found")
-        else:
-            self.periodOID = periodOID
-            self.dateToImport = dateToImport
         if(fileDataOID is None):
             self.fileDataOID = fileData.OID
         else:
             self.fileDataOID = fileDataOID
+        self.periodOID = periodOID
 
     def doImport2(self):
         try:
+            if(self.periodOID is None):
+                conceptName = 'EntityCommonStockSharesOutstanding'
+                entityFact = EntityFactDao().getEntityFact2(self.fileDataOID, conceptName, self.session)
+                if entityFact is not None:
+                    self.periodOID = entityFact.periodOID
+                    self.dateToImport = entityFact.period.getKeyDate()
+                else:
+                    raise Exception("EntityFact not found")
+            else:
+                self.periodOID = self.periodOID
+                self.dateToImport = self.periodOID
             self.webSession = requests.Session()
             self.webSession.headers.update({"Accept":"application/json","Authorization":"Bearer XGabnWN7VqBkIuSVvS6QrhwtiQcK"})
             self.webSession.trust_env = False
