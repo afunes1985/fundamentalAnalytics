@@ -165,6 +165,5 @@ def build_hierarchical_dataframe(df, levels, value_column):
         df_all_trees = df_all_trees.append(df_tree, ignore_index=True)
     total = pd.Series(dict(id='total', label = 'total', parent='',value=df[value_column].sum(), level = ''))
     df_all_trees = df_all_trees.append(total, ignore_index=True)
-    print(df_all_trees)
     return df_all_trees
 

@@ -20,7 +20,7 @@ from valueobject.constant import Constant
 class ImporterPrice(AbstractImporter):
 
     def __init__(self, filename, replace, ticker = None, periodOID = None, dateToImport = None, fileDataOID = None):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_PRICE, filename, replace, 'entityStatus', 'priceStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_PRICE, filename, replace, 'entityStatus', 'priceStatus', isNullPool=True)
         self.dateToImport = None
         if (ticker is None):
             fileData = FileDataDao().getFileData(filename, self.session)
@@ -53,6 +53,8 @@ class ImporterPrice(AbstractImporter):
             for i in range(0,5):
                 if self.dateToImport is not None:
                     self.dateToImport = self.dateToImport + timedelta(days=(i*-1))
+                    if(self.ticker is None):
+                        raise Exception("Ticker not found")
                     url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(self.dateToImport).strftime("%Y-%m-%d")+ '&end=' + (self.dateToImport).strftime("%Y-%m-%d")
                     response = self.webSession.get(url, timeout=2)
                     r = response.json()

@@ -20,12 +20,12 @@ class AbstractImporter(object):
     cacheDict = {}
     logger = None
     
-    def __init__(self, errorKey, filename, replace, previousStatus=None, actualStatus=None):
+    def __init__(self, errorKey, filename, replace, previousStatus=None, actualStatus=None, isNullPool=False):
         self.initLogger()
         self.errorKey = errorKey
         self.filename = filename
         self.fileDataDao = FileDataDao()
-        self.session = DBConnector().getNewSession()
+        self.session = DBConnector(isNullPool=isNullPool).getNewSession()
         self.replace = replace
         self.previousStatus = previousStatus
         self.actualStatus = actualStatus
