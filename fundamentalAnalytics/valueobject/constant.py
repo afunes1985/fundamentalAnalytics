@@ -43,6 +43,7 @@ class Constant:
     XBRL_INSTANT =['xbrli:instant','instant']
     XBRL_ENTITY =['xbrli:entity','entity']
     XBRL_SEGMENT =['xbrli:segment','segment']
+    XBRL_EXPLICIT_MEMBER = ['xbrldi:explicitMember']
     LINKBASE =['link:linkbase','linkbase']
     PRESENTATON_LINK =["link:presentationLink","presentationLink"]
     LOC =["link:loc", "loc"]

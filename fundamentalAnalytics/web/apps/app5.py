@@ -77,7 +77,7 @@ def doSubmitProcessFile(n_clicks, fileStatus, factStatus, entityStatus, priceSta
         session = DBConnector().getNewSession()
         
         if (priceStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='entityStatus', statusValue=entityStatus, statusAttr2='priceStatus', statusValue2=priceStatus, session=session)
+            fileDataList = FileDataDao().getFileData3(statusAttr='entityStatus', statusValue=entityStatus, statusAttr2='priceStatus', statusValue2=priceStatus, session=session, errorMessage='%timed out%')
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterPrice)
             importerExecutor.execute(fileDataList)
         elif (entityStatus is not None):

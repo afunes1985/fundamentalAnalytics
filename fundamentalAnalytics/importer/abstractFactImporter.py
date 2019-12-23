@@ -121,18 +121,18 @@ class AbstractFactImporter(object):
         xmlDictPre = processCache[Constant.DOCUMENT_PRE]
         for item in self.getListFromElement(Constant.PRESENTATON_LINK, self.getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
             reportRole = item['@xlink:role']
-            if(reportDict.get(reportRole, None) is not None):
-                for item2 in self.getListFromElement(Constant.LOC, item):
-                    href = item2["@xlink:href"]
-                    if(href.find(conceptName) != -1):
-                        factVO = FactVO()
-                        factVO.xlink_href = href
-                        factVO.reportRole = reportRole
-                        factVO.labelID = item2["@xlink:label"]
-                        factVO.order = 99
-                        factVO = self.setXsdValue(factVO, processCache)
-                        factVOList.append(factVO)
-                        return factVOList
+            #if(reportDict.get(reportRole, None) is not None):
+            for item2 in self.getListFromElement(Constant.LOC, item):
+                href = item2["@xlink:href"]
+                if(href.find(conceptName) != -1):
+                    factVO = FactVO()
+                    factVO.xlink_href = href
+                    factVO.reportRole = reportRole
+                    factVO.labelID = item2["@xlink:label"]
+                    factVO.order = 99
+                    factVO = self.setXsdValue(factVO, processCache)
+                    factVOList.append(factVO)
+                    return factVOList
         return factVOList
     
     def getReportDict(self, processCache, menuCategoryAllowed, session):
@@ -285,17 +285,18 @@ class AbstractFactImporter(object):
     
     def getObjectFromElement(self, objectIDList, element):
         objectsToReturn = []
-        for objectID in objectIDList:
-            if(element.get(objectID, None) is not None):
-                objectsToReturn.append(element.get(objectID))
-        if(len(objectsToReturn) == 1):
-            return objectsToReturn[0]
-        listToReturn = []
-        for obj in objectsToReturn:
-            if isinstance(obj, list):
-                listToReturn = listToReturn + obj
-        if (len(listToReturn) != 0):
-            return listToReturn
+        if element is not None:
+            for objectID in objectIDList:
+                if(element.get(objectID, None) is not None):
+                    objectsToReturn.append(element.get(objectID))
+            if(len(objectsToReturn) == 1):
+                return objectsToReturn[0]
+            listToReturn = []
+            for obj in objectsToReturn:
+                if isinstance(obj, list):
+                    listToReturn = listToReturn + obj
+            if (len(listToReturn) != 0):
+                return listToReturn
         return None
             
     def getObjectFromList(self, objectIDList, list_):

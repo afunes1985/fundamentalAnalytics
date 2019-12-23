@@ -17,6 +17,8 @@ from valueobject.constant import Constant
 
 
 class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
+    
+    EXPLICIT_MEMBER_ALLOWED = ['CommonClassAMember', 'CommonStockMember']
 
     def __init__(self, filename, replace):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'status', 'entityStatus')
@@ -27,7 +29,9 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         self.processCache = self.initProcessCache(self.filename, self.session)
         reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
         factVOList = self.getFactByConcept(reportDict, self.processCache, self.conceptName)
+        print(factVOList)
         factVOList = self.setFactValues(factVOList, self.processCache)
+        print(factVOList)
         EntityFactDao().addEntityFact(factVOList, self.fileData.OID , reportDict, self.session, self.replace)
         return factVOList
             
@@ -50,7 +54,10 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         periodDict = {}
         for item in self.getListFromElement(Constant.XBRL_CONTEXT, xmlDictRoot):
             entityElement = self.getElementFromElement(Constant.XBRL_ENTITY, item)
-            if(self.getElementFromElement(Constant.XBRL_SEGMENT, entityElement, False) is None):
+            #self.getElementFromElement(Constant.XBRL_SEGMENT, entityElement)
+            segmentElement = self.getElementFromElement(Constant.XBRL_SEGMENT, entityElement, False)
+            explicitMemberElement = self.getObjectFromElement(Constant.XBRL_EXPLICIT_MEMBER, segmentElement)
+            if(segmentElement is None or self.isExplicitMemberAllowed(explicitMemberElement)):
                 periodElement = self.getElementFromElement(Constant.XBRL_PERIOD, item)
                 instant = self.getValueAsDate(Constant.XBRL_INSTANT, periodElement) 
                 if(instant is not None):
@@ -59,11 +66,12 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         return periodDict
 
     def isReportAllowed(self, reportRole):
-        keyList = ["DocumentAndEntityInformation", "CoverPage"]
-        for key in keyList:
-            if key.upper() in reportRole.upper(): 
-                return True
-        return False
+#         keyList = ["DocumentAndEntityInformation", "CoverPage"]
+#         for key in keyList:
+#             if key.upper() in reportRole.upper(): 
+#                 return True
+#        return False
+        return True
 
 
     def initCache(self):
@@ -80,3 +88,26 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
             except Exception as e:
                 self.logger.exception(e)
         AbstractImporter.cacheDict["XSD_CACHE"] = xsdCache
+        
+    def getObjectFromList(self, objectIDList, list_):
+        for objectID in objectIDList:
+            result = []
+            for element in list_:
+                if(element.get(objectID, None) is not None):
+                    result.append(element)
+            return result
+        
+    def isExplicitMemberAllowed(self, element):
+        if (isinstance(element, list)):
+            for e in element:
+                value = self.getValueFromElement(['#text'], e, False)
+                for em in self.EXPLICIT_MEMBER_ALLOWED:
+                    if(value.find(em) != -1):
+                        return True
+        elif (isinstance(element, dict)):
+            value = self.getValueFromElement(['#text'],element, False)
+            for em in self.EXPLICIT_MEMBER_ALLOWED:
+                if(value.find(em) != -1):
+                    return True
+            
+        
