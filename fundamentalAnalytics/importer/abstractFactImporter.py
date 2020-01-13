@@ -168,8 +168,6 @@ class AbstractFactImporter(object):
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalYearFocus " + documentFiscalYearFocus)
         documentFiscalPeriodFocus = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentFiscalPeriodFocus'])
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("DocumentFiscalPeriodFocus " + documentFiscalPeriodFocus)
-        entityCentralIndexKey = self.getValueFromElement(['#text'], insXMLDict['dei:EntityCentralIndexKey'])
-        #logging.getLogger(Constant.LOGGER_GENERAL).debug("EntityCentralIndexKey " + entityCentralIndexKey)
         #entityRegistrantName = insXMLDict['dei:EntityRegistrantName']['#text']
         fileData.documentType = documentType
         fileData.amendmentFlag = amendmentFlag
@@ -177,7 +175,6 @@ class AbstractFactImporter(object):
         if(len(documentFiscalYearFocus) <= 4):
             fileData.documentFiscalYearFocus = documentFiscalYearFocus
         fileData.documentFiscalPeriodFocus = documentFiscalPeriodFocus
-        fileData.entityCentralIndexKey = entityCentralIndexKey
         fileData.company = processCache["COMPANY"]
         #fileData.entityRegistrantName = entityRegistrantName
         Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)

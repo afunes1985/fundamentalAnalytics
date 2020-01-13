@@ -3,7 +3,7 @@ Created on 20 ago. 2018
 
 @author: afunes
 '''
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
 
 from modelClass import PersistenObject
@@ -16,3 +16,4 @@ class Company(PersistenObject):
     sector = Column(String(45), nullable=False)
     industry = Column(String(100), nullable=False)
     fileDataList = relationship("FileData", back_populates="company")
+    active = Column(Boolean, nullable=False)

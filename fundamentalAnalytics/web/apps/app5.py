@@ -20,6 +20,7 @@ from importer.importerEntityFact import ImporterEntityFact
 from importer.importerPrice import ImporterPrice
 
 levels = ['priceStatus', 'entityStatus', 'status', 'fileStatus']  # levels used for the hierarchical chart
+levels2 = ['copyStatus','status']  # levels used for the hierarchical chart
 value_column = 'value_'
 
 ddFileStatus = dcc.Dropdown(
@@ -48,13 +49,18 @@ layout = html.Div([
                     id='graph',
                     figure=go.Figure(go.Sunburst()),
                     style={'width': '70%', 'display': 'inline-block', 'float': 'left'}),
-                html.Div(id='fig-fileStatus', style={'clear': 'both'}),
+                html.Div(id='fig-status1', style={'clear': 'both'}),
                 html.Label(["Import File Status", ddFileStatus]),
                 html.Label(["Import Fact Status", ddFactStatus]),
                 html.Label(["Import Entity Status", ddEntityStatus]),
                 html.Label(["Import Price Status", ddPriceStatus]),
-                html.Button(id='btn-submit-processFile', n_clicks=0, children='Submit'),
-                html.Div(id='hidden2-div', style={'display':'none'})
+                html.Button(id='btn-submit-processStatus', n_clicks=0, children='Submit'),
+                dcc.Graph(
+                    id='graph2',
+                    figure=go.Figure(go.Sunburst()),
+                    style={'width': '70%', 'display': 'inline-block', 'float': 'left'}),
+                html.Div(id='fig-status2', style={'clear': 'both'}),
+                html.Button(id='btn-submit-processStatus2', n_clicks=0, children='Submit')
                 ])
 
 
@@ -64,12 +70,12 @@ layout = html.Div([
      Output('dd-factStatus', "options"),
      Output('dd-entityStatus', "options"),
      Output('dd-priceStatus', "options")],
-    [Input('btn-submit-processFile', 'n_clicks')],
+    [Input('btn-submit-processStatus', 'n_clicks')],
     [State('dd-fileStatus', 'value'),
      State('dd-factStatus', 'value'),
      State('dd-entityStatus', 'value'),
      State('dd-priceStatus', 'value')])
-def doSubmitProcessFile(n_clicks, fileStatus, factStatus, entityStatus, priceStatus):
+def doSubmitProcessStatus1(n_clicks, fileStatus, factStatus, entityStatus, priceStatus):
     if (n_clicks > 0):
         logging.info("START")
         print("Start")  
@@ -77,7 +83,7 @@ def doSubmitProcessFile(n_clicks, fileStatus, factStatus, entityStatus, priceSta
         session = DBConnector().getNewSession()
         
         if (priceStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='entityStatus', statusValue=entityStatus, statusAttr2='priceStatus', statusValue2=priceStatus, session=session, errorMessage='%timed out%')
+            fileDataList = FileDataDao().getFileData3(statusAttr='entityStatus', statusValue=entityStatus, statusAttr2='priceStatus', statusValue2=priceStatus, session=session, errorMessage2='')
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterPrice)
             importerExecutor.execute(fileDataList)
         elif (entityStatus is not None):
@@ -128,6 +134,29 @@ def doSubmitProcessFile(n_clicks, fileStatus, factStatus, entityStatus, priceSta
     
     return sunburstImportStatus, listFileStatus, listFactStatus, listEntityStatus, listPriceStatus
 
+
+@app.callback(
+    Output('graph2', "figure"),
+    [Input('btn-submit-processStatus2', 'n_clicks')])
+def doSubmitProcessStatus2(n_clicks):
+    rs = FileDataDao().getStatusCount3()
+    df = DataFrame(rs, columns=['status', 'copyStatus', 'value_'])
+    df_all_trees = build_hierarchical_dataframe(df, levels2, value_column)
+    sunburstStatus2 = go.Figure(go.Sunburst(
+                                labels=df_all_trees['label'],
+                                parents=df_all_trees['parent'],
+                                ids=df_all_trees['id'],
+                                customdata = df_all_trees['level'],
+                                name = "",
+                                marker=dict(
+                                    colors=df_all_trees['value'],
+                                    colorscale='RdBu'),
+                                hovertemplate='<b>%{customdata} </b> <br> %{color:.0f}'
+                                    ))
+    
+    sunburstStatus2.update_layout(margin=dict(t=0, l=0, r=0, b=0))
+    return sunburstStatus2
+    
 
 def build_hierarchical_dataframe(df, levels, value_column):
     """

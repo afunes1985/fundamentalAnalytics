@@ -28,7 +28,6 @@ class FileDataDao():
             query = session.query(FileData)\
             .with_entities(FileData.fileName, FileData.status, FileData.fileStatus)\
             .filter(FileData.status.in_(status))
-            # .with_entities(FileData.fileName, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.status)\
             objectResult = query.all()
             return objectResult
         except NoResultFound:
@@ -43,7 +42,6 @@ class FileDataDao():
             query = text("""SELECT fd.fileName, fd.documentType, 
                             fd.documentFiscalYearFocus AS fa_file_data_documentFiscalYearFocus, 
                             fd.documentFiscalPeriodFocus AS fa_file_data_documentFiscalPeriodFocus, 
-                            fd.entityCentralIndexKey AS fa_file_data_entityCentralIndexKey, c.ticker AS fa_company_ticker, 
                             fd.status AS fa_file_data_status 
                         from fa_file_data fd
                         inner join (select f.fileDataOID, f.companyOID
@@ -62,7 +60,7 @@ class FileDataDao():
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
             .join(FileData.company)\
-            .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.entityCentralIndexKey, FileData.fileStatus, FileData.status, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
+            .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.status, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Company.ticker == ticker, ticker != '')))
             objectResult = query.all()
@@ -157,16 +155,16 @@ class FileDataDao():
             rs = con.execute(query)
             return rs 
         
-    def getFileData3(self, statusAttr, statusValue, statusAttr2, statusValue2, ticker='', session=None, limit=None, errorMessage = ''):
+    def getFileData3(self, statusAttr, statusValue, statusAttr2, statusValue2, ticker='', session=None, limit=None, errorMessage2 = ''):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
         query = session.query(FileData)\
             .outerjoin(FileData.company)\
-            .join(FileData.errorMessageList)\
+            .outerjoin(FileData.errorMessageList)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(and_(getattr(FileData, statusAttr) == statusValue, getattr(FileData, statusAttr2) == statusValue2, 
-                         or_(ticker == '', Company.ticker == ticker), ErrorMessage.errorMessage.like(errorMessage)))\
+                         or_(ticker == '', Company.ticker == ticker), or_(errorMessage2 == '', ErrorMessage.errorMessage.like(errorMessage2))))\
             .limit(limit)
         objectResult = query.all()
         return objectResult
@@ -198,11 +196,11 @@ class FileDataDao():
         session = DBConnector().getNewSession()
         query = text("""
                         SELECT null as parent, null as id, fileStatus as label, count(*) as values_ 
-                                FROM fundamentalanalytics.fa_file_data
+                                FROM fa_file_data
                                 group by fileStatus
                         union                                
                         SELECT fileStatus as parent, CONCAT(fileStatus, " - ", status) as id, status as label, count(*) as values_ 
-                                FROM fundamentalanalytics.fa_file_data
+                                FROM fa_file_data
                                 group by fileStatus, status""")
         return session.execute(query, '')
     
@@ -210,7 +208,19 @@ class FileDataDao():
         session = DBConnector().getNewSession()
         query = text("""
                 SELECT fileStatus, status, entityStatus, priceStatus, count(*) as values_ 
-                    FROM fundamentalanalytics.fa_file_data
-                    group by fileStatus, status, entityStatus, priceStatus;""")
+                    FROM fa_file_data fd
+                        join fa_company c on c.oid = fd.companyOID
+                    where c.active = 1
+                    group by fileStatus, status, entityStatus, priceStatus""")
+        return session.execute(query, '')
+    
+    def getStatusCount3(self):
+        session = DBConnector().getNewSession()
+        query = text("""
+                SELECT status, copyStatus, count(*) as values_ 
+                    FROM fa_file_data fd
+                        join fa_company c on c.oid = fd.companyOID
+                    where c.active = 1
+                    group by status, copyStatus""")
         return session.execute(query, '')
         

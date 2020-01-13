@@ -151,7 +151,7 @@ def doGoToSECURL(n_clicks, rows, selected_rows):
      State('dt-fileData', "derived_virtual_selected_rows")])
 def doGoToDir(n_clicks, rows, selected_rows):  
     if (n_clicks > 0):  
-        if(selected_rows is not None and len(selected_rows) == 0):
+        if(selected_rows is not None and len(selected_rows) != 0):
             fileName = rows[selected_rows[0]]["fileName"]
             fileName = fileName.replace(".txt", "\\")
             fileName = fileName.replace("/", "\\")

@@ -89,5 +89,4 @@ class SanityCheckEngine():
 #         from fa_file_data a 
 #         where a.status = 'OK'
 #         and a.documentFiscalYearFocus < 2017
-#         group by a.entityCentralIndexKey
 #         having count(*) = 1) as c);

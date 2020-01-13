@@ -56,7 +56,7 @@ class ImporterPrice(AbstractImporter):
                 if(self.ticker is None):
                     raise Exception("Ticker not found")
                 url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(self.dateToImport).strftime("%Y-%m-%d")+ '&end=' + (self.dateToImport).strftime("%Y-%m-%d")
-                response = self.webSession.get(url, timeout=3)
+                response = self.webSession.get(url, timeout=2)
                 r = response.json()
                 if(r["history"] is not None):
                     price = Price()

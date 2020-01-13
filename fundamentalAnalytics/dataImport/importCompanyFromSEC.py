@@ -50,7 +50,6 @@ def readSECIndexFor(period, replace, session):
                     fileData = FileDataDao.getFileData(processCache, filename, session)
                     print(fileData.__dict__)
                     company = Company()
-                    company.entityCentralIndexKey = fileData.entityCentralIndexKey
                     company.entityRegistrantName = fileData.entityRegistrantName
                     company.ticker = fileData.tradingSymbol.upper()
                     session.add(company)

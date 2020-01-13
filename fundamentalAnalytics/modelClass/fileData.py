@@ -20,8 +20,6 @@ class FileData(PersistenObject):
     documentPeriodEndDate = Column(String(45), nullable=False)
     documentFiscalYearFocus = Column(String(45), nullable=False)
     documentFiscalPeriodFocus = Column(String(45), nullable=False)
-    entityCentralIndexKey = Column(String(45), nullable=False)
-    CIK = Column(Integer, nullable=False)
     #status
     status = Column(String(15), nullable=False)
     fileStatus = Column(String(15), nullable=False)
