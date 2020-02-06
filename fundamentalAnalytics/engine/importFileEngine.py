@@ -20,6 +20,7 @@ from tools.tools import getBinaryFileFromCache, getXMLFromText, \
     FileNotFoundException, getXMLDictFromGZCache, XSDNotFoundException, \
     XMLNotFoundException
 from valueobject.constant import Constant
+from dao.companyDao import CompanyDao
 
 
 class ImportFileEngine():
@@ -41,12 +42,15 @@ class ImportFileEngine():
             for row in df.iterrows():
                 filename = row[1]["Filename"]
                 formType = row[1]["Form Type"]
-                if(formType == "10-Q" or formType == "10-K"):
+                if(formType == "10-Q" or formType == "10-K"): #edgar/data/1000045/0001564590-19-043374.txt
                     fd = FileDataDao.getFileData(filename, session)
                     if(fd is None):
+                        CIK = filename[len("edgar/data/"):filename.rfind("/",0, len(filename))]
+                        company = CompanyDao().getCompany2(CIK, session)
                         fd = FileData()
                         fd.fileName = filename
                         fd.CIK = row[0]
+                        fd.company = company
                         Dao().addObject(objectToAdd = fd, session = session, doCommit = True)
                         print("FD Added " + filename)
             print("FINISHED")

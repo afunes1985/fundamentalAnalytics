@@ -50,7 +50,10 @@ class AbstractImporter(object):
                 else: 
                     setattr(self.fileData , self.actualStatus, Constant.STATUS_NO_DATA) 
                 Dao().addObject(objectToAdd=self.fileData, session=self.session, doCommit=True)
-                self.logger.info("***********FINISH AT " + str(datetime.now() - time1) + " " + self.filename + " objects added " + str(len(voList)))
+                if (voList is None):
+                    self.logger.info("***********FINISH AT " + str(datetime.now() - time1) + " " + self.filename)
+                else:
+                    self.logger.info("***********FINISH AT " + str(datetime.now() - time1) + " " + self.filename + " objects added " + str(len(voList)))
         except (FileNotFoundException, XSDNotFoundException,XMLNotFoundException) as e:
             self.logger.debug("ERROR " + str(e))
             self.addOrModifyFDError1(e)
