@@ -14,7 +14,7 @@ from valueobject.constant import Constant
 class ImporterCopy(AbstractImporter):
     
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_COPY, filename, replace, 'status', 'copyStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_COPY, filename, replace, 'priceStatus', 'copyStatus')
         self.customConceptList = GenericDao().getAllResult(objectClazz=CustomConcept, condition=(CustomConcept.fillStrategy == "COPY_CALCULATE"), session=self.session)
     
     def doImport2(self):

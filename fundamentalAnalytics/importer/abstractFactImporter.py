@@ -128,7 +128,7 @@ class AbstractFactImporter(object):
         for item in self.getListFromElement(Constant.PRESENTATON_LINK, self.getElementFromElement(Constant.LINKBASE, xmlDictPre)): 
             reportRole = item['@xlink:role']
             #if(reportDict.get(reportRole, None) is not None):
-            for item2 in self.getListFromElement(Constant.LOC, item):
+            for item2 in self.getListFromElement(Constant.LOC, item, raiseException=False):
                 href = item2["@xlink:href"]
                 if(href.find(conceptName) != -1):
                     factVO = FactVO()
@@ -323,6 +323,8 @@ class AbstractFactImporter(object):
         if (obj is None):
             if (raiseException):
                 raise Exception("List for elementID not found "  + str(elementIDList) + " " +  str(element)[0:50])
+            else: 
+                return []
         elif(isinstance(obj, dict)):
             return [obj]
         elif(not isinstance(obj, list)):
