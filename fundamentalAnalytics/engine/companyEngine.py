@@ -17,8 +17,17 @@ class CompanyEngine():
             company.CIK = CIK
             company.entityRegistrantName = entityRegistrantName
             company.ticker = ticker
-            Dao().addObject(objectToAdd = company, session = session, doCommit = True)
-        if(company.ticker is None and ticker is not None):
+            company.listed = True
+        elif(company.ticker is None and ticker is not None):
             company.ticker = ticker
-            Dao().addObject(objectToAdd = company, session = session, doCommit = True)
+            company.entityRegistrantName = entityRegistrantName
+        company.entityRegistrantName = entityRegistrantName
+        Dao().addObject(objectToAdd = company, session = session, doCommit = True)
         return company
+    
+    def updateListedCompany(self, company, noTradingSymbolFlag, session):
+        if(noTradingSymbolFlag is not None and noTradingSymbolFlag):
+            company.listed = False
+            company.notListedDescription = 'noTradingSymbolFlag'
+        Dao().addObject(objectToAdd = company, session = session, doCommit = True)
+        

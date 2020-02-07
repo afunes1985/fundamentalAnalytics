@@ -16,4 +16,5 @@ class Company(PersistenObject):
     sector = Column(String(45), nullable=False)
     industry = Column(String(100), nullable=False)
     fileDataList = relationship("FileData", back_populates="company")
-    active = Column(Boolean, nullable=False)
+    listed = Column(Boolean, nullable=False)
+    notListedDescription = Column(String(45), nullable=False)

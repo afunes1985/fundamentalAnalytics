@@ -210,7 +210,7 @@ class FileDataDao():
                 SELECT fileStatus, status, entityStatus, priceStatus, count(*) as values_ 
                     FROM fa_file_data fd
                         join fa_company c on c.oid = fd.companyOID
-                    where c.active = 1
+                    where c.listed = 1
                     group by fileStatus, status, entityStatus, priceStatus""")
         return session.execute(query, '')
     
@@ -220,7 +220,7 @@ class FileDataDao():
                 SELECT status, copyStatus, count(*) as values_ 
                     FROM fa_file_data fd
                         join fa_company c on c.oid = fd.companyOID
-                    where c.active = 1
+                    where c.listed = 1
                     group by status, copyStatus""")
         return session.execute(query, '')
         

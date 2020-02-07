@@ -45,11 +45,7 @@ class AbstractImporter(object):
                 voList = self.doImport2()
                 persistentList = self.getPersistentList(voList)
                 Dao().addObjectList(persistentList, self.session)
-                if(voList is None or len(voList) != 0):
-                    setattr(self.fileData , self.actualStatus, Constant.STATUS_OK)
-                else: 
-                    setattr(self.fileData , self.actualStatus, Constant.STATUS_NO_DATA) 
-                Dao().addObject(objectToAdd=self.fileData, session=self.session, doCommit=True)
+                self.setFileDataStatus(voList)
                 if (voList is None):
                     self.logger.info("***********FINISH AT " + str(datetime.now() - time1) + " " + self.filename)
                 else:
@@ -69,6 +65,14 @@ class AbstractImporter(object):
         finally:
             self.session.commit()
             self.session.close()
+            
+    @abstractmethod
+    def setFileDataStatus(self, voList):
+        if(voList is None or len(voList) != 0):
+            setattr(self.fileData , self.actualStatus, Constant.STATUS_OK)
+        else: 
+            setattr(self.fileData , self.actualStatus, Constant.STATUS_NO_DATA) 
+        Dao().addObject(objectToAdd=self.fileData, session=self.session, doCommit=True)
     
     @abstractmethod
     def addOrModifyInit(self):

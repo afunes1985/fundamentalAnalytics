@@ -82,12 +82,18 @@ class AbstractFactImporter(object):
         #PERIOD
         periodDict = self.getPeriodDict(insDict, session)
         processCache[Constant.PERIOD_DICT] = periodDict 
-        #COMPANY
-        CIK = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityCentralIndexKey'], insDict, False), False)
-        entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], insDict, False), False) 
-        ticker = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:TradingSymbol'], insDict, False), False)
-        processCache["COMPANY"] = CompanyEngine().getOrCreateCompany(CIK, ticker, entityRegistrantName, session)
+        
         return processCache
+    
+    def fillCompanyData(self, session):
+        #COMPANY
+        CIK = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityCentralIndexKey'], self.processCache[Constant.DOCUMENT_INS], False), False)
+        entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], self.processCache[Constant.DOCUMENT_INS], False), False) 
+        ticker = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:TradingSymbol'], self.processCache[Constant.DOCUMENT_INS], False), False)
+        self.processCache["COMPANY"] = CompanyEngine().getOrCreateCompany(CIK, ticker, entityRegistrantName, session)
+        noTradingSymbolFlag = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:NoTradingSymbolFlag'], self.processCache[Constant.DOCUMENT_INS], False), False)
+        CompanyEngine().updateListedCompany(self.processCache["COMPANY"], noTradingSymbolFlag, session)
+        
     
     def setFactValues(self, factToAddList, processCache):
         insXMLDict = processCache[Constant.DOCUMENT_INS]
@@ -156,7 +162,7 @@ class AbstractFactImporter(object):
         self.logger.debug("REPORT LIST " + str(reportDict))
         return reportDict
     
-    def completeFileData(self, fileData, processCache, filename, session):
+    def fillFileData(self, fileData, processCache, filename, session):
         insXMLDict = processCache[Constant.DOCUMENT_INS]
         documentType = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentType'])
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("documentType " + documentType)
