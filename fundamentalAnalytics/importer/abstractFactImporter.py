@@ -82,17 +82,27 @@ class AbstractFactImporter(object):
         #PERIOD
         periodDict = self.getPeriodDict(insDict, session)
         processCache[Constant.PERIOD_DICT] = periodDict 
-        
         return processCache
     
-    def fillCompanyData(self, session):
-        #COMPANY
+    def initProcessCache2(self, filename, session):
+        processCache = {}
+        #XML INSTANCE
+        insDict = getXMLDictFromGZCache(filename, Constant.DOCUMENT_INS)
+        insDict = self.getElementFromElement(Constant.XBRL_ROOT, insDict)
+        processCache[Constant.DOCUMENT_INS] = insDict
+        return processCache    
+    
+    def fillCompanyData(self, filename, session):
         CIK = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityCentralIndexKey'], self.processCache[Constant.DOCUMENT_INS], False), False)
-        entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], self.processCache[Constant.DOCUMENT_INS], False), False) 
-        ticker = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:TradingSymbol'], self.processCache[Constant.DOCUMENT_INS], False), False)
-        self.processCache["COMPANY"] = CompanyEngine().getOrCreateCompany(CIK, ticker, entityRegistrantName, session)
-        noTradingSymbolFlag = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:NoTradingSymbolFlag'], self.processCache[Constant.DOCUMENT_INS], False), False)
-        CompanyEngine().updateListedCompany(self.processCache["COMPANY"], noTradingSymbolFlag, session)
+        if (CIK is None):
+            company = CompanyEngine().getCompanyWithJustFilename(filename, session)
+        else:
+            entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], self.processCache[Constant.DOCUMENT_INS], False), False) 
+            ticker = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:TradingSymbol'], self.processCache[Constant.DOCUMENT_INS], False), False)
+            company = CompanyEngine().getOrCreateCompany(CIK, ticker, entityRegistrantName, session)
+            noTradingSymbolFlag = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:NoTradingSymbolFlag'], self.processCache[Constant.DOCUMENT_INS], False), False)
+            CompanyEngine().updateListedCompany(company, noTradingSymbolFlag, session)
+        return company
         
     
     def setFactValues(self, factToAddList, processCache):
