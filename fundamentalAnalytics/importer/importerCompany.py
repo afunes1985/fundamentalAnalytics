@@ -9,6 +9,7 @@ from nt import listdir
 import pandas
 import xmltodict
 
+from dao.dao import Dao
 from importer.abstractFactImporter import AbstractFactImporter
 from importer.abstractImporter import AbstractImporter
 from tools.tools import getXSDFileFromCache
@@ -22,8 +23,10 @@ class ImporterCompany(AbstractImporter, AbstractFactImporter):
         self.processCache = None
             
     def doImport2(self):
-        self.processCache = self.initProcessCache(self.filename, self.session)
-        self.fillCompanyData(self.session)
+        self.processCache = self.initProcessCache2(self.filename, self.session)
+        company = self.fillCompanyData(self.filename, self.session)
+        self.fileData.company = company
+        Dao().addObject(objectToAdd = self.fileData, session = self.session, doCommit = True) 
     
     def getPersistentList(self, voList):
         return []    

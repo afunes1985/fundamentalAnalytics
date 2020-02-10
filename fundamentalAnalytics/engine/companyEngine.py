@@ -31,3 +31,8 @@ class CompanyEngine():
             company.notListedDescription = 'noTradingSymbolFlag'
         Dao().addObject(objectToAdd = company, session = session, doCommit = True)
         
+    def getCompanyWithJustFilename(self, filename, session):
+        CIK = filename[len("edgar/data/"):filename.rfind("/",0, len(filename))]
+        company = CompanyEngine().getOrCreateCompany(CIK, None, None, session)
+        return company
+        

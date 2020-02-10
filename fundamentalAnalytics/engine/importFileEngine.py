@@ -13,14 +13,15 @@ import pandas
 import requests
 
 from base.dbConnector import DBConnector
+from dao.companyDao import CompanyDao
 from dao.dao import Dao
 from dao.fileDataDao import FileDataDao
+from engine.companyEngine import CompanyEngine
 from modelClass.fileData import FileData
 from tools.tools import getBinaryFileFromCache, getXMLFromText, \
     FileNotFoundException, getXMLDictFromGZCache, XSDNotFoundException, \
     XMLNotFoundException
 from valueobject.constant import Constant
-from dao.companyDao import CompanyDao
 
 
 class ImportFileEngine():
@@ -45,11 +46,9 @@ class ImportFileEngine():
                 if(formType == "10-Q" or formType == "10-K"): #edgar/data/1000045/0001564590-19-043374.txt
                     fd = FileDataDao.getFileData(filename, session)
                     if(fd is None):
-                        CIK = filename[len("edgar/data/"):filename.rfind("/",0, len(filename))]
-                        company = CompanyDao().getCompany2(CIK, session)
+                        company = CompanyEngine().getCompanyWithJustFilename(filename, session)
                         fd = FileData()
                         fd.fileName = filename
-                        fd.CIK = row[0]
                         fd.company = company
                         Dao().addObject(objectToAdd = fd, session = session, doCommit = True)
                         print("FD Added " + filename)

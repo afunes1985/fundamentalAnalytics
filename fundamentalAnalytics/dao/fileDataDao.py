@@ -221,6 +221,6 @@ class FileDataDao():
                     FROM fa_file_data fd
                         join fa_company c on c.oid = fd.companyOID
                     where c.listed = 1
-                    group by priceStatus, copyStatus""")
+                    group by priceStatus, copyStatus, calculateStatus, expressionStatus""")
         return session.execute(query, '')
         
