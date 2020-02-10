@@ -167,7 +167,9 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, factStatus, entityStatus, price
 
 @app.callback(
     [Output('graph2', "figure"),
-     Output('dd-copyStatus', "options")],
+     Output('dd-copyStatus', "options"),
+     Output('dd-calculateStatus', "options"),
+     Output('dd-expressionStatus', "options")],
     [Input('btn-submit-processStatus2', 'n_clicks')],
     [State('dd-copyStatus', 'value'),
      State('dd-calculateStatus', 'value'),
@@ -178,18 +180,19 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
         print("Start")  
         createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)
         session = DBConnector().getNewSession()
-        if (copyStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='copyStatus', statusValue=copyStatus, statusAttr2='priceStatus', statusValue2=Constant.STATUS_OK, session=session, errorMessage2='')
-            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterCopy)
+        if (expressionStatus is not None):
+            fileDataList = FileDataDao().getFileData3(statusAttr='expressionStatus', statusValue=expressionStatus, statusAttr2='calculateStatus', statusValue2=calculateStatus, session=session, errorMessage2='')
+            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterExpression)
             importerExecutor.execute(fileDataList)
         elif (calculateStatus is not None):
             fileDataList = FileDataDao().getFileData3(statusAttr='calculateStatus', statusValue=calculateStatus, statusAttr2='copyStatus', statusValue2=copyStatus, session=session, errorMessage2='')
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterCalculate)
+            importerExecutor.execute(fileDataList)        
+        if (copyStatus is not None):
+            fileDataList = FileDataDao().getFileData3(statusAttr='copyStatus', statusValue=copyStatus, statusAttr2='priceStatus', statusValue2=Constant.STATUS_OK, session=session, errorMessage2='')
+            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterCopy)
             importerExecutor.execute(fileDataList)
-        elif (expressionStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='expressionStatus', statusValue=expressionStatus, statusAttr2='calculateStatus', statusValue2=calculateStatus, session=session, errorMessage2='')
-            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterExpression)
-            importerExecutor.execute(fileDataList)
+
     
     rs = FileDataDao().getStatusCount3()
     df = DataFrame(rs, columns=['priceStatus', 'copyStatus', 'calculateStatus', 'expressionStatus', 'value_'])
@@ -209,8 +212,10 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
     sunburstStatus2.update_layout(margin=dict(t=0, l=0, r=0, b=0))
     
     listCopyStatus = getUniqueValues(df_all_trees, 'copyStatus')
+    listCalculateStatus = getUniqueValues(df_all_trees, 'calculateStatus')
+    listExpressionStatus = getUniqueValues(df_all_trees, 'expressionStatus')
     
-    return sunburstStatus2, listCopyStatus
+    return sunburstStatus2, listCopyStatus, listCalculateStatus, listExpressionStatus
 
 def getUniqueValues(df_all_trees, key):
     resultList = []
