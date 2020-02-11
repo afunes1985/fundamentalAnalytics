@@ -61,6 +61,11 @@ from modelClass.customConcept import RelCustomConceptConcept
 #     ccList.append(customFactEngine.createCustomConcept("NET_INCOME_PER_SHARE (EPS)", "CUSTOM_RATIO", 7, 'QTD', "EXPRESSION", session));
 #     ccList.append(customFactEngine.createCustomConcept("INCOME_PRE_TAX_YIELD", "CUSTOM_RATIO", 8, 'QTD', "EXPRESSION", session));
 #     ccList.append(customFactEngine.createCustomConcept("REVENUE_PER_SHARE", "CUSTOM_RATIO", 9, 'QTD', "EXPRESSION", session));
+#     ccList.append(customFactEngine.createCustomConcept("TOTAL_CASH_FROM_OPERATING_ACTIVITIES", "CUSTOM_CASH_FLOW", 1, 'QTD', "COPY_CALCULATE", session));
+#     ccList.append(customFactEngine.createCustomConcept("TOTAL_CASH_FROM_INVESTING_ACTIVITIES", "CUSTOM_CASH_FLOW", 2, 'QTD', "COPY_CALCULATE", session));
+#     ccList.append(customFactEngine.createCustomConcept("TOTAL_CASH_FROM_FINANCING_ACTIVITIES", "CUSTOM_CASH_FLOW", 3, 'QTD', "COPY_CALCULATE", session));
+#     ccList.append(customFactEngine.createCustomConcept("NET_CHANGE_IN_CASH", "CUSTOM_CASH_FLOW", 4, 'QTD', "COPY_CALCULATE", session));
+
 
 # customConceptDict = {"REVENUE": ["Revenues", "SalesRevenueNet", "RevenueFromContractWithCustomerExcludingAssessedTax"], #1,2,3
 #                      "COST_OF_REVENUE": ["CostOfRevenue", "CostOfGoodsAndServicesSold"],  # 1,2
@@ -108,7 +113,8 @@ from modelClass.customConcept import RelCustomConceptConcept
 #                      "RETAINED_EARNINGS": ["RetainedEarningsAccumulatedDeficit"],
 #                      "THREASURY_STOCK": ["TreasuryStockValue"],
 #                      "TOTAL_SHAREHOLDERS_EQUITY": ["StockholdersEquity"],
-#                      "SHARES_OUTSTANDING": ["CommonStockSharesOutstanding"]}
+#                      "SHARES_OUTSTANDING": ["CommonStockSharesOutstanding"],
+#                        "NET_CHANGE_IN_CASH": ["CashAndCashEquivalentsPeriodIncreaseDecrease"]}
 
 
 Initializer()
@@ -120,18 +126,15 @@ if(createCustomConcept):
     ccList = []
     customFactEngine = CustomFactEngine()
     
-    ccList.append(customFactEngine.createCustomConcept("TOTAL_CASH_FROM_OPERATING_ACTIVITIES", "CUSTOM_CASH_FLOW", 1, 'QTD', "COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("TOTAL_CASH_FROM_INVESTING_ACTIVITIES", "CUSTOM_CASH_FLOW", 2, 'QTD', "COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("TOTAL_CASH_FROM_FINANCING_ACTIVITIES", "CUSTOM_CASH_FLOW", 3, 'QTD', "COPY_CALCULATE", session));
-    ccList.append(customFactEngine.createCustomConcept("NET_CHANGE_IN_CASH", "CUSTOM_CASH_FLOW", 4, 'QTD', "COPY_CALCULATE", session));
+
         
     for itemToAdd in ccList:
         Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
 
-customConceptDict = {"TOTAL_CASH_FROM_OPERATING_ACTIVITIES": ["NetCashProvidedByUsedInOperatingActivities"],
-                     "TOTAL_CASH_FROM_INVESTING_ACTIVITIES": ["NetCashProvidedByUsedInInvestingActivities"],
-                     "TOTAL_CASH_FROM_FINANCING_ACTIVITIES": ["NetCashProvidedByUsedInFinancingActivities"],
-                     "NET_CHANGE_IN_CASH": ["CashAndCashEquivalentsPeriodIncreaseDecrease"]}
+customConceptDict = {"TOTAL_CASH_FROM_OPERATING_ACTIVITIES": ["NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
+                     "TOTAL_CASH_FROM_INVESTING_ACTIVITIES": ["NetCashProvidedByUsedInInvestingActivitiesContinuingOperations"],
+                     "TOTAL_CASH_FROM_FINANCING_ACTIVITIES": ["NetCashProvidedByUsedInFinancingActivitiesContinuingOperations"]
+                     }
 
 #session.query(RelCustomConceptConcept).delete()
 #session.flush()
@@ -139,9 +142,8 @@ customConceptDict = {"TOTAL_CASH_FROM_OPERATING_ACTIVITIES": ["NetCashProvidedBy
 for customConceptName, conceptList in customConceptDict.items():
     print ("Configuring " + customConceptName)
     customConcept = Dao().getCustomConcept(customConceptName, session)
-    orderCount = 0
     for conceptName in conceptList:
-        orderCount += 1
+        orderCount = len(customConcept.relationConceptList) + 1
         concept = Dao().getConcept(conceptName, session)
         relCCC = RelCustomConceptConcept()
         relCCC.concept = concept
