@@ -72,6 +72,7 @@ class FactDao():
                                     and (:ticker is null or company.ticker = :ticker )
                                     and (:reportShortName is null or report.shortName = :reportShortName )
                                     and (:periodType is null or period.type = :periodType )
+                                    and (:CIK is null or company.CIK = :CIK )
                             union
                             select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
                                     IFNULL(period.endDate, period.instant) date_, period.type as periodType, concept.defaultOrder as order_
@@ -86,7 +87,8 @@ class FactDao():
                                     (:conceptName is null or concept.conceptName = :conceptName)
                                     and (:ticker is null or company.ticker = :ticker)
                                     and (:reportShortName is null or report.shortName = :reportShortName )
-                                    and (:periodType is null or period.type = :periodType )) as rs
+                                    and (:periodType is null or period.type = :periodType )
+                                    and (:CIK is null or company.CIK = :CIK )) as rs
                                         order by reportShortName, conceptName, periodType, date_""")
             rs = con.execute(query, params)
             return rs 

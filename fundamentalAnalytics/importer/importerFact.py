@@ -24,7 +24,7 @@ class ImporterFact(AbstractImporter, AbstractFactImporter):
             
     def doImport2(self):
         self.processCache = self.initProcessCache(self.filename, self.session)
-        self.fillCompanyData(self.session)
+        self.fillCompanyData(self.filename, self.session)
         self.fileData = self.fillFileData(self.fileData, self.processCache, self.filename, self.session)
         reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
         factVOList = self.getFactByReport(reportDict, self.processCache, self.session)
