@@ -24,7 +24,7 @@ from importer.importerCalculate import ImporterCalculate
 from importer.importerExpression import ImporterExpression
 
 
-levels = ['priceStatus', 'entityStatus', 'status', 'fileStatus']  # levels used for the hierarchical chart
+levels = ['status', 'priceStatus', 'entityStatus', 'companyStatus', 'fileStatus']  # levels used for the hierarchical chart
 levels2 = ['expressionStatus', 'calculateStatus', 'copyStatus','priceStatus']  # levels used for the hierarchical chart
 value_column = 'value_'
 
@@ -34,9 +34,9 @@ ddFileStatus = dcc.Dropdown(
     clearable=False
 )
 
-ddFactStatus = dcc.Dropdown(
-    id='dd-factStatus',
-    value=None
+ddCompanyStatus = dcc.Dropdown(
+    id='dd-companyStatus',
+    value=None,
 )
 
 ddEntityStatus = dcc.Dropdown(
@@ -46,6 +46,11 @@ ddEntityStatus = dcc.Dropdown(
 
 ddPriceStatus = dcc.Dropdown(
     id='dd-priceStatus',
+    value=None
+)
+
+ddFactStatus = dcc.Dropdown(
+    id='dd-factStatus',
     value=None
 )
 
@@ -80,9 +85,10 @@ layout = html.Div(
                     ]),
                     dbc.Col([
                         dbc.Row(html.Label(["Import File Status", ddFileStatus])),
-                        dbc.Row(html.Label(["Import Fact Status", ddFactStatus])),
+                        dbc.Row(html.Label(["Import Company Status", ddCompanyStatus])),
                         dbc.Row(html.Label(["Import Entity Status", ddEntityStatus])),
                         dbc.Row(html.Label(["Import Price Status", ddPriceStatus])),
+                        dbc.Row(html.Label(["Import Fact Status", ddFactStatus])),
                         dbc.Row(html.Button(id='btn-submit-processStatus', n_clicks=0, children='Submit'))
                     ]),
                 ]),
@@ -108,32 +114,38 @@ layout = html.Div(
 @app.callback(
     [Output('graph', "figure"),
      Output('dd-fileStatus', "options"),
-     Output('dd-factStatus', "options"),
+     Output('dd-companyStatus', "options"),
      Output('dd-entityStatus', "options"),
-     Output('dd-priceStatus', "options")],
+     Output('dd-priceStatus', "options"),
+     Output('dd-factStatus', "options")],
     [Input('btn-submit-processStatus', 'n_clicks')],
     [State('dd-fileStatus', 'value'),
-     State('dd-factStatus', 'value'),
+     State('dd-companyStatus', 'value'),
      State('dd-entityStatus', 'value'),
-     State('dd-priceStatus', 'value')])
-def doSubmitProcessStatus1(n_clicks, fileStatus, factStatus, entityStatus, priceStatus):
+     State('dd-priceStatus', 'value'),
+     State('dd-factStatus', 'value')])
+def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, priceStatus, factStatus):
     if (n_clicks > 0):
         logging.info("START")
         print("Start")  
         createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)
         session = DBConnector().getNewSession()
         
-        if (priceStatus is not None):
+        if (factStatus is not None):
+            fileDataList = FileDataDao().getFileData3(statusAttr='priceStatus', statusValue=priceStatus, statusAttr2='status', statusValue2=factStatus, session=session)
+            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterFact)
+            importerExecutor.execute(fileDataList)
+        elif (priceStatus is not None):
             fileDataList = FileDataDao().getFileData3(statusAttr='entityStatus', statusValue=entityStatus, statusAttr2='priceStatus', statusValue2=priceStatus, session=session, errorMessage2='')
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterPrice)
             importerExecutor.execute(fileDataList)
         elif (entityStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='status', statusValue=factStatus, statusAttr2='entityStatus', statusValue2=entityStatus, session=session)
+            if(companyStatus == 'LISTED'): 
+                listed = 1 
+            else: 
+                listed = 0
+            fileDataList = FileDataDao().getFileData3(statusAttr='fileStatus', statusValue=fileStatus, statusAttr2='entityStatus', statusValue2=entityStatus, session=session, listed=listed)
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterEntityFact)
-            importerExecutor.execute(fileDataList)
-        elif (factStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='fileStatus', statusValue=fileStatus, statusAttr2='status', statusValue2=factStatus, session=session)
-            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterFact)
             importerExecutor.execute(fileDataList)
         elif (fileStatus is not None):    
             fileDataList = FileDataDao().getFileData2(statusAttr='fileStatus', statusValue=fileStatus, session=session)
@@ -141,7 +153,7 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, factStatus, entityStatus, price
             importerExecutor.execute(fileDataList)
 
     rs = FileDataDao().getStatusCount2()
-    df = DataFrame(rs, columns=['fileStatus', 'status', 'entityStatus', 'priceStatus', 'value_'])
+    df = DataFrame(rs, columns=['fileStatus', 'companyStatus', 'entityStatus', 'priceStatus', 'status', 'value_'])
     df_all_trees = build_hierarchical_dataframe(df, levels, value_column)
     sunburstImportStatus = go.Figure(go.Sunburst(
                                 labels=df_all_trees['label'],
@@ -158,11 +170,12 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, factStatus, entityStatus, price
     sunburstImportStatus.update_layout(margin=dict(t=0, l=0, r=0, b=0))
     
     listFileStatus = getUniqueValues(df_all_trees, 'fileStatus')
-    listFactStatus = getUniqueValues(df_all_trees, 'status')
+    listCompanyStatus = getUniqueValues(df_all_trees, 'companyStatus')
     listEntityStatus = getUniqueValues(df_all_trees, 'entityStatus')
     listPriceStatus = getUniqueValues(df_all_trees, 'priceStatus')
+    listFactStatus = getUniqueValues(df_all_trees, 'status')
     
-    return sunburstImportStatus, listFileStatus, listFactStatus, listEntityStatus, listPriceStatus
+    return sunburstImportStatus, listFileStatus, listCompanyStatus, listEntityStatus, listPriceStatus, listFactStatus
 
 
 @app.callback(

@@ -155,7 +155,7 @@ class FileDataDao():
             rs = con.execute(query)
             return rs 
         
-    def getFileData3(self, statusAttr, statusValue, statusAttr2, statusValue2, ticker='', session=None, limit=None, errorMessage2 = ''):
+    def getFileData3(self, statusAttr, statusValue, statusAttr2, statusValue2, ticker='', session=None, limit=None, errorMessage2 = '', listed = ''):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
@@ -164,19 +164,21 @@ class FileDataDao():
             .outerjoin(FileData.errorMessageList)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(and_(getattr(FileData, statusAttr) == statusValue, getattr(FileData, statusAttr2) == statusValue2, 
-                         or_(ticker == '', Company.ticker == ticker), or_(errorMessage2 == '', ErrorMessage.errorMessage.like(errorMessage2))))\
+                         or_(ticker == '', Company.ticker == ticker), or_(errorMessage2 == '', ErrorMessage.errorMessage.like(errorMessage2)), 
+                         or_(listed == '', Company.listed == listed)))\
             .limit(limit)
         objectResult = query.all()
         return objectResult
     
-    def getFileData2(self, statusAttr, statusValue, ticker='', session=None, limit=None):
+    def getFileData2(self, statusAttr, statusValue, ticker='', session=None, limit=None, listed = ''):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
         query = session.query(FileData)\
             .outerjoin(FileData.company)\
             .order_by(FileData.documentPeriodEndDate)\
-            .filter(and_(getattr(FileData, statusAttr) == statusValue, or_(ticker == '', Company.ticker == ticker)))\
+            .filter(and_(getattr(FileData, statusAttr) == statusValue, or_(ticker == '', Company.ticker == ticker),
+                         or_(listed == '', Company.listed == listed)))\
             .limit(limit)
         objectResult = query.all()
         return objectResult
@@ -192,26 +194,13 @@ class FileDataDao():
             .with_entities(ErrorMessage.errorKey, ErrorMessage.errorMessage)
         return query.all()  
     
-    def getStatusCount(self):
-        session = DBConnector().getNewSession()
-        query = text("""
-                        SELECT null as parent, null as id, fileStatus as label, count(*) as values_ 
-                                FROM fa_file_data
-                                group by fileStatus
-                        union                                
-                        SELECT fileStatus as parent, CONCAT(fileStatus, " - ", status) as id, status as label, count(*) as values_ 
-                                FROM fa_file_data
-                                group by fileStatus, status""")
-        return session.execute(query, '')
-    
     def getStatusCount2(self):
         session = DBConnector().getNewSession()
         query = text("""
-                SELECT fileStatus, status, entityStatus, priceStatus, count(*) as values_ 
+                SELECT fileStatus, if(listed=1,'LISTED','NOT_LISTED') as companyStatus, entityStatus, priceStatus, status, count(*) as values_ 
                     FROM fa_file_data fd
                         join fa_company c on c.oid = fd.companyOID
-                    where c.listed = 1
-                    group by fileStatus, status, entityStatus, priceStatus""")
+                    group by fileStatus, listed, entityStatus, priceStatus, status""")
         return session.execute(query, '')
     
     def getStatusCount3(self):

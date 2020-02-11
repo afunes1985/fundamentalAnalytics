@@ -7,7 +7,7 @@ import dash_html_components as html
 from tools.tools import createLog
 from valueobject.constant import Constant
 from web.app import app
-from web.apps import app1, app2, app3, app4, app5, app6
+from web.apps import app1, app2, app3, app4, app5
 
 
 app.layout = html.Div([
@@ -29,8 +29,6 @@ def display_page(pathname):
         return app4.layout
     elif pathname == '/apps/app5':
         return app5.layout
-    elif pathname == '/apps/app6':
-        return app6.layout
     else:
         return app1.layout
 
