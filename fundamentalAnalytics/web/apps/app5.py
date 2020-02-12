@@ -23,9 +23,8 @@ from web.app import app
 from importer.importerCalculate import ImporterCalculate
 from importer.importerExpression import ImporterExpression
 
-
 levels = ['status', 'priceStatus', 'entityStatus', 'companyStatus', 'fileStatus']  # levels used for the hierarchical chart
-levels2 = ['expressionStatus', 'calculateStatus', 'copyStatus','priceStatus']  # levels used for the hierarchical chart
+levels2 = ['expressionStatus', 'calculateStatus', 'copyStatus', 'status']  # levels used for the hierarchical chart
 value_column = 'value_'
 
 ddFileStatus = dcc.Dropdown(
@@ -71,7 +70,6 @@ ddExpressionStatus = dcc.Dropdown(
     value=None,
     clearable=False
 )
-
 
 layout = html.Div(
             [
@@ -159,12 +157,13 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, pr
                                 labels=df_all_trees['label'],
                                 parents=df_all_trees['parent'],
                                 ids=df_all_trees['id'],
-                                customdata = df_all_trees['level'],
-                                name = "",
+                                customdata=df_all_trees['level'],
+                                text = df_all_trees['value'],
+                                name="",
                                 marker=dict(
-                                    colors=df_all_trees['value'],
+                                    colors=df_all_trees['color'],
                                     colorscale='RdBu'),
-                                hovertemplate='<b>%{customdata} </b> <br> %{color:.0f}'
+                                hovertemplate='<b>%{customdata} </b>'
                                     ))
     
     sunburstImportStatus.update_layout(margin=dict(t=0, l=0, r=0, b=0))
@@ -199,29 +198,29 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
             importerExecutor.execute(fileDataList)
         elif (calculateStatus is not None):
             fileDataList = FileDataDao().getFileData3(statusAttr='calculateStatus', statusValue=calculateStatus, statusAttr2='copyStatus', statusValue2=copyStatus, session=session, errorMessage2='')
-            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterCalculate)
+            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterCalculate)
             importerExecutor.execute(fileDataList)        
         if (copyStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='copyStatus', statusValue=copyStatus, statusAttr2='priceStatus', statusValue2=Constant.STATUS_OK, session=session, errorMessage2='')
-            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterCopy)
+            fileDataList = FileDataDao().getFileData3(statusAttr='copyStatus', statusValue=copyStatus, statusAttr2='status', statusValue2=Constant.STATUS_OK, session=session, errorMessage2='')
+            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterCopy)
             importerExecutor.execute(fileDataList)
-
     
     rs = FileDataDao().getStatusCount3()
-    df = DataFrame(rs, columns=['priceStatus', 'copyStatus', 'calculateStatus', 'expressionStatus', 'value_'])
+    df = DataFrame(rs, columns=['status', 'copyStatus', 'calculateStatus', 'expressionStatus', 'value_'])
     df_all_trees = build_hierarchical_dataframe(df, levels2, value_column)
-    sunburstStatus2 = go.Figure(go.Sunburst(
+    s = go.Sunburst(
                                 labels=df_all_trees['label'],
                                 parents=df_all_trees['parent'],
                                 ids=df_all_trees['id'],
-                                customdata = df_all_trees['level'],
-                                name = "",
+                                customdata= df_all_trees['level'],
+                                text = df_all_trees['value'],
+                                name="",
                                 marker=dict(
-                                    colors=df_all_trees['value'],
+                                    colors=df_all_trees['color'],
                                     colorscale='RdBu'),
-                                hovertemplate='<b>%{customdata} </b> <br> %{color:.0f}'
-                                    ))
-    
+                                hovertemplate='<b>%{customdata} </b> '
+                                    )
+    sunburstStatus2 = go.Figure(s)
     sunburstStatus2.update_layout(margin=dict(t=0, l=0, r=0, b=0))
     
     listCopyStatus = getUniqueValues(df_all_trees, 'copyStatus')
@@ -229,6 +228,7 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
     listExpressionStatus = getUniqueValues(df_all_trees, 'expressionStatus')
     
     return sunburstStatus2, listCopyStatus, listCalculateStatus, listExpressionStatus
+
 
 def getUniqueValues(df_all_trees, key):
     resultList = []
@@ -263,14 +263,32 @@ def build_hierarchical_dataframe(df, levels, value_column):
             df_tree[level] = dfg[level].copy()
             df_tree['level'] = level
         else:
+            #set total series
             df_tree['id'] = dfg[level].copy()
             df_tree['parent'] = 'total'
             df_tree['label'] = dfg[level].copy()
             df_tree[level] = dfg[level].copy()
             df_tree['level'] = level
         df_tree['value'] = dfg[value_column]
+        df_tree['color'] = getColorCode(df_tree['label'])
         df_all_trees = df_all_trees.append(df_tree, ignore_index=True)
-    total = pd.Series(dict(id='total', label = 'total', parent='',value=df[value_column].sum(), level = ''))
+    total = pd.Series(dict(id='total', label='total', parent='', value=df[value_column].sum(), level=''))
     df_all_trees = df_all_trees.append(total, ignore_index=True)
     return df_all_trees
 
+def getColorCode(labels):
+    returnList = []
+    for item in labels.iteritems(): 
+        if (item[1] == 'OK' or item[1] == 'LISTED'):
+            returnList.append('rgb(0,102,51)')
+        elif (item[1] == 'NO_DATA'):
+            returnList.append('rgb(204,204,0)')
+        elif (item[1] == 'ERROR' or item[1] == 'FNF' or item[1] == 'XML_FNF'):
+            returnList.append('rgb(153,0,0)')
+        elif (item[1] == 'INIT'):
+            returnList.append('rgb(0,76,153)')
+        elif (item[1] == 'PENDING'):
+            returnList.append('rgb(204,255,204)')
+        else:
+            returnList.append('white')
+    return pd.Series(returnList)

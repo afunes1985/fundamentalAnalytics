@@ -10,12 +10,13 @@ select a.oid from (SELECT c.oid
     group by c.oid
 	having sum(efv.value) = 0) as a);
 
+update fa_file_data set status = 'PENDING' where priceStatus != 'OK';
 update fa_file_data set copyStatus = 'PENDING' where priceStatus != 'OK';
 update fa_file_data set calculateStatus = 'PENDING' where copyStatus != 'OK';
 update fa_file_data set expressionStatus = 'PENDING' where (calculateStatus != 'OK' and calculateStatus != 'NO_DATA');
 
 #update fd where listed = 0
-update fa_file_data set copyStatus = 'PENDING', calculateStatus = 'PENDING', expressionStatus = 'PENDING', status = 'PENDING', priceStatus = 'PENDING'
+update fa_file_data set copyStatus = 'PENDING', calculateStatus = 'PENDING', expressionStatus = 'PENDING', status = 'PENDING', entityStatus = 'PENDING', priceStatus = 'PENDING'
 where oid in(  
 select a.oid from(
 select fd.OID 
@@ -30,7 +31,28 @@ select CFV.OID
 	from fa_custom_fact_value cfv
     inner join fa_file_data fd on cfv.fileDataOID = fd.OID
     where fd.copyStatus = 'PENDING') a);
-    
+
+#delete fa_custom_fact orphans may not usefull
+#delete from fa_custom_fact cf
+#		left join fa_custom_fact_value cfv on cfv.customFactOID = cf.oid
+#where cfv.oid is null;
+#
+#
+
+#delete entity  where entityStatus = 'PENDING'  
+delete from fa_entity_fact_value where oid in(
+select t.oid from (
+select efv.oid
+	from fa_entity_fact_value efv
+    join fa_file_data fd on fd.oid = efv.fileDataOID
+    where fd.entityStatus = 'PENDING') as t);
+
+#TODO delete orphan entity fact
+#
+#
+#
+# 
+ 
 #delete prices  where priceStatus = 'PENDING'  
 delete from fa_price where oid in(
 select t.oid from (
@@ -63,7 +85,25 @@ from fa_fact_value fv
 left join fa_fact f on fv.oid = f.factValueOID
 where  f.oid is null)as a);
 
+#delete fa_period orphans
+delete
+from fa_period 
+where oid not in(
+	select fv.periodOID
+	from fa_fact_value fv
+	union 
+	select fcv.periodOID
+	from fa_custom_fact_value fcv
+	union 
+	select ev.periodOID
+	from fa_entity_fact_value ev);
 
-              
 
+######################################### quries
+
+#search period duplicates
+SELECT p1.OID
+FROM fa_period p1
+	join fa_period p2 on p1.oid != p2.oid and p1.endDate = p2.endDate
+WHERE p1.endDate is not null AND p1.startDate IS NULL;
 

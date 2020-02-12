@@ -206,7 +206,7 @@ class FileDataDao():
     def getStatusCount3(self):
         session = DBConnector().getNewSession()
         query = text("""
-                SELECT priceStatus, copyStatus, calculateStatus, expressionStatus, count(*) as values_ 
+                SELECT status, copyStatus, calculateStatus, expressionStatus, count(*) as values_ 
                     FROM fa_file_data fd
                         join fa_company c on c.oid = fd.companyOID
                     where c.listed = 1
