@@ -23,8 +23,8 @@ from web.app import app
 from importer.importerCalculate import ImporterCalculate
 from importer.importerExpression import ImporterExpression
 
-levels = ['status', 'priceStatus', 'entityStatus', 'companyStatus', 'fileStatus']  # levels used for the hierarchical chart
-levels2 = ['expressionStatus', 'calculateStatus', 'copyStatus', 'status']  # levels used for the hierarchical chart
+levels = ['factStatus', 'priceStatus', 'entityStatus', 'companyStatus', 'fileStatus']  # levels used for the hierarchical chart
+levels2 = ['expressionStatus', 'calculateStatus', 'copyStatus', 'factStatus']  # levels used for the hierarchical chart
 value_column = 'value_'
 
 ddFileStatus = dcc.Dropdown(
@@ -130,7 +130,7 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, pr
         session = DBConnector().getNewSession()
         
         if (factStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='priceStatus', statusValue=priceStatus, statusAttr2='status', statusValue2=factStatus, session=session)
+            fileDataList = FileDataDao().getFileData3(statusAttr='priceStatus', statusValue=priceStatus, statusAttr2='factStatus', statusValue2=factStatus, session=session)
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterFact)
             importerExecutor.execute(fileDataList)
         elif (priceStatus is not None):
@@ -151,7 +151,7 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, pr
             importerExecutor.execute(fileDataList)
 
     rs = FileDataDao().getStatusCount2()
-    df = DataFrame(rs, columns=['fileStatus', 'companyStatus', 'entityStatus', 'priceStatus', 'status', 'value_'])
+    df = DataFrame(rs, columns=['fileStatus', 'companyStatus', 'entityStatus', 'priceStatus', 'factStatus', 'value_'])
     df_all_trees = build_hierarchical_dataframe(df, levels, value_column)
     sunburstImportStatus = go.Figure(go.Sunburst(
                                 labels=df_all_trees['label'],
@@ -172,7 +172,7 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, pr
     listCompanyStatus = getUniqueValues(df_all_trees, 'companyStatus')
     listEntityStatus = getUniqueValues(df_all_trees, 'entityStatus')
     listPriceStatus = getUniqueValues(df_all_trees, 'priceStatus')
-    listFactStatus = getUniqueValues(df_all_trees, 'status')
+    listFactStatus = getUniqueValues(df_all_trees, 'factStatus')
     
     return sunburstImportStatus, listFileStatus, listCompanyStatus, listEntityStatus, listPriceStatus, listFactStatus
 
@@ -197,16 +197,16 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterExpression)
             importerExecutor.execute(fileDataList)
         elif (calculateStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='calculateStatus', statusValue=calculateStatus, statusAttr2='copyStatus', statusValue2=copyStatus, session=session, errorMessage2='')
+            fileDataList = FileDataDao().getFileData4(statusAttr='calculateStatus', statusValue=calculateStatus, statusAttr2='copyStatus', statusValue2=copyStatus, session=session)
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterCalculate)
             importerExecutor.execute(fileDataList)        
         if (copyStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='copyStatus', statusValue=copyStatus, statusAttr2='status', statusValue2=Constant.STATUS_OK, session=session, errorMessage2='')
+            fileDataList = FileDataDao().getFileData3(statusAttr='copyStatus', statusValue=copyStatus, statusAttr2='factStatus', statusValue2=Constant.STATUS_OK, session=session, errorMessage2='')
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterCopy)
             importerExecutor.execute(fileDataList)
     
     rs = FileDataDao().getStatusCount3()
-    df = DataFrame(rs, columns=['status', 'copyStatus', 'calculateStatus', 'expressionStatus', 'value_'])
+    df = DataFrame(rs, columns=['factStatus', 'copyStatus', 'calculateStatus', 'expressionStatus', 'value_'])
     df_all_trees = build_hierarchical_dataframe(df, levels2, value_column)
     s = go.Sunburst(
                                 labels=df_all_trees['label'],

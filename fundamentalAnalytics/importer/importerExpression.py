@@ -18,7 +18,7 @@ class ImporterExpression(AbstractImporter):
     expressionDict = {}
     
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_EXPRESSION, filename, replace, 'status', 'expressionStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_EXPRESSION, filename, replace, 'factStatus', 'expressionStatus')
         expressionList = ExpressionDao().getExpressionList(session=self.session)
         self.expressionDict = {}
         for expression in expressionList:

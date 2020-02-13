@@ -5,7 +5,7 @@ Created on Apr 19, 2019
 '''
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import or_, and_
+from sqlalchemy.sql.expression import or_, and_, text
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
@@ -24,6 +24,21 @@ class CustomFactDao():
     def getCustomConcept(self, fillStrategy, session):
         #"COPY_CALCULATE"
         return GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == fillStrategy), session = session)
+    
+                            
+    
+    def getCustomConceptFilled(self, fileDataOID, session):
+        params = { 'fileDataOID' : fileDataOID}
+        query = text(""" select cc.conceptName
+                            from fa_custom_concept cc
+                                join fa_custom_fact cf on cc.oid = cf.customConceptOID
+                                join fa_custom_fact_value cfv on cfv.customFactOID = cf.OID 
+                             where fillStrategy = 'COPY_CALCULATE'
+                                 and cfv.fileDataOID = :fileDataOID""")
+        result = session.execute(query, params)
+        returnResult = [x[0] for x in result]
+        return returnResult
+    
     
     @staticmethod
     def getCustomFactValue(ticker, customConceptName, periodType = None, session = None):

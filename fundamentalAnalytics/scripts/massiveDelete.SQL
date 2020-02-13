@@ -10,13 +10,13 @@ select a.oid from (SELECT c.oid
     group by c.oid
 	having sum(efv.value) = 0) as a);
 
-update fa_file_data set status = 'PENDING' where priceStatus != 'OK';
+update fa_file_data set factStatus = 'PENDING' where priceStatus != 'OK';
 update fa_file_data set copyStatus = 'PENDING' where priceStatus != 'OK';
 update fa_file_data set calculateStatus = 'PENDING' where copyStatus != 'OK';
 update fa_file_data set expressionStatus = 'PENDING' where (calculateStatus != 'OK' and calculateStatus != 'NO_DATA');
 
 #update fd where listed = 0
-update fa_file_data set copyStatus = 'PENDING', calculateStatus = 'PENDING', expressionStatus = 'PENDING', status = 'PENDING', entityStatus = 'PENDING', priceStatus = 'PENDING'
+update fa_file_data set copyStatus = 'PENDING', calculateStatus = 'PENDING', expressionStatus = 'PENDING', factStatus = 'PENDING', entityStatus = 'PENDING', priceStatus = 'PENDING'
 where oid in(  
 select a.oid from(
 select fd.OID 
@@ -61,21 +61,21 @@ select p.oid
     join fa_file_data fd on fd.oid = p.fileDataOID
     where fd.priceStatus = 'PENDING') as t);
 
-#delete fa_fact_report_relation where status = 'PENDING'
+#delete fa_fact_report_relation where factStatus = 'PENDING'
 delete from fa_fact_report_relation where factOID in(    
 select f.OID 
 	from fa_file_data fd
 		join fa_fact f on f.fileDataOID = fd.OID
-	where status = 'PENDING');
+	where factStatus = 'PENDING');
 
 
-#delete fa_fact where status = 'PENDING'
+#delete fa_fact where factStatus = 'PENDING'
 delete from fa_fact where OID in(    
 	select a.OID from (
 	select f.OID 
 		from fa_file_data fd
 			join fa_fact f on f.fileDataOID = fd.OID
-		where status = 'PENDING') as a);
+		where factStatus = 'PENDING') as a);
 
 #delete fa_fact_value orphans
 delete from fa_fact_value where oid in(
@@ -97,6 +97,46 @@ where oid not in(
 	union 
 	select ev.periodOID
 	from fa_entity_fact_value ev);
+
+#delete orphans fa_error_message for EXPRESSION_ERROR
+delete from fa_error_message where fileDataOID in(
+select a.fileDataOID from (
+select em.fileDataOID
+	from fa_error_message em
+		inner join fa_file_data fd on fd.OID = em.fileDataOID
+    where em.errorKey = 'EXPRESSION_ERROR'
+		and expressionStatus = 'PENDING') as a)
+and errorKey = 'EXPRESSION_ERROR';
+
+#delete orphans fa_error_message for PRICE_ERROR
+delete from fa_error_message where fileDataOID in(
+select a.fileDataOID from (
+select em.fileDataOID
+	from fa_error_message em
+		inner join fa_file_data fd on fd.OID = em.fileDataOID
+    where em.errorKey = 'PRICE_ERROR'
+		and priceStatus = 'PENDING') as a)
+and errorKey = 'PRICE_ERROR';
+
+#delete orphans fa_error_message for FACT_ERROR
+delete from fa_error_message where fileDataOID in(
+select a.fileDataOID from (
+select em.fileDataOID
+	from fa_error_message em
+		inner join fa_file_data fd on fd.OID = em.fileDataOID
+    where em.errorKey = 'FACT_ERROR'
+		and factStatus = 'PENDING') as a)
+and errorKey = 'FACT_ERROR';
+
+#delete orphans fa_error_message for FILE_ERROR
+delete from fa_error_message where fileDataOID in(
+select a.fileDataOID from (
+select em.fileDataOID
+	from fa_error_message em
+		inner join fa_file_data fd on fd.OID = em.fileDataOID
+    where em.errorKey = 'FILE_ERROR'
+		and fileStatus = 'PENDING') as a)
+and errorKey = 'FILE_ERROR';
 
 
 ######################################### quries

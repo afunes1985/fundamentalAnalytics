@@ -91,7 +91,7 @@ def doButtonAction(n_clicks,n_clicks2,n_clicks3,n_clicks4,n_clicks5,n_clicks6,n_
 
 def doSubmit(filename, ticker):
     if (filename != '' or ticker != ''):
-        rs2 = FileDataDao.getFileDataList3(filename, ticker)
+        rs2 = FileDataDao().getFileDataList3(filename, ticker)
         if (len(rs2) != 0):
             df2 = DataFrame(rs2)
             dt2 = dt.DataTable(

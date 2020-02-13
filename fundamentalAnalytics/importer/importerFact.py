@@ -19,7 +19,7 @@ from valueobject.constant import Constant
 class ImporterFact(AbstractImporter, AbstractFactImporter):
 
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_FACT, filename, replace, 'fileStatus', 'status')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_FACT, filename, replace, 'fileStatus', 'factStatus')
         self.processCache = None
             
     def doImport2(self):
@@ -36,13 +36,13 @@ class ImporterFact(AbstractImporter, AbstractFactImporter):
         return []    
     
     def addOrModifyFDError1(self, e):
-        self.fileDataDao.addOrModifyFileData(status = e.status, filename = self.filename, errorMessage=str(e), errorKey = self.errorKey, externalSession=self.session)
+        self.fileDataDao.addOrModifyFileData(factStatus = e.status, filename = self.filename, errorMessage=str(e), errorKey = self.errorKey, externalSession=self.session)
     
     def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey, externalSession=self.session)         
+        self.fileDataDao.addOrModifyFileData(factStatus = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey, externalSession=self.session)         
        
     def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(status = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey, externalSession=self.session)   
+        self.fileDataDao.addOrModifyFileData(factStatus = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey, externalSession=self.session)   
         
     def deleteImportedObject(self):
         FactDao().deleteFactByFD(self.fileData.OID, self.session)

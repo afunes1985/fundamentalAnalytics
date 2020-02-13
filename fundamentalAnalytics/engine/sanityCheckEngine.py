@@ -81,12 +81,3 @@ class SanityCheckEngine():
 #         left join fa_fact f on f.factValueOID = fv.OID 
 #     where f.OID is null) as c) as d on d.OID = fa_fact_value.OID;
 
-#### BEGIN - set delete status to old companies
-# update fa_file_data b set b.status = 'DELETE'
-# where b.oid in(
-#     select c.OID2 from(
-#         select  max(OID) as OID2
-#         from fa_file_data a 
-#         where a.status = 'OK'
-#         and a.documentFiscalYearFocus < 2017
-#         having count(*) = 1) as c);

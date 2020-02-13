@@ -13,16 +13,4 @@ from valueobject.constant import Constant
 
 class FactEngine(object):
 
-    def deleteFactByFileData(self, filename, session = None):
-        if (session is None): 
-            dbconnector = DBConnector()
-            session = dbconnector.getNewSession()
-        fileData = GenericDao().getOneResult(FileData, FileData.fileName.__eq__(filename), session)
-        if(fileData is not None):
-            for itemToDelete in fileData.factList:
-                session.delete(itemToDelete)
-                session.commit()
-            fileData.status = Constant.STATUS_PENDING
-            fileData.factList = []
-            Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
-            print("Object deleted " + str(len(fileData.factList)))
+    pass

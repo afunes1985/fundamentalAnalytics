@@ -15,10 +15,12 @@ class ImporterCalculate(AbstractImporter):
 
     def __init__(self, filename, replace):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_CALCULATE, filename, replace, 'copyStatus', 'calculateStatus')
-        self.customConceptList = GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = self.session)
             
     def doImport2(self):
-        return CustomFactEngine().calculateMissingQTDValues2(fileData = self.fileData, customConceptList = self.customConceptList, session=self.session)
+        customConceptList = GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = self.session)
+        customConceptListFilled= CustomFactDao().getCustomConceptFilled(self.fileData.OID, self.session)
+        customConceptListMissing =[x for x in customConceptList if not x.conceptName in customConceptListFilled]
+        return CustomFactEngine().calculateMissingQTDValues2(fileData = self.fileData, customConceptList = customConceptListMissing, session=self.session)
 
     def addOrModifyFDError2(self, e):
         self.fileDataDao.addOrModifyFileData(calculateStatus = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey, externalSession = self.session)         

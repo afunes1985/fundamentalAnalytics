@@ -19,48 +19,14 @@ from valueobject.constant import Constant
 
 class FileDataDao():
 
-    @staticmethod   
-    def getFileDataList(status=[], session=None):
-        try:
-            dbconnector = DBConnector()
-            if (session is None): 
-                session = dbconnector.getNewSession()
-            query = session.query(FileData)\
-            .with_entities(FileData.fileName, FileData.status, FileData.fileStatus)\
-            .filter(FileData.status.in_(status))
-            objectResult = query.all()
-            return objectResult
-        except NoResultFound:
-            return None
-        
-    @staticmethod   
-    def getFileDataList2(status=[], session=None):
-        dbconnector = DBConnector()
-        with dbconnector.engine.connect() as con:
-            params = { 'status' : status}
-            
-            query = text("""SELECT fd.fileName, fd.documentType, 
-                            fd.documentFiscalYearFocus AS fa_file_data_documentFiscalYearFocus, 
-                            fd.documentFiscalPeriodFocus AS fa_file_data_documentFiscalPeriodFocus, 
-                            fd.status AS fa_file_data_status 
-                        from fa_file_data fd
-                        inner join (select f.fileDataOID, f.companyOID
-                            from fa_fact f
-                            group by f.fileDataOID, f.companyOID) as b on b.fileDataOID = fd.oid
-                        inner join fa_company c on c.oid = b.companyOID 
-                        WHERE fd.status NOT IN ('PENDING')""")
-            rs = con.execute(query, params)
-            return rs 
-        
-    @staticmethod   
-    def getFileDataList3(filename='', ticker='', session=None):
+    def getFileDataList3(self, filename='', ticker='', session=None):
         try:
             dbconnector = DBConnector()
             if (session is None): 
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
             .join(FileData.company)\
-            .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.status, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
+            .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.factStatus, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Company.ticker == ticker, ticker != '')))
             objectResult = query.all()
@@ -68,33 +34,7 @@ class FileDataDao():
         except NoResultFound:
             return None
         
-    def getFileDataListWithoutConcept(self, ticker, customConceptOID, session=None):
-        try:
-            dbconnector = DBConnector()
-            fd2 = []
-            with dbconnector.engine.connect() as con:
-                params = { 'ticker' : ticker,
-                           'customConceptOID' : customConceptOID}
-                
-                query = text("""select fd.OID as fileDataOID, fd.documentPeriodEndDate
-                                    from fa_file_data fd
-                                        join fa_company comp on comp.oid = fd.companyOID
-                                    where comp.ticker = :ticker and
-                                        fd.OID not in (select fd.OID
-                                            from fa_custom_fact_value cfv 
-                                                join fa_custom_fact cf on cfv.customFactOID = cf.OID 
-                                                join fa_file_data fd on fd.OID = cfv.fileDataOID
-                                                join fa_company comp on comp.oid = fd.companyOID
-                                            where comp.ticker = :ticker
-                                                and cf.customConceptOID = :customConceptOID)""")
-                rs = con.execute(query, params)
-                for fd in rs:
-                    fd2.append(fd.fileDataOID)
-            return fd2 
-        except NoResultFound:
-            return None
-    
-    def addOrModifyFileData(self, status=None, fileStatus=None, entityStatus=None, priceStatus=None, expressionStatus=None, copyStatus=None, calculateStatus=None, filename=None, externalSession=None, errorMessage=None, errorKey=None, fileData=None):
+    def addOrModifyFileData(self, factStatus=None, fileStatus=None, entityStatus=None, priceStatus=None, expressionStatus=None, copyStatus=None, calculateStatus=None, filename=None, externalSession=None, errorMessage=None, errorKey=None, fileData=None):
         try:
             if (externalSession is None):
                 session = DBConnector().getNewSession()
@@ -105,8 +45,8 @@ class FileDataDao():
             if (fileData is None):
                 fileData = FileData()
                 fileData.fileName = filename
-            if (status is not None):
-                fileData.status = status
+            if (factStatus is not None):
+                fileData.factStatus = factStatus
             if (entityStatus is not None):
                 fileData.entityStatus = entityStatus
             if (priceStatus is not None):
@@ -166,6 +106,19 @@ class FileDataDao():
             .filter(and_(getattr(FileData, statusAttr) == statusValue, getattr(FileData, statusAttr2) == statusValue2, 
                          or_(ticker == '', Company.ticker == ticker), or_(errorMessage2 == '', ErrorMessage.errorMessage.like(errorMessage2)), 
                          or_(listed == '', Company.listed == listed)))\
+            .with_entities(FileData.fileName)\
+            .limit(limit)
+        objectResult = query.all()
+        return objectResult
+    
+    def getFileData4(self, statusAttr, statusValue, statusAttr2, statusValue2, session=None, limit=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(FileData)\
+            .order_by(FileData.documentPeriodEndDate)\
+            .filter(and_(getattr(FileData, statusAttr) == statusValue, getattr(FileData, statusAttr2) == statusValue2))\
+            .with_entities(FileData.fileName)\
             .limit(limit)
         objectResult = query.all()
         return objectResult
@@ -197,19 +150,19 @@ class FileDataDao():
     def getStatusCount2(self):
         session = DBConnector().getNewSession()
         query = text("""
-                SELECT fileStatus, if(listed=1,'LISTED','NOT_LISTED') as companyStatus, entityStatus, priceStatus, status, count(*) as values_ 
+                SELECT fileStatus, if(listed=1,'LISTED','NOT_LISTED') as companyStatus, entityStatus, priceStatus, factStatus, count(*) as values_ 
                     FROM fa_file_data fd
                         join fa_company c on c.oid = fd.companyOID
-                    group by fileStatus, listed, entityStatus, priceStatus, status""")
+                    group by fileStatus, listed, entityStatus, priceStatus, factStatus""")
         return session.execute(query, '')
     
     def getStatusCount3(self):
         session = DBConnector().getNewSession()
         query = text("""
-                SELECT status, copyStatus, calculateStatus, expressionStatus, count(*) as values_ 
+                SELECT factStatus, copyStatus, calculateStatus, expressionStatus, count(*) as values_ 
                     FROM fa_file_data fd
                         join fa_company c on c.oid = fd.companyOID
                     where c.listed = 1
-                    group by priceStatus, copyStatus, calculateStatus, expressionStatus""")
+                    group by factStatus, copyStatus, calculateStatus, expressionStatus""")
         return session.execute(query, '')
         

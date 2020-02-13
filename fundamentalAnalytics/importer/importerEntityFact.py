@@ -18,10 +18,10 @@ from valueobject.constant import Constant
 
 class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
     
-    EXPLICIT_MEMBER_ALLOWED = ['CommonClassAMember', 'CommonStockMember']
+    EXPLICIT_MEMBER_ALLOWED = ['CommonClassAMember', 'CommonStockMember', 'CapitalUnitClassAMember']
 
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'status', 'entityStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'fileStatus', 'entityStatus')
         self.processCache = None
         self.conceptName = 'EntityCommonStockSharesOutstanding'
             

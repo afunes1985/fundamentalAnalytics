@@ -1,21 +1,2 @@
-Error al importar calculate
-Traceback (most recent call last):
-  File "C:\Users\afunes\git\fundamentalAnalytics\fundamentalAnalytics\importer\abstractImporter.py", line 46, in doImport
-    persistentList = self.getPersistentList(voList)
-  File "C:\Users\afunes\git\fundamentalAnalytics\fundamentalAnalytics\importer\abstractImporter.py", line 111, in getPersistentList
-    persistentList.append(self.getPersistent(vo))
-  File "C:\Users\afunes\git\fundamentalAnalytics\fundamentalAnalytics\importer\importerCalculate.py", line 31, in getPersistent
-    customConcept=cfvVO.customConcept,  endDate=cfvVO.endDate, session=self.session)
-  File "C:\Users\afunes\git\fundamentalAnalytics\fundamentalAnalytics\engine\customFactEngine.py", line 51, in getNewCustomFactValue
-    customFactValue.period = PeriodEngine().getOrCreatePeriod('QTD', endDate, session)
-  File "C:\Users\afunes\git\fundamentalAnalytics\fundamentalAnalytics\engine\periodEngine.py", line 15, in getOrCreatePeriod
-    period = GenericDao().getOneResult(Period, and_(Period.endDate == endDate, Period.startDate.is_(None)), session, raiseNoResultFound = False)
-  File "C:\Users\afunes\git\fundamentalAnalytics\fundamentalAnalytics\dao\dao.py", line 39, in getOneResult
-    .filter(condition)\
-  File "C:\Users\afunes\AppData\Local\Programs\Python\Python37-32\lib\site-packages\sqlalchemy\orm\query.py", line 3284, in one
-    "Multiple rows were found for one()"
-sqlalchemy.orm.exc.MultipleResultsFound: Multiple rows were found for one()
-
-
 
 FK companyOID to file_data
