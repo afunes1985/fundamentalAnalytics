@@ -122,6 +122,19 @@ class FileDataDao():
             .limit(limit)
         objectResult = query.all()
         return objectResult
+
+    def getFileData5(self, statusAttr, statusValue, session=None, limit=None, errorMessage2 = ''):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(FileData)\
+            .outerjoin(FileData.errorMessageList)\
+            .order_by(FileData.documentPeriodEndDate)\
+            .filter(and_(getattr(FileData, statusAttr) == statusValue, or_(errorMessage2 == '', ErrorMessage.errorMessage.like(errorMessage2 + '%'))))\
+            .with_entities(FileData.fileName)\
+            .limit(limit)
+        objectResult = query.all()
+        return objectResult
     
     def getFileData2(self, statusAttr, statusValue, ticker='', session=None, limit=None, listed = ''):
         dbconnector = DBConnector()

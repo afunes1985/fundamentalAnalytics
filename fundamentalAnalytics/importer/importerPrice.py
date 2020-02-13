@@ -50,9 +50,9 @@ class ImporterPrice(AbstractImporter):
         self.webSession.headers.update({"Accept":"application/json","Authorization":"Bearer XGabnWN7VqBkIuSVvS6QrhwtiQcK"})
         self.webSession.trust_env = False
         priceList = []
-        for i in range(0,5):
+        for i in range(0,30):
             if self.dateToImport is not None:
-                self.dateToImport = self.dateToImport + timedelta(days=(i*-1))
+                self.dateToImport = self.dateToImport + timedelta(days=(-1))
                 if(self.ticker is None):
                     raise Exception("Ticker not found")
                 url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(self.dateToImport).strftime("%Y-%m-%d")+ '&end=' + (self.dateToImport).strftime("%Y-%m-%d")
