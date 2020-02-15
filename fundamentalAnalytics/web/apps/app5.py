@@ -130,11 +130,11 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, pr
         session = DBConnector().getNewSession()
         
         if (factStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='priceStatus', statusValue=priceStatus, statusAttr2='factStatus', statusValue2=factStatus, session=session)
+            fileDataList = FileDataDao().getFileData4(statusAttr='priceStatus', statusValue=priceStatus, statusAttr2='factStatus', statusValue2=factStatus, session=session)
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterFact)
             importerExecutor.execute(fileDataList)
         elif (priceStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='entityStatus', statusValue=entityStatus, statusAttr2='priceStatus', statusValue2=priceStatus, session=session, errorMessage2='')
+            fileDataList = FileDataDao().getFileData4(statusAttr='entityStatus', statusValue=entityStatus, statusAttr2='priceStatus', statusValue2=priceStatus, session=session)
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterPrice)
             importerExecutor.execute(fileDataList)
         elif (entityStatus is not None):
@@ -200,7 +200,7 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
             fileDataList = FileDataDao().getFileData4(statusAttr='calculateStatus', statusValue=calculateStatus, statusAttr2='copyStatus', statusValue2=copyStatus, session=session)
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterCalculate)
             importerExecutor.execute(fileDataList)        
-        if (copyStatus is not None):
+        elif (copyStatus is not None):
             fileDataList = FileDataDao().getFileData3(statusAttr='copyStatus', statusValue=copyStatus, statusAttr2='factStatus', statusValue2=Constant.STATUS_OK, session=session, errorMessage2='')
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterCopy)
             importerExecutor.execute(fileDataList)

@@ -19,55 +19,43 @@ from valueobject.constant import Constant
 
 class ImporterPrice(AbstractImporter):
 
-    def __init__(self, filename, replace, ticker = None, periodOID = None, dateToImport = None, fileDataOID = None):
+    def __init__(self, filename, replace):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_PRICE, filename, replace, 'entityStatus', 'priceStatus', isNullPool=True)
-        self.dateToImport = None
-        if (ticker is None):
-            fileData = FileDataDao().getFileData(filename, self.session)
-            self.ticker = fileData.company.ticker
-        else:
-            self.ticker = ticker
-        if(fileDataOID is None):
-            self.fileDataOID = fileData.OID
-        else:
-            self.fileDataOID = fileDataOID
-        self.periodOID = periodOID
+        self.ticker = self.fileData.company.ticker
 
     def doImport2(self):
 #         try:
-        if(self.periodOID is None):
-            conceptName = 'EntityCommonStockSharesOutstanding'
-            entityFact = EntityFactDao().getEntityFact2(self.fileDataOID, conceptName, self.session)
-            if entityFact is not None:
-                self.periodOID = entityFact.periodOID
-                self.dateToImport = entityFact.period.getKeyDate()
-            else:
-                raise Exception("EntityFact not found")
+        conceptName = 'EntityCommonStockSharesOutstanding'
+        entityFact = EntityFactDao().getEntityFact2(self.fileData.OID, conceptName, self.session)
+        if entityFact is not None:
+            self.periodOID = entityFact.periodOID
+            dateToImportEnd = entityFact.period.getKeyDate()
         else:
-            self.periodOID = self.periodOID
-            self.dateToImport = self.periodOID
+            raise Exception("EntityFact not found")
         self.webSession = requests.Session()
         self.webSession.headers.update({"Accept":"application/json","Authorization":"Bearer XGabnWN7VqBkIuSVvS6QrhwtiQcK"})
         self.webSession.trust_env = False
         priceList = []
-        for i in range(0,30):
-            if self.dateToImport is not None:
-                self.dateToImport = self.dateToImport + timedelta(days=(-1))
-                if(self.ticker is None):
-                    raise Exception("Ticker not found")
-                url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(self.dateToImport).strftime("%Y-%m-%d")+ '&end=' + (self.dateToImport).strftime("%Y-%m-%d")
-                response = self.webSession.get(url, timeout=2)
-                r = response.json()
-                if(r["history"] is not None):
-                    price = Price()
-                    price.fileDataOID = self.fileDataOID
-                    price.periodOID = self.periodOID
+        daysToBack = 60
+        if dateToImportEnd is not None:
+            dateToImportStart = dateToImportEnd + timedelta(days=(daysToBack * -1))
+            if(self.ticker is None):
+                raise Exception("Ticker not found")
+            url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(dateToImportStart).strftime("%Y-%m-%d")+ '&end=' + (dateToImportEnd).strftime("%Y-%m-%d")
+            response = self.webSession.get(url, timeout=2)
+            r = response.json()
+            if(r["history"] is not None and r["history"]["day"] is not None):
+                price = Price()
+                price.fileDataOID = self.fileData.OID
+                price.periodOID = self.periodOID
+                if(isinstance(r["history"]["day"], list)):
+                    price.value =  r["history"]["day"][len(r["history"]["day"])-1]["close"]
+                elif(isinstance(r["history"]["day"], dict)):
                     price.value =  r["history"]["day"]["close"]
-                    if (isinstance(price.value, float)):
-                        priceList.append(price)
-                        break
+                if (isinstance(price.value, float)):
+                    priceList.append(price)
         if len(priceList) == 0:
-            raise Exception("Price not found for " + self.ticker + " " + self.dateToImport.strftime("%Y-%m-%d"))
+            raise Exception("DTB = "+ str(daysToBack) +" - Price not found for " + self.ticker +" Start=" + dateToImportStart.strftime("%Y-%m-%d") + " End=" + dateToImportEnd.strftime("%Y-%m-%d"))
 #         except ReadTimeout:
 #             FileDataDao().addOrModifyFileData(priceStatus = Constant.PRICE_STATUS_TIMEOUT, filename = self.filename, externalSession = self.session)
         return priceList

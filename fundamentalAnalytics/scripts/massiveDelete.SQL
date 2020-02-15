@@ -11,8 +11,8 @@ select a.oid from (SELECT c.oid
 	having sum(efv.value) = 0) as a);
 
 update fa_file_data set factStatus = 'PENDING' where priceStatus != 'OK';
-update fa_file_data set copyStatus = 'PENDING' where priceStatus != 'OK';
-update fa_file_data set calculateStatus = 'PENDING' where copyStatus != 'OK';
+update fa_file_data set copyStatus = 'PENDING' where (factStatus != 'OK' and factStatus != 'NO_DATA');
+update fa_file_data set calculateStatus = 'PENDING' where (copyStatus != 'OK' and copyStatus != 'NO_DATA');
 update fa_file_data set expressionStatus = 'PENDING' where (calculateStatus != 'OK' and calculateStatus != 'NO_DATA');
 
 #update fd where listed = 0
@@ -84,19 +84,6 @@ select fv.OID
 from fa_fact_value fv
 left join fa_fact f on fv.oid = f.factValueOID
 where  f.oid is null)as a);
-
-#delete fa_period orphans
-delete
-from fa_period 
-where oid not in(
-	select fv.periodOID
-	from fa_fact_value fv
-	union 
-	select fcv.periodOID
-	from fa_custom_fact_value fcv
-	union 
-	select ev.periodOID
-	from fa_entity_fact_value ev);
 
 #delete orphans fa_error_message for EXPRESSION_ERROR
 delete from fa_error_message where fileDataOID in(

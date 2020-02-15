@@ -124,6 +124,11 @@ class XMLNotFoundException(Exception):
     fileStatus = Constant.FILE_STATUS_XML_FNF
     def __init__(self, fileName):
         self.fileName = fileName
+        
+class PriceNotFoundException(Exception):
+    priceStatus = Constant.STATUS_NO_DATA
+    def __init__(self, fileName):
+        self.fileName = fileName
            
 def getXMLDictFromGZCache(filename, documentName):
     finalFileName = Constant.CACHE_FOLDER + filename[0: filename.find(".txt")] + "/" + documentName + ".gz"
