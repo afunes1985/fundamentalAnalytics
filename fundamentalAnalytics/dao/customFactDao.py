@@ -17,6 +17,7 @@ from modelClass.customFactValue import CustomFactValue
 from modelClass.customReport import CustomReport
 from modelClass.fileData import FileData
 from modelClass.period import Period
+from modelClass.ticker import Ticker
 
 
 class CustomFactDao():
@@ -40,42 +41,6 @@ class CustomFactDao():
         return returnResult
     
     
-    @staticmethod
-    def getCustomFactValue(ticker, customConceptName, periodType = None, session = None):
-        try:
-            if (session is None): 
-                dbconnector = DBConnector()
-                session = dbconnector.getNewSession()
-            query = session.query(CustomFactValue)\
-                .join(CustomFactValue.customFact)\
-                .join(CustomFact.customConcept)\
-                .join(CustomFactValue.fileData)\
-                .join(FileData.company)\
-                .join(CustomFactValue.period)\
-                .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName.__eq__(customConceptName), Period.type.__eq__(periodType)))
-            objectResult = query.all()
-            return objectResult
-        except NoResultFound:
-            return None
-
-    @staticmethod
-    def getCustomFactValue2(ticker, customConceptName, session = None):
-        try:
-            if (session is None): 
-                dbconnector = DBConnector()
-                session = dbconnector.getNewSession()
-            query = session.query(CustomFactValue)\
-                .join(CustomFactValue.customFact)\
-                .join(CustomFact.customConcept)\
-                .join(CustomFactValue.fileData)\
-                .join(FileData.company)\
-                .join(CustomFactValue.period)\
-                .filter(and_(Company.ticker.__eq__(ticker), CustomConcept.conceptName.__eq__(customConceptName)))
-            objectResult = query.all()
-            return objectResult
-        except NoResultFound:
-            return None
-        
     def getCustomFactValue5(self, fillStrategy = '', ticker = '', session = None):
         try:
             if (session is None): 
@@ -86,7 +51,8 @@ class CustomFactDao():
                 .join(CustomFactValue.fileData)\
                 .join(CustomFact.customConcept)\
                 .join(FileData.company)\
-                .filter(and_(or_(fillStrategy == '', CustomConcept.fillStrategy.__eq__(fillStrategy)), or_(ticker == '', Company.ticker.__eq__(ticker))))\
+                .join(Company.tickerList)\
+                .filter(and_(or_(fillStrategy == '', CustomConcept.fillStrategy.__eq__(fillStrategy)), or_(ticker == '', Ticker.ticker.__eq__(ticker))))\
                 .all()
             return objectResult
         except NoResultFound:
@@ -100,22 +66,6 @@ class CustomFactDao():
             objectResult = session.query(CustomFact)\
                 .filter(and_(CustomFact.customReportOID == customReportOID, CustomFact.customConceptOID == customConceptOID))\
                 .one()
-            return objectResult
-        except NoResultFound:
-            return None
-        
-    def getCustomFactValue3(self, ticker, customConceptName, session = None):
-        try:
-            if (session is None): 
-                dbconnector = DBConnector()
-                session = dbconnector.getNewSession()
-            objectResult = session.query(CustomFactValue)\
-                .join(CustomFactValue.customFact)\
-                .join(CustomFact.customConcept)\
-                .join(CustomFactValue.fileData)\
-                .join(FileData.company)\
-                .filter(and_(Company.ticker == ticker, CustomConcept.conceptName == customConceptName))\
-                .all()
             return objectResult
         except NoResultFound:
             return None

@@ -193,7 +193,7 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
         createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)
         session = DBConnector().getNewSession()
         if (expressionStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='expressionStatus', statusValue=expressionStatus, statusAttr2='calculateStatus', statusValue2=calculateStatus, session=session, errorMessage2='')
+            fileDataList = FileDataDao().getFileData3(statusAttr='expressionStatus', statusValue=expressionStatus, statusAttr2='calculateStatus', statusValue2=calculateStatus, session=session)
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterExpression)
             importerExecutor.execute(fileDataList)
         elif (calculateStatus is not None):
@@ -201,7 +201,7 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterCalculate)
             importerExecutor.execute(fileDataList)        
         elif (copyStatus is not None):
-            fileDataList = FileDataDao().getFileData3(statusAttr='copyStatus', statusValue=copyStatus, statusAttr2='factStatus', statusValue2=Constant.STATUS_OK, session=session, errorMessage2='')
+            fileDataList = FileDataDao().getFileData3(statusAttr='copyStatus', statusValue=copyStatus, statusAttr2='factStatus', statusValue2=Constant.STATUS_OK, session=session)
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterCopy)
             importerExecutor.execute(fileDataList)
     

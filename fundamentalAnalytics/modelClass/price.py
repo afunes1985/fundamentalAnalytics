@@ -17,4 +17,6 @@ class Price(PersistenObject):
     period = relationship("Period", back_populates="priceList")
     fileDataOID = Column(Integer, ForeignKey('fa_file_data.OID'))
     fileData = relationship("FileData", back_populates="priceList")
+    tickerOID = Column(Integer, ForeignKey('fa_ticker.OID'))
+    ticker = relationship("Ticker")
     value = Column(Float(), nullable=False)

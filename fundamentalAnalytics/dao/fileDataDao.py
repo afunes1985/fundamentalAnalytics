@@ -8,12 +8,14 @@ import logging
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.elements import and_
 from sqlalchemy.sql.expression import text, or_
+from sqlalchemy.sql.functions import func
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
 from modelClass.company import Company
 from modelClass.errorMessage import ErrorMessage
 from modelClass.fileData import FileData
+from modelClass.ticker import Ticker
 from valueobject.constant import Constant
 
 
@@ -26,9 +28,10 @@ class FileDataDao():
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
             .join(FileData.company)\
-            .with_entities(Company.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.factStatus, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
+            .join(Company.tickerList)\
+            .with_entities(Ticker.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.factStatus, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
             .order_by(FileData.documentPeriodEndDate)\
-            .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Company.ticker == ticker, ticker != '')))
+            .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Ticker.ticker == ticker, ticker != '')))
             objectResult = query.all()
             return objectResult
         except NoResultFound:
@@ -95,16 +98,16 @@ class FileDataDao():
             rs = con.execute(query)
             return rs 
         
-    def getFileData3(self, statusAttr, statusValue, statusAttr2, statusValue2, ticker='', session=None, limit=None, errorMessage2 = '', listed = ''):
+    def getFileData3(self, statusAttr, statusValue, statusAttr2, statusValue2, ticker='', session=None, limit=None, listed = ''):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
         query = session.query(FileData)\
-            .outerjoin(FileData.company)\
-            .outerjoin(FileData.errorMessageList)\
+            .join(FileData.company)\
+            .join(Company.tickerList)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(and_(getattr(FileData, statusAttr) == statusValue, getattr(FileData, statusAttr2) == statusValue2, 
-                         or_(ticker == '', Company.ticker == ticker), or_(errorMessage2 == '', ErrorMessage.errorMessage.like(errorMessage2)), 
+                         or_(ticker == '', Ticker.ticker == ticker), 
                          or_(listed == '', Company.listed == listed)))\
             .with_entities(FileData.fileName)\
             .limit(limit)
@@ -145,6 +148,28 @@ class FileDataDao():
             .filter(and_(getattr(FileData, statusAttr) == statusValue))\
             .with_entities(FileData.fileName)\
             .limit(limit)
+        objectResult = query.all()
+        return objectResult
+    
+    def getFileData7(self, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+#         query = text("""
+#                 select max(fd.fileName) as fileName
+#                 from fa_file_data fd 
+#                     join fa_company c on fd.companyOID = c.oid
+#                 where c.ticker is null
+#                 group by c.oid""")
+#         resultList = []
+#         result = session.execute(query, '')
+#         for row in result:
+#             resultList.append(row[0])
+#             
+        query = session.query(func.max(FileData.fileName).label("fileName"))\
+            .join(FileData.company)\
+            .filter(Company.ticker.is_(None))\
+            .group_by(Company.OID)
         objectResult = query.all()
         return objectResult
     

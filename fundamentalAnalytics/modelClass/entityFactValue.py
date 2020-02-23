@@ -6,8 +6,10 @@ Created on 20 ago. 2018
 from sqlalchemy import Column, Integer, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy.sql.sqltypes import String
 
 from modelClass import PersistenObject
+
 
 class EntityFactValue(PersistenObject):
     __tablename__ = 'fa_entity_fact_value'
@@ -18,3 +20,4 @@ class EntityFactValue(PersistenObject):
     entityFactOID = Column(Integer, ForeignKey('fa_entity_fact.OID'))
     entityFact = relationship("EntityFact", back_populates="entityFactValueList")
     value = Column(Float(), nullable=False)
+    explicitMember = Column(String(100), nullable=False)

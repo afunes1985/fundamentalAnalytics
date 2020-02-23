@@ -12,9 +12,10 @@ from dataImport.importerExecutor import ImporterExecutor
 from importer.importerPrice import ImporterPrice
 
 
-#logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.ERROR)
 Initializer()
 session = DBConnector().getNewSession()
-fileDataList = FileDataDao().getFileData5( statusAttr='priceStatus', statusValue='ERROR', session=session, errorMessage2='Price not found for')
+#fileDataList = FileDataDao().getFileData5( statusAttr='priceStatus', statusValue='NO_DATA', session=session, errorMessage2='')
+fileDataList = FileDataDao().getFileData6( statusAttr='fileName', statusValue='edgar/data/1000229/0001000229-18-000071.txt', session=session)
 importerExecutor = ImporterExecutor(threadNumber=5, maxProcessInQueue=5, replace=True, isSequential=False, importerClass=ImporterPrice)
 importerExecutor.execute(fileDataList)

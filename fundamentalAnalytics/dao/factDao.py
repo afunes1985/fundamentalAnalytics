@@ -38,9 +38,10 @@ class FactDao():
                                     left join fa_file_data fileData on fact.fileDataOID = fileData.OID
                                     left join fa_fact_value factValue on factValue.factOID = fact.OID
                                     left join fa_period period on factValue.periodOID = period.OID
+                                    left join fa_ticker t on t.companyOID = company.OID
                                 where concept.conceptName = :conceptName
                                     and (company.CIK = :CIK or :CIK is null)
-                                    and (company.ticker = :ticker or :ticker is null)
+                                    and (t.ticker = :ticker or :ticker is null)
                                     and (period.type= :periodType or :periodType is null or period.type is null)
                                 order by IFNULL(period.endDate, period.instant)""")
             rs = con.execute(query, params)

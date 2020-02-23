@@ -90,18 +90,49 @@ class AbstractFactImporter(object):
         insDict = getXMLDictFromGZCache(filename, Constant.DOCUMENT_INS)
         insDict = self.getElementFromElement(Constant.XBRL_ROOT, insDict)
         processCache[Constant.DOCUMENT_INS] = insDict
+        #Entity
+        entityDict = self.getEntityFromContextDict(insDict, session)
+        processCache[Constant.ENTITY_DICT] = entityDict 
         return processCache    
     
+    def initProcessCache3(self, filename, session):
+        processCache = {}
+        #XML INSTANCE
+        insDict = getXMLDictFromGZCache(filename, Constant.DOCUMENT_INS)
+        insDict = self.getElementFromElement(Constant.XBRL_ROOT, insDict)
+        processCache[Constant.DOCUMENT_INS] = insDict
+        #Entity
+        entityDict = self.getEntityFromContextDict(insDict, session)
+        processCache[Constant.ENTITY_DICT] = entityDict 
+        #PERIOD
+        periodDict = self.getPeriodDict(insDict, session)
+        processCache[Constant.PERIOD_DICT] = periodDict 
+        return processCache
+    
+    
     def fillCompanyData(self, filename, session):
-        CIK = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityCentralIndexKey'], self.processCache[Constant.DOCUMENT_INS], False), False)
-        if (CIK is None):
-            company = CompanyEngine().getCompanyWithJustFilename(filename, session)
-        else:
-            entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], self.processCache[Constant.DOCUMENT_INS], False), False) 
-            ticker = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:TradingSymbol'], self.processCache[Constant.DOCUMENT_INS], False), False)
-            company = CompanyEngine().getOrCreateCompany(CIK, ticker, entityRegistrantName, session)
-            noTradingSymbolFlag = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:NoTradingSymbolFlag'], self.processCache[Constant.DOCUMENT_INS], False), False)
-            CompanyEngine().updateListedCompany(company, noTradingSymbolFlag, session)
+        company = CompanyEngine().getCompanyWithJustFilename(filename, session)
+        #ENTITY REGISTRANT NAME
+        entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], self.processCache[Constant.DOCUMENT_INS], False), False) 
+        if (entityRegistrantName is not None):
+            company.entityRegistrantName = entityRegistrantName
+#         #TICKER
+#         ticker = self.getValueFromElement(['#text'], self.getElementFromElement(Constant.DEI_TRADING_SYMBOL, self.processCache[Constant.DOCUMENT_INS], False), False)
+#         if (ticker is None):
+#             tradindSymbolList = self.getListFromElement(Constant.DEI_TRADING_SYMBOL, self.processCache[Constant.DOCUMENT_INS], False)
+#             for ts in tradindSymbolList:
+#                 contextRef = self.getValueFromElement(['@contextRef'], ts, False)
+#                 entity = self.getElementFromElement([contextRef], self.processCache[Constant.ENTITY_DICT], False)
+#                 segment = self.getElementFromElement(Constant.XBRL_SEGMENT, entity, False)
+#                 segmentValue = self.getValueFromElement(['#text'], self.getElementFromElement(Constant.XBRL_EXPLICIT_MEMBER, segment, False), False) 
+#                 if (segmentValue == 'us-gaap:CommonStockMember'):
+#                     ticker = self.getValueFromElement(['#text'], ts, False)
+#                     break
+#         if (ticker is not None):
+#             company.ticker = ticker
+        #NO TRADING SYMBOL
+        noTradingSymbolFlag = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:NoTradingSymbolFlag'], self.processCache[Constant.DOCUMENT_INS], False), False)
+        CompanyEngine().updateListedCompany(company, noTradingSymbolFlag, session)
         return company
         
     
@@ -231,7 +262,14 @@ class AbstractFactImporter(object):
                     period =  PeriodEngine().getOrCreatePeriod3(instant, session)
                     periodDict[item['@id']] = period
         return periodDict
-    
+
+    def getEntityFromContextDict(self, xmlDictRoot, session): 
+        entityDict = {}
+        for item in self.getListFromElement(Constant.XBRL_CONTEXT, xmlDictRoot):
+            entityElement = self.getElementFromElement(Constant.XBRL_ENTITY, item)
+            #periodElement = self.getElementFromElement(Constant.XBRL_PERIOD, item)
+            entityDict[item['@id']] = entityElement
+        return entityDict    
     
     def isReportAllowed(self, reportRole):
         keyList = ["INCOME", "balance", "CASH", "CONSOLIDATED", "OPERATION"]

@@ -60,6 +60,7 @@ class AbstractImporter(object):
         except Exception as e:
             self.logger.info("ERROR " + self.filename)
             self.logger.exception(e)
+            #self.logger.error(str(e))
             self.session.rollback()
             self.addOrModifyFDError2(e)
         finally:

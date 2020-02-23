@@ -30,6 +30,7 @@ class ImporterCompany(AbstractImporter, AbstractFactImporter):
         except Exception as e:
             company = CompanyEngine().getCompanyWithJustFilename(self.filename, self.session)
         self.fileData.company = company
+        self.session.add(company)
         Dao().addObject(objectToAdd = self.fileData, session = self.session, doCommit = True) 
     
     def getPersistentList(self, voList):

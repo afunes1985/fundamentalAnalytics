@@ -31,10 +31,12 @@ class Constant:
     DOCUMENT_PRE = "EX-101.PRE"
     
     PERIOD_DICT = "PERIOD_DICT"
+    ENTITY_DICT = "ENTITY_DICT"
     
     DOCUMENT_FISCAL_PERIOD_FOCUS = ['dei:DocumentFiscalPeriodFocus']
     DOCUMENT_FISCAL_YEAR_FOCUS =['dei:DocumentFiscalYearFocus']
     DOCUMENT_PERIOD_END_DATE =['dei:DocumentPeriodEndDate']
+    DEI_TRADING_SYMBOL = ['dei:TradingSymbol']
     XBRL_ROOT =['xbrli:xbrl','xbrl']
     XBRL_CONTEXT = ['xbrli:context','context']
     XBRL_PERIOD =['xbrli:period','period']
@@ -43,7 +45,8 @@ class Constant:
     XBRL_INSTANT =['xbrli:instant','instant']
     XBRL_ENTITY =['xbrli:entity','entity']
     XBRL_SEGMENT =['xbrli:segment','segment']
-    XBRL_EXPLICIT_MEMBER = ['xbrldi:explicitMember']
+    XBRL_EXPLICIT_MEMBER = ['xbrldi:explicitMember', 'explicitMember']
+    XBRL_SEGMENT = ['xbrli:segment', 'segment' ]
     LINKBASE =['link:linkbase','linkbase']
     PRESENTATON_LINK =["link:presentationLink","presentationLink"]
     LOC =["link:loc", "loc"]

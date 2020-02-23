@@ -132,12 +132,14 @@ class Dao():
                             join fa_period p on p.oid = efv.periodOID
                             join fa_file_Data fd on fd.oid = efv.fileDataOID
                             join fa_company c on c.oid = fd.companyOID
-                        where c.ticker = :ticker
+                            join fa_ticker t on t.companyOID = c.OID
+                        where t.ticker = :ticker
                         union
                         select 'PRICE', pri.value, p.instant as endDate
                         from fa_price pri
                             join fa_period p on p.oid = pri.periodOID
                             join fa_file_Data fd on fd.oid = pri.fileDataOID
                             join fa_company c on c.oid = fd.companyOID
-                        where c.ticker = :ticker""")
+                            join fa_ticker t on t.companyOID = c.OID
+                        where t.ticker = :ticker""")
         return session.execute(query, params)

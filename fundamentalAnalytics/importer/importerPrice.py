@@ -21,7 +21,6 @@ class ImporterPrice(AbstractImporter):
 
     def __init__(self, filename, replace):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_PRICE, filename, replace, 'entityStatus', 'priceStatus', isNullPool=True)
-        self.ticker = self.fileData.company.ticker
 
     def doImport2(self):
 #         try:
@@ -38,24 +37,26 @@ class ImporterPrice(AbstractImporter):
         priceList = []
         daysToBack = 60
         if dateToImportEnd is not None:
-            dateToImportStart = dateToImportEnd + timedelta(days=(daysToBack * -1))
-            if(self.ticker is None):
-                raise Exception("Ticker not found")
-            url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + self.ticker +'&interval=daily&start='+(dateToImportStart).strftime("%Y-%m-%d")+ '&end=' + (dateToImportEnd).strftime("%Y-%m-%d")
-            response = self.webSession.get(url, timeout=2)
-            r = response.json()
-            if(r["history"] is not None and r["history"]["day"] is not None):
-                price = Price()
-                price.fileDataOID = self.fileData.OID
-                price.periodOID = self.periodOID
-                if(isinstance(r["history"]["day"], list)):
-                    price.value =  r["history"]["day"][len(r["history"]["day"])-1]["close"]
-                elif(isinstance(r["history"]["day"], dict)):
-                    price.value =  r["history"]["day"]["close"]
-                if (isinstance(price.value, float)):
-                    priceList.append(price)
-        if len(priceList) == 0:
-            raise Exception("DTB = "+ str(daysToBack) +" - Price not found for " + self.ticker +" Start=" + dateToImportStart.strftime("%Y-%m-%d") + " End=" + dateToImportEnd.strftime("%Y-%m-%d"))
+            for ticker in self.fileData.company.tickerList:
+                dateToImportStart = dateToImportEnd + timedelta(days=(daysToBack * -1))
+                if(ticker.ticker is None):
+                    raise Exception("Ticker not found")
+                url = 'https://sandbox.tradier.com/v1/markets/history?symbol=' + ticker.ticker +'&interval=daily&start='+(dateToImportStart).strftime("%Y-%m-%d")+ '&end=' + (dateToImportEnd).strftime("%Y-%m-%d")
+                response = self.webSession.get(url, timeout=2)
+                r = response.json()
+                if(r["history"] is not None and r["history"]["day"] is not None):
+                    price = Price()
+                    price.fileDataOID = self.fileData.OID
+                    price.periodOID = self.periodOID
+                    price.ticker = ticker
+                    if(isinstance(r["history"]["day"], list)):
+                        price.value =  r["history"]["day"][len(r["history"]["day"])-1]["close"]
+                    elif(isinstance(r["history"]["day"], dict)):
+                        price.value =  r["history"]["day"]["close"]
+                    if (isinstance(price.value, float)):
+                        priceList.append(price)
+                if len(priceList) == 0:
+                    raise Exception("DTB = "+ str(daysToBack) +" - Price not found for " + ticker.ticker +" Start=" + dateToImportStart.strftime("%Y-%m-%d") + " End=" + dateToImportEnd.strftime("%Y-%m-%d"))
 #         except ReadTimeout:
 #             FileDataDao().addOrModifyFileData(priceStatus = Constant.PRICE_STATUS_TIMEOUT, filename = self.filename, externalSession = self.session)
         return priceList

@@ -9,13 +9,14 @@ from sqlalchemy.sql.elements import and_, or_
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
+from engine.conceptEngine import ConceptEngine
 from modelClass.company import Company
 from modelClass.concept import Concept
 from modelClass.entityFact import EntityFact
 from modelClass.entityFactValue import EntityFactValue
 from modelClass.fileData import FileData
 from modelClass.period import Period
-from engine.conceptEngine import ConceptEngine
+from modelClass.ticker import Ticker
 
 
 class EntityFactDao():
@@ -57,23 +58,6 @@ class EntityFactDao():
     def getEntityFact(self, conceptOID, reportOID, order_, session):
         return GenericDao().getOneResult(EntityFact, and_(EntityFact.conceptOID == conceptOID, EntityFact.reportOID == reportOID, EntityFact.order_ == order_), session, raiseNoResultFound=False)
         
-    def getEntityFactList(self, ticker, conceptName, priceStatus, session):
-        if (session is None): 
-            dbconnector = DBConnector()
-            session = dbconnector.getNewSession()
-        query = session.query(EntityFactValue)\
-            .join(EntityFactValue.entityFact)\
-            .join(EntityFact.concept)\
-            .join(EntityFactValue.fileData)\
-            .join(EntityFactValue.period)\
-            .join(FileData.company)\
-            .filter(and_(Concept.conceptName.__eq__(conceptName), FileData.priceStatus == priceStatus, or_(ticker == "", Company.ticker == ticker), Company.ticker.isnot(None)))\
-            .order_by(Period.endDate)\
-            .with_entities(Company.ticker, FileData.fileName, EntityFactValue.periodOID, Period.instant, EntityFactValue.fileDataOID)\
-            .distinct()
-        objectResult = query.all()
-        return objectResult
-        
     def getEntityFactValueList(self, fileDataOID, conceptOID, session):
         if (session is None): 
             dbconnector = DBConnector()
@@ -84,20 +68,6 @@ class EntityFactDao():
         objectResult = query.all()
         return objectResult
         
-    def getEntityFactList2(self, ticker, session):
-        if (session is None): 
-            dbconnector = DBConnector()
-            session = dbconnector.getNewSession()
-        query = session.query(EntityFactValue)\
-            .join(EntityFactValue.entityFact)\
-            .join(EntityFact.concept)\
-            .join(EntityFactValue.fileData)\
-            .join(EntityFactValue.period)\
-            .join(FileData.company)\
-            .filter(or_(ticker == "", Company.ticker == ticker))
-        objectResult = query.all()
-        return objectResult
-    
     def deleteEFVByFD(self, fileDataOID, session=None):
         if (session is None): 
             dbconnector = DBConnector()
