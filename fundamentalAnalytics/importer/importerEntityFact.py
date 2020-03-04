@@ -8,21 +8,20 @@ from nt import listdir
 import pandas
 import xmltodict
 
-from dao.dao import Dao
+from dao.dao import Dao, GenericDao
 from dao.entityFactDao import EntityFactDao
 from engine.conceptEngine import ConceptEngine
 from engine.periodEngine import PeriodEngine
 from importer.abstractFactImporter import AbstractFactImporter
 from importer.abstractImporter import AbstractImporter
 from modelClass.entityFactValue import EntityFactValue
+from modelClass.explicitMember import ExplicitMember
 from tools.tools import  getXSDFileFromCache
 from valueobject.constant import Constant
 
 
 class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
     
-    EXPLICIT_MEMBER_ALLOWED = ['CommonClassAMember', 'CommonStockMember', 'CapitalUnitClassAMember']
-
     def __init__(self, filename, replace):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'fileStatus', 'entityStatus')
         self.processCache = None
@@ -50,7 +49,10 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
                 else:
                     efv.value = conceptValue
                 efv.period = self.processCache[Constant.PERIOD_DICT][contextRef]
-                efv.explicitMember = explicitMemberValue
+                if(explicitMemberValue is None):
+                    efv.explicitMember = GenericDao().getOneResult(ExplicitMember, (ExplicitMember.explicitMemberValue == 'NO_EXPLICIT_MEMBER'), self.session, raiseNoResultFound = True)
+                else:
+                    efv.explicitMember = GenericDao().getOneResult(ExplicitMember, (ExplicitMember.explicitMemberValue == explicitMemberValue), self.session, raiseNoResultFound = True)
                 efvList.append(efv)
         Dao().addObjectList(objectList = efvList, session = self.session)
         return efvList

@@ -20,4 +20,5 @@ class EntityFactValue(PersistenObject):
     entityFactOID = Column(Integer, ForeignKey('fa_entity_fact.OID'))
     entityFact = relationship("EntityFact", back_populates="entityFactValueList")
     value = Column(Float(), nullable=False)
-    explicitMember = Column(String(100), nullable=False)
+    explicitMemberOID = Column(Integer, ForeignKey('fa_explicit_member.OID'))
+    explicitMember = relationship("ExplicitMember")

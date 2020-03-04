@@ -17,6 +17,7 @@ from modelClass.entityFactValue import EntityFactValue
 from modelClass.fileData import FileData
 from modelClass.period import Period
 from modelClass.ticker import Ticker
+from modelClass.explicitMember import ExplicitMember
 
 
 class EntityFactDao():
@@ -75,17 +76,17 @@ class EntityFactDao():
         session.query(EntityFactValue).filter(and_(EntityFactValue.fileDataOID == fileDataOID)).delete()
     
     
-    def getEntityFact2(self, fileDataOID, conceptName, session):
+    def getFirstEntityFact(self, fileDataOID, conceptName, session):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
         try:
             query = session.query(EntityFactValue)\
-                .join(EntityFactValue.fileData)\
+                .join(EntityFactValue.explicitMember)\
                 .filter(and_(Concept.conceptName.__eq__(conceptName), 
-                             EntityFactValue.fileDataOID == fileDataOID),
-                             EntityFactValue.explicitMember.is_(None))
-            objectResult = query.one()
+                             EntityFactValue.fileDataOID == fileDataOID))\
+                .order_by(ExplicitMember.order_)
+            objectResult = query.first()
         except NoResultFound:
             objectResult = None
         return objectResult

@@ -11,7 +11,7 @@ from base.dbConnector import DBConnector
 from dao.dao import Dao
 from dao.fileDataDao import FileDataDao
 from tools.tools import FileNotFoundException, XSDNotFoundException, createLog, \
-    XMLNotFoundException
+    XMLNotFoundException, CustomException
 from valueobject.constant import Constant
 
 
@@ -50,17 +50,14 @@ class AbstractImporter(object):
                     self.logger.info("***********FINISH AT " + str(datetime.now() - time1) + " " + self.filename)
                 else:
                     self.logger.info("***********FINISH AT " + str(datetime.now() - time1) + " " + self.filename + " objects added " + str(len(voList)))
-        except (FileNotFoundException, XSDNotFoundException, XMLNotFoundException) as e:
-            self.logger.debug("ERROR " + str(e))
+        except (CustomException) as e:
+            self.logger.error(self.filename + " " + str(e))
             self.addOrModifyFDError1(e)
         except MemoryError as e:
-            self.logger.info("ERROR " + self.filename)
-            self.logger.exception(e)
+            self.logger.error(self.filename, str(e))
             FileDataDao().addOrModifyFileData(fileStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage='MemoryError', errorKey=self.errorKey)
         except Exception as e:
-            self.logger.info("ERROR " + self.filename)
-            # self.logger.exception(e)
-            self.logger.error(str(e))
+            self.logger.error(self.filename + " " + str(e))
             self.session.rollback()
             self.addOrModifyFDError2(e)
         finally:

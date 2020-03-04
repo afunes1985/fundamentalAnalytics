@@ -16,6 +16,7 @@ from dao.priceDao import PriceDao
 from importer.abstractImporter import AbstractImporter
 from modelClass.price import Price
 from valueobject.constant import Constant
+from tools.tools import EntityFactNotFoundException
 
 
 class ImporterPrice(AbstractImporter):
@@ -26,17 +27,17 @@ class ImporterPrice(AbstractImporter):
     def doImport2(self):
 #         try:
         conceptName = 'EntityCommonStockSharesOutstanding'
-        entityFact = EntityFactDao().getEntityFact2(self.fileData.OID, conceptName, self.session)
-        if entityFact is not None:
+        entityFact = EntityFactDao().getFirstEntityFact(self.fileData.OID, conceptName, self.session)
+        if entityFact is not None and entityFact.explicitMember.order_ != 99:
             self.periodOID = entityFact.periodOID
             dateToImportEnd = entityFact.period.getKeyDate()
         else:
-            raise Exception("EntityFact not found")
+            raise EntityFactNotFoundException("EntityFact not found " + entityFact.explicitMember.explicitMemberValue)
         self.webSession = requests.Session()
         self.webSession.headers.update({"Accept":"application/json","Authorization":"Bearer XGabnWN7VqBkIuSVvS6QrhwtiQcK"})
         self.webSession.trust_env = False
         priceList = []
-        daysToBack = 60
+        daysToBack = 0
         if dateToImportEnd is not None:
             for ticker in self.fileData.company.tickerList:
                 dateToImportStart = dateToImportEnd + timedelta(days=(daysToBack * -1))

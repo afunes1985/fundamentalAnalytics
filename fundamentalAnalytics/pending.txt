@@ -1,2 +1,3 @@
-
+arreglar filtro app2, un query filename y otro query ticker
 FK companyOID to file_data
+reprocesar todos los precios!!!

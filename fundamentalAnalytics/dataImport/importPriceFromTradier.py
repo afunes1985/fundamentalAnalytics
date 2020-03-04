@@ -11,6 +11,6 @@ from importer.importerPrice import ImporterPrice
 Initializer()
 session = DBConnector().getNewSession()
 #fileDataList = FileDataDao().getFileData4( statusAttr='priceStatus', statusValue='ERROR', statusAttr2='entityStatus', statusValue2='OK', session=session)
-fileDataList = FileDataDao().getFileData5( statusAttr='priceStatus', statusValue='ERROR', session=session, errorMessage2='%Multi%')
+fileDataList = FileDataDao().getFileData5( statusAttr='priceStatus', statusValue='ERROR', session=session, errorMessage2='%Entity%')
 importerExecutor = ImporterExecutor(threadNumber=3, maxProcessInQueue=5, replace=True, isSequential=False, importerClass=ImporterPrice)
 importerExecutor.execute(fileDataList)

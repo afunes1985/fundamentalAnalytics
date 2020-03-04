@@ -29,7 +29,7 @@ class FileDataDao():
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
             .join(FileData.company)\
-            .outerjoin(Company.tickerList)\
+            .join(Company.tickerList)\
             .with_entities(Company.CIK, Ticker.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.factStatus, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Ticker.ticker == ticker, ticker != '')))

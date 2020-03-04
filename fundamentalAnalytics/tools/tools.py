@@ -107,28 +107,24 @@ class LoggingException(Exception):
 
     def log(self):
         logging.getLogger(self.loggerName).debug(self.message)
-        
-class FileNotFoundException(Exception):
-    fileStatus = "FNF"
-    status = "FNF"
-    def __init__(self, fileName):
-        self.fileName = fileName
+ 
+class CustomException(Exception):
+    pass 
 
-class XSDNotFoundException(Exception):
-    fileStatus = Constant.STATUS_XSD_FNF
+class FileNotFoundException(CustomException):
+    status = "FNF"
+
+class XSDNotFoundException(CustomException):
     status = Constant.STATUS_XSD_FNF
-    def __init__(self, fileName):
-        self.fileName = fileName
         
-class XMLNotFoundException(Exception):
-    fileStatus = Constant.FILE_STATUS_XML_FNF
-    def __init__(self, fileName):
-        self.fileName = fileName
+class XMLNotFoundException(CustomException):
+    status = Constant.FILE_STATUS_XML_FNF
         
-class PriceNotFoundException(Exception):
-    priceStatus = Constant.STATUS_NO_DATA
-    def __init__(self, fileName):
-        self.fileName = fileName
+class PriceNotFoundException(CustomException):
+    status = Constant.STATUS_NO_DATA
+    
+class EntityFactNotFoundException(CustomException):
+    status = Constant.STATUS_ERROR
            
 def getXMLDictFromGZCache(filename, documentName):
     finalFileName = Constant.CACHE_FOLDER + filename[0: filename.find(".txt")] + "/" + documentName + ".gz"
