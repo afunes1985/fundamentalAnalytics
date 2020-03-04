@@ -20,12 +20,6 @@ class ImporterCopy(AbstractImporter):
     def doImport2(self):
         return CustomFactEngine().copyToCustomFact2(fileData=self.fileData, customConceptList=self.customConceptList, session=self.session)
             
-    def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(copyStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey, externalSession=self.session)         
-       
-    def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(copyStatus=Constant.STATUS_INIT, filename=self.filename, errorKey=self.errorKey, externalSession=self.session)  
-    
     def getPersistent(self, cfvVO):
         customFactValue = CustomFactEngine().getNewCustomFactValue(value=cfvVO.value, origin=cfvVO.origin, fileDataOID=cfvVO.fileDataOID,
                                     customConcept=cfvVO.customConcept, endDate=cfvVO.endDate, periodOID=cfvVO.periodOID, session=self.session)

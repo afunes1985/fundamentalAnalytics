@@ -9,6 +9,7 @@ from sqlalchemy.sql.expression import and_, text
 from base.dbConnector import DBConnector
 from dao.dao import GenericDao
 from modelClass.company import Company
+from modelClass.ticker import Ticker
 
 
 class CompanyDao():
@@ -25,3 +26,6 @@ class CompanyDao():
                                 order by t.ticker""")
             rs = con.execute(query, [])
             return rs 
+    
+    def getTicker(self, ticker, session):
+        return GenericDao().getOneResult(Ticker,Ticker.ticker.__eq__(ticker), session, raiseNoResultFound = False)

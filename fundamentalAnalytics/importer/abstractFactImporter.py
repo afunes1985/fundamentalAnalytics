@@ -20,6 +20,7 @@ from tools.tools import getXMLDictFromGZCache, XSDNotFoundException, \
     getXSDFileFromCache
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
+from dao.companyDao import CompanyDao
 
 
 class AbstractFactImporter(object):
@@ -110,31 +111,38 @@ class AbstractFactImporter(object):
         return processCache
     
     
-    def fillCompanyData(self, filename, session):
-        company = CompanyEngine().getCompanyWithJustFilename(filename, session)
+    def fillCompanyData(self, session):
+        #CIK
+        entityCentralIndexKey = self.getConceptValue(Constant.DEI_CIK, noSegment = True)
         #ENTITY REGISTRANT NAME
         entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], self.processCache[Constant.DOCUMENT_INS], False), False) 
-        if (entityRegistrantName is not None):
-            company.entityRegistrantName = entityRegistrantName
-#         #TICKER
-#         ticker = self.getValueFromElement(['#text'], self.getElementFromElement(Constant.DEI_TRADING_SYMBOL, self.processCache[Constant.DOCUMENT_INS], False), False)
-#         if (ticker is None):
-#             tradindSymbolList = self.getListFromElement(Constant.DEI_TRADING_SYMBOL, self.processCache[Constant.DOCUMENT_INS], False)
-#             for ts in tradindSymbolList:
-#                 contextRef = self.getValueFromElement(['@contextRef'], ts, False)
-#                 entity = self.getElementFromElement([contextRef], self.processCache[Constant.ENTITY_DICT], False)
-#                 segment = self.getElementFromElement(Constant.XBRL_SEGMENT, entity, False)
-#                 segmentValue = self.getValueFromElement(['#text'], self.getElementFromElement(Constant.XBRL_EXPLICIT_MEMBER, segment, False), False) 
-#                 if (segmentValue == 'us-gaap:CommonStockMember'):
-#                     ticker = self.getValueFromElement(['#text'], ts, False)
-#                     break
-#         if (ticker is not None):
-#             company.ticker = ticker
+        #COMPANY
+        if (entityCentralIndexKey is None):
+            raise Exception("ERROR - CIK wasn't found", self.filename)
+        company = CompanyEngine().getOrCreateCompany(CIK = entityCentralIndexKey, entityRegistrantName = entityRegistrantName, session = session)
+        #TICKER - Imported from ticker.txt
         #NO TRADING SYMBOL
-        noTradingSymbolFlag = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:NoTradingSymbolFlag'], self.processCache[Constant.DOCUMENT_INS], False), False)
-        CompanyEngine().updateListedCompany(company, noTradingSymbolFlag, session)
+        #noTradingSymbolFlag = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:NoTradingSymbolFlag'], self.processCache[Constant.DOCUMENT_INS], False), False)
+        #CompanyEngine().updateListedCompany(company, noTradingSymbolFlag, session)
+        self.session.add(company)
         return company
         
+    def getConceptValue(self, conceptName, noSegment = False):
+        resultList = []
+        conceptElementList = self.getListFromElement(conceptName, self.processCache[Constant.DOCUMENT_INS], False)
+        for conceptElement in conceptElementList:
+            conceptValue = self.getValueFromElement(['#text'], conceptElement, False)
+            contextRef = self.getValueFromElement(['@contextRef'], conceptElement, False)
+            entity = self.getElementFromElement([contextRef], self.processCache[Constant.ENTITY_DICT], False)
+            segment = self.getElementFromElement(Constant.XBRL_SEGMENT, entity, False)
+            if (noSegment and segment is None):
+                resultList.append(conceptValue)
+        if(len(resultList) == 1):
+            return resultList[0]
+        elif(len(resultList) > 1):
+            raise Exception("Concept Value has more than one row")
+        else:
+            return None
     
     def setFactValues(self, factToAddList, processCache):
         insXMLDict = processCache[Constant.DOCUMENT_INS]
@@ -222,7 +230,7 @@ class AbstractFactImporter(object):
         if(len(documentFiscalYearFocus) <= 4):
             fileData.documentFiscalYearFocus = documentFiscalYearFocus
         fileData.documentFiscalPeriodFocus = documentFiscalPeriodFocus
-        fileData.company = processCache["COMPANY"]
+        fileData.company = self.company
         #fileData.entityRegistrantName = entityRegistrantName
         Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
         return fileData
@@ -332,7 +340,7 @@ class AbstractFactImporter(object):
     def getValueAsDate(self, attrID, element):
         value = self.getValueFromElement(attrID, element, False)
         if(value is not None):
-            return datetime.strptime(value, '%Y-%m-%d')
+            return datetime.strptime(value[:10], '%Y-%m-%d')
     
     def getObjectFromElement(self, objectIDList, element):
         objectsToReturn = []

@@ -14,7 +14,6 @@ from modelClass.ticker import Ticker
 Initializer()
 session = DBConnector().getNewSession()
 
-#companyList = GenericDao().getAllResult(Company, (Company.ticker.isnot(None)), session)
 notMarchingList = []
 fileHandle = open('C:\\Users\\afunes\\iCloudDrive\\PortfolioViewer\\import\\ticker.txt', 'r')
 objectList = []
@@ -35,38 +34,3 @@ for line in fileHandle:
             print("Ticker added " + ticker)
             Dao().addObject(objectToAdd = company, session = session, doFlush = True)
 session.commit()
-# fileHandle = open('C:\\Users\\afunes\\iCloudDrive\\PortfolioViewer\\import\\nasdaqlisted.txt', 'r')
-# for line in fileHandle:
-#     row = line.split('|')
-#     if ("Common Stock".upper() in row[1].upper()):
-#         if (row[6] != 'Y'):
-#             #print(row)
-#             exists = False
-#             for company in companyList:
-#                 if (company.ticker == row[0]):
-#                     exists = True
-#                     break
-#             if not exists:
-#                 notMarchingList.append(row[0] + "  " + row[2])
-#  
-# fileHandle.close()
-#          
-# for item in notMarchingList:
-#     print(item)
-
-# 
-# for company in companyList:
-#     if(company.ticker is None
-#        and company.CIK is not None):
-#         try:
-#             company.ticker = object_[company.CIK]
-#             session.add(company)
-#         except Exception as e:
-#             print(repr(e))
-# session.commit()
-# # 
-
-# import csv
-# with open('C:\\Users\\afunes\\iCloudDrive\\PortfolioViewer\\import\\nyse-listed_csv.csv', 'r') as file:
-#     reader = csv.reader(file)
-#     for row in reader:

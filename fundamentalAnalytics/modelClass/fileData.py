@@ -21,10 +21,11 @@ class FileData(PersistenObject):
     documentFiscalYearFocus = Column(String(45), nullable=False)
     documentFiscalPeriodFocus = Column(String(45), nullable=False)
     #status
-    factStatus = Column(String(15), nullable=False)
     fileStatus = Column(String(15), nullable=False)
+    companyStatus = Column(String(15), nullable=False)
     entityStatus = Column(String(15), nullable=False)
     priceStatus = Column(String(15), nullable=False)
+    factStatus = Column(String(15), nullable=False)
     copyStatus = Column(String(15), nullable=False)
     calculateStatus = Column(String(15), nullable=False)
     expressionStatus = Column(String(15), nullable=False)

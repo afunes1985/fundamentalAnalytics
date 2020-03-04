@@ -10,6 +10,7 @@ import pandas
 import xmltodict
 
 from dao.factDao import FactDao
+from engine.companyEngine import CompanyEngine
 from importer.abstractFactImporter import AbstractFactImporter
 from importer.abstractImporter import AbstractImporter
 from tools.tools import getXSDFileFromCache
@@ -24,7 +25,7 @@ class ImporterFact(AbstractImporter, AbstractFactImporter):
             
     def doImport2(self):
         self.processCache = self.initProcessCache(self.filename, self.session)
-        self.processCache['COMPANY'] = self.fillCompanyData(self.filename, self.session)
+        self.company = CompanyEngine().getCompanyWithJustFilename(self.filename, self.session)
         self.fileData = self.fillFileData(self.fileData, self.processCache, self.filename, self.session)
         reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
         factVOList = self.getFactByReport(reportDict, self.processCache, self.session)
@@ -35,15 +36,6 @@ class ImporterFact(AbstractImporter, AbstractFactImporter):
     def getPersistentList(self, voList):
         return []    
     
-    def addOrModifyFDError1(self, e):
-        self.fileDataDao.addOrModifyFileData(factStatus = e.status, filename = self.filename, errorMessage=str(e), errorKey = self.errorKey, externalSession=self.session)
-    
-    def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(factStatus = Constant.STATUS_ERROR, filename = self.filename, errorMessage = str(e)[0:149], errorKey = self.errorKey, externalSession=self.session)         
-       
-    def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(factStatus = Constant.STATUS_INIT, filename = self.filename, errorKey = self.errorKey, externalSession=self.session)   
-        
     def deleteImportedObject(self):
         FactDao().deleteFactByFD(self.fileData.OID, self.session)
         

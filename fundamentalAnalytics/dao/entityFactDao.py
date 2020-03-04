@@ -82,7 +82,9 @@ class EntityFactDao():
         try:
             query = session.query(EntityFactValue)\
                 .join(EntityFactValue.fileData)\
-                .filter(and_(Concept.conceptName.__eq__(conceptName), EntityFactValue.fileDataOID == fileDataOID))
+                .filter(and_(Concept.conceptName.__eq__(conceptName), 
+                             EntityFactValue.fileDataOID == fileDataOID),
+                             EntityFactValue.explicitMember.is_(None))
             objectResult = query.one()
         except NoResultFound:
             objectResult = None

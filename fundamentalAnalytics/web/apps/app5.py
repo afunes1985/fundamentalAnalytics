@@ -146,7 +146,7 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, pr
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterEntityFact)
             importerExecutor.execute(fileDataList)
         elif (fileStatus is not None):    
-            fileDataList = FileDataDao().getFileData2(statusAttr='fileStatus', statusValue=fileStatus, session=session)
+            fileDataList = FileDataDao().getFileData6(statusAttr='fileStatus', statusValue=fileStatus, session=session)
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterFile)
             importerExecutor.execute(fileDataList)
 

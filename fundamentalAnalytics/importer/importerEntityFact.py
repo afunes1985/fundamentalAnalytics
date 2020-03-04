@@ -37,36 +37,23 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
             contextRef = self.getValueFromElement(['@contextRef'], conceptElement, False)
             entity = self.getElementFromElement([contextRef], self.processCache[Constant.ENTITY_DICT], False)
             segment = self.getElementFromElement(Constant.XBRL_SEGMENT, entity, False)
-            explicitMemberValue = self.getValueFromElement(['#text'], self.getElementFromElement(Constant.XBRL_EXPLICIT_MEMBER, segment, False), False)
-            
-            concept = ConceptEngine().getOrCreateConcept("EntityCommonStockSharesOutstanding", self.session)
-            entityFact = EntityFactDao().getEntityFact(concept.OID, 2803, 99, self.session) 
-            
-            efv = EntityFactValue()
-            efv.entityFact = entityFact
-            efv.fileData = self.fileData
-            efv.value = conceptValue
-            efv.period = self.processCache[Constant.PERIOD_DICT][contextRef]
-            efv.explicitMember = explicitMemberValue
-            efvList.append(efv)
-        
+            explicitMemberElement = self.getObjectFromElement(Constant.XBRL_EXPLICIT_MEMBER, segment)
+            if(explicitMemberElement is None or isinstance(explicitMemberElement, dict)):
+                explicitMemberValue = self.getValueFromElement(['#text'], explicitMemberElement, False)
+                concept = ConceptEngine().getOrCreateConcept("EntityCommonStockSharesOutstanding", self.session)
+                entityFact = EntityFactDao().getEntityFact(concept.OID, 2803, 99, self.session) 
+                efv = EntityFactValue()
+                efv.entityFact = entityFact
+                efv.fileData = self.fileData
+                if conceptValue is None:
+                    efv.value = 0
+                else:
+                    efv.value = conceptValue
+                efv.period = self.processCache[Constant.PERIOD_DICT][contextRef]
+                efv.explicitMember = explicitMemberValue
+                efvList.append(efv)
         Dao().addObjectList(objectList = efvList, session = self.session)
-        
-        #reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
-        #factVOList = self.getFactByConcept(reportDict, self.processCache, self.conceptName)
-        #factVOList = self.setFactValues(factVOList, self.processCache)
-        #EntityFactDao().addEntityFact(factVOList, self.fileData.OID , reportDict, self.session, self.replace)
-        #return factVOList
         return efvList
-            
-    def addOrModifyFDError1(self, e):
-        self.fileDataDao.addOrModifyFileData(entityStatus=e.status, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey, externalSession=self.session)
-    
-    def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey, externalSession=self.session)         
-            
-    def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(entityStatus=Constant.STATUS_INIT, filename=self.filename, errorKey=self.errorKey, externalSession=self.session)   
             
     def getPersistentList(self, voList):
         return []       
@@ -75,18 +62,21 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
         EntityFactDao().deleteEFVByFD(self.fileData.OID, self.session)
             
     def getPeriodDict(self, xmlDictRoot, session):
-        periodDict = {}
-        for item in self.getListFromElement(Constant.XBRL_CONTEXT, xmlDictRoot):
-            entityElement = self.getElementFromElement(Constant.XBRL_ENTITY, item)
-            #self.getElementFromElement(Constant.XBRL_SEGMENT, entityElement)
-            segmentElement = self.getElementFromElement(Constant.XBRL_SEGMENT, entityElement, False)
-            explicitMemberElement = self.getObjectFromElement(Constant.XBRL_EXPLICIT_MEMBER, segmentElement)
-            #if(segmentElement is None or self.isExplicitMemberAllowed(explicitMemberElement)):
-            periodElement = self.getElementFromElement(Constant.XBRL_PERIOD, item)
-            instant = self.getValueAsDate(Constant.XBRL_INSTANT, periodElement) 
-            if(instant is not None):
-                period =  PeriodEngine().getOrCreatePeriod3(instant, session)
-                periodDict[item['@id']] = period
+        try:
+            periodDict = {}
+            for item in self.getListFromElement(Constant.XBRL_CONTEXT, xmlDictRoot):
+                #entityElement = self.getElementFromElement(Constant.XBRL_ENTITY, item)
+                #self.getElementFromElement(Constant.XBRL_SEGMENT, entityElement)
+                #segmentElement = self.getElementFromElement(Constant.XBRL_SEGMENT, entityElement, False)
+                #explicitMemberElement = self.getObjectFromElement(Constant.XBRL_EXPLICIT_MEMBER, segmentElement)
+                #if(segmentElement is None or self.isExplicitMemberAllowed(explicitMemberElement)):
+                periodElement = self.getElementFromElement(Constant.XBRL_PERIOD, item)
+                instant = self.getValueAsDate(Constant.XBRL_INSTANT, periodElement) 
+                if(instant is not None):
+                    period =  PeriodEngine().getOrCreatePeriod3(instant, session)
+                    periodDict[item['@id']] = period
+        except Exception as e:
+            print(e)
         return periodDict
 
     def isReportAllowed(self, reportRole):

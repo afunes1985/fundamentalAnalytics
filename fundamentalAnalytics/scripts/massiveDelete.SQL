@@ -10,8 +10,9 @@ select a.oid from (SELECT c.oid
     group by c.oid
 	having sum(efv.value) = 0) as a);
 
-update fa_file_data set entityStatus = 'PENDING' where entityStatus != 'OK';
-update fa_file_data set factStatus = 'PENDING' where entityStatus != 'OK';
+update fa_file_data set entityStatus = 'PENDING' where fileStatus != 'OK';
+update fa_file_data set priceStatus = 'PENDING' where entityStatus != 'OK';
+update fa_file_data set factStatus = 'PENDING' where priceStatus != 'OK';
 update fa_file_data set copyStatus = 'PENDING' where (factStatus != 'OK' and factStatus != 'NO_DATA');
 update fa_file_data set calculateStatus = 'PENDING' where (copyStatus != 'OK' and copyStatus != 'NO_DATA');
 update fa_file_data set expressionStatus = 'PENDING' where (calculateStatus != 'OK' and calculateStatus != 'NO_DATA');

@@ -28,12 +28,6 @@ class ImporterExpression(AbstractImporter):
     def doImport2(self):
         return ExpressionEngine().solveAndAddExpression(expressionDict=self.expressionDict, fileData=self.fileData, session=self.session)
             
-    def addOrModifyFDError2(self, e):
-        self.fileDataDao.addOrModifyFileData(expressionStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey, externalSession=self.session)         
-       
-    def addOrModifyInit(self):
-        self.fileDataDao.addOrModifyFileData(expressionStatus=Constant.STATUS_INIT, filename=self.filename, errorKey=self.errorKey, externalSession=self.session)  
-    
     def getPersistent(self, vo):
         customFactValue = CustomFactEngine().getNewCustomFactValue(value=vo.value, origin=vo.origin, fileDataOID=vo.fileDataOID,
                                     customConcept=vo.customConcept, periodOID=vo.periodOID, session=self.session)

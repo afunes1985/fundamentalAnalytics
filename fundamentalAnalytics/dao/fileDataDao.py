@@ -7,7 +7,7 @@ import logging
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.elements import and_
-from sqlalchemy.sql.expression import text, or_
+from sqlalchemy.sql.expression import text, or_, outerjoin
 from sqlalchemy.sql.functions import func
 
 from base.dbConnector import DBConnector
@@ -17,6 +17,7 @@ from modelClass.errorMessage import ErrorMessage
 from modelClass.fileData import FileData
 from modelClass.ticker import Ticker
 from valueobject.constant import Constant
+from modelClass.entityFactValue import EntityFactValue
 
 
 class FileDataDao():
@@ -28,8 +29,8 @@ class FileDataDao():
                 session = dbconnector.getNewSession()
             query = session.query(FileData)\
             .join(FileData.company)\
-            .join(Company.tickerList)\
-            .with_entities(Ticker.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.factStatus, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
+            .outerjoin(Company.tickerList)\
+            .with_entities(Company.CIK, Ticker.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.factStatus, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Ticker.ticker == ticker, ticker != '')))
             objectResult = query.all()
@@ -37,7 +38,7 @@ class FileDataDao():
         except NoResultFound:
             return None
         
-    def addOrModifyFileData(self, factStatus=None, fileStatus=None, entityStatus=None, priceStatus=None, expressionStatus=None, copyStatus=None, calculateStatus=None, filename=None, externalSession=None, errorMessage=None, errorKey=None, fileData=None):
+    def addOrModifyFileData(self, statusKey=None, statusValue=None, filename=None, externalSession=None, errorMessage=None, errorKey=None, fileData=None):
         try:
             if (externalSession is None):
                 session = DBConnector().getNewSession()
@@ -45,23 +46,7 @@ class FileDataDao():
                 session = externalSession
             if (fileData is None):
                 fileData = FileDataDao.getFileData(filename, session)
-            if (fileData is None):
-                fileData = FileData()
-                fileData.fileName = filename
-            if (factStatus is not None):
-                fileData.factStatus = factStatus
-            if (entityStatus is not None):
-                fileData.entityStatus = entityStatus
-            if (priceStatus is not None):
-                fileData.priceStatus = priceStatus
-            if (calculateStatus is not None):
-                fileData.calculateStatus = calculateStatus    
-            if fileStatus is not None:
-                fileData.fileStatus = fileStatus
-            if copyStatus is not None:
-                fileData.copyStatus = copyStatus
-            if expressionStatus is not None:
-                fileData.expressionStatus = expressionStatus
+                setattr(fileData, statusKey, statusValue)
             self.setErrorMessage(errorMessage, errorKey, fileData)
             Dao().addObject(objectToAdd=fileData, session=session, doCommit=True)
             if (externalSession is None):
@@ -98,16 +83,15 @@ class FileDataDao():
             rs = con.execute(query)
             return rs 
         
-    def getFileData3(self, statusAttr, statusValue, statusAttr2, statusValue2, ticker='', session=None, limit=None, listed = ''):
+    def getFileData3(self, statusAttr, statusValue, statusAttr2, statusValue2, session=None, limit=None, listed = ''):
+        """get FD by two attributes and listed"""
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
         query = session.query(FileData)\
             .join(FileData.company)\
-            .join(Company.tickerList)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(and_(getattr(FileData, statusAttr) == statusValue, getattr(FileData, statusAttr2) == statusValue2, 
-                         or_(ticker == '', Ticker.ticker == ticker), 
                          or_(listed == '', Company.listed == listed)))\
             .with_entities(FileData.fileName)\
             .limit(limit)
@@ -115,6 +99,7 @@ class FileDataDao():
         return objectResult
     
     def getFileData4(self, statusAttr, statusValue, statusAttr2, statusValue2, session=None, limit=None):
+        """get FD by two attributes"""
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
@@ -127,6 +112,7 @@ class FileDataDao():
         return objectResult
 
     def getFileData5(self, statusAttr, statusValue, session=None, limit=None, errorMessage2 = ''):
+        """get FD by one attribute and error message"""
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
@@ -139,7 +125,9 @@ class FileDataDao():
         objectResult = query.all()
         return objectResult
     
+    
     def getFileData6(self, statusAttr, statusValue, session=None, limit=None):
+        """get FD by one attribute"""
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
@@ -151,38 +139,26 @@ class FileDataDao():
         objectResult = query.all()
         return objectResult
     
-    def getFileData7(self, session=None):
+    def getFileData7(self, session):
+        """get FD for entityfactValue without explicit member"""
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
-#         query = text("""
-#                 select max(fd.fileName) as fileName
-#                 from fa_file_data fd 
-#                     join fa_company c on fd.companyOID = c.oid
-#                 where c.ticker is null
-#                 group by c.oid""")
-#         resultList = []
-#         result = session.execute(query, '')
-#         for row in result:
-#             resultList.append(row[0])
-#             
-        query = session.query(func.max(FileData.fileName).label("fileName"))\
-            .join(FileData.company)\
-            .filter(Company.ticker.is_(None))\
-            .group_by(Company.OID)
+        query = session.query(func.max(FileData.fileName))\
+            .join(FileData.entityFactValueList)\
+            .filter(EntityFactValue.explicitMember.isnot(None))\
+            .with_entities(FileData.fileName)\
+            .group_by(FileData.companyOID)
         objectResult = query.all()
         return objectResult
     
-    def getFileData2(self, statusAttr, statusValue, ticker='', session=None, limit=None, listed = ''):
+    def getLastFileData(self, session):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
-        query = session.query(FileData)\
-            .outerjoin(FileData.company)\
-            .order_by(FileData.documentPeriodEndDate)\
-            .filter(and_(getattr(FileData, statusAttr) == statusValue, or_(ticker == '', Company.ticker == ticker),
-                         or_(listed == '', Company.listed == listed)))\
-            .limit(limit)
+        query = session.query(func.max(FileData.fileName))\
+            .with_entities(FileData.fileName)\
+            .group_by(FileData.companyOID)
         objectResult = query.all()
         return objectResult
     
@@ -215,4 +191,3 @@ class FileDataDao():
                     where c.listed = 1
                     group by factStatus, copyStatus, calculateStatus, expressionStatus""")
         return session.execute(query, '')
-        

@@ -50,7 +50,7 @@ class AbstractImporter(object):
                     self.logger.info("***********FINISH AT " + str(datetime.now() - time1) + " " + self.filename)
                 else:
                     self.logger.info("***********FINISH AT " + str(datetime.now() - time1) + " " + self.filename + " objects added " + str(len(voList)))
-        except (FileNotFoundException, XSDNotFoundException,XMLNotFoundException) as e:
+        except (FileNotFoundException, XSDNotFoundException, XMLNotFoundException) as e:
             self.logger.debug("ERROR " + str(e))
             self.addOrModifyFDError1(e)
         except MemoryError as e:
@@ -59,8 +59,8 @@ class AbstractImporter(object):
             FileDataDao().addOrModifyFileData(fileStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage='MemoryError', errorKey=self.errorKey)
         except Exception as e:
             self.logger.info("ERROR " + self.filename)
-            self.logger.exception(e)
-            #self.logger.error(str(e))
+            # self.logger.exception(e)
+            self.logger.error(str(e))
             self.session.rollback()
             self.addOrModifyFDError2(e)
         finally:
@@ -77,15 +77,15 @@ class AbstractImporter(object):
     
     @abstractmethod
     def addOrModifyInit(self):
-        pass
+        self.fileDataDao.addOrModifyFileData(statusKey=self.actualStatus, statusValue=Constant.STATUS_INIT, filename=self.filename, errorKey=self.errorKey, externalSession=self.session)
     
     @abstractmethod
     def addOrModifyFDError1(self, e):
-        pass
+        self.fileDataDao.addOrModifyFileData(statusKey=self.actualStatus, statusValue=e.status, filename=self.filename, errorMessage=str(e), errorKey=self.errorKey, externalSession=self.session)
     
     @abstractmethod
     def addOrModifyFDError2(self, e):
-        pass
+        FileDataDao().addOrModifyFileData(statusKey=self.actualStatus, statusValue=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey, externalSession=self.session)   
             
     @abstractmethod
     def doImport2(self):

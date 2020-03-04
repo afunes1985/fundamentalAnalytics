@@ -22,6 +22,7 @@ class Constant:
     ERROR_KEY_EXPRESSION = 'EXPRESSION_ERROR'
     ERROR_KEY_COPY = 'COPY_ERROR'
     ERROR_KEY_CALCULATE = 'CALCULATE_ERROR'
+    ERROR_KEY_COMPANY = 'COMPANY_ERROR'
     
     CACHE_FOLDER = "D://Per//cache//"
 
@@ -37,6 +38,7 @@ class Constant:
     DOCUMENT_FISCAL_YEAR_FOCUS =['dei:DocumentFiscalYearFocus']
     DOCUMENT_PERIOD_END_DATE =['dei:DocumentPeriodEndDate']
     DEI_TRADING_SYMBOL = ['dei:TradingSymbol']
+    DEI_CIK = ['dei:EntityCentralIndexKey']
     XBRL_ROOT =['xbrli:xbrl','xbrl']
     XBRL_CONTEXT = ['xbrli:context','context']
     XBRL_PERIOD =['xbrli:period','period']
@@ -63,3 +65,5 @@ class Constant:
     LOGGER_GENERAL = "general"
     LOGGER_ADDTODB = "addToDB"
     LOGGER_IMPORT_GENERAL = "importGeneral"
+    
+    ERROR_DICT_KEY = {}
