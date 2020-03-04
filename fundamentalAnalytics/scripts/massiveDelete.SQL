@@ -1,5 +1,5 @@
 #udate listed company with shares = 0
-update fa_company set listed = 0, notListedDescription = 'sum EntityCommonStockSharesOutstanding = 0' 
+#update fa_company set listed = 0, notListedDescription = 'sum EntityCommonStockSharesOutstanding = 0' 
 where oid in (     
 select a.oid from (SELECT c.oid
 	FROM fa_entity_fact_value efv
