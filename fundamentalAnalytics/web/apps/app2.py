@@ -23,6 +23,7 @@ from importer.importerFile import ImporterFile
 from importer.importerPrice import ImporterPrice
 from web.app import app
 from importer.importerEntityFact import ImporterEntityFact
+from importer.importerCompany import ImporterCompany
 
 
 layout = html.Div([
@@ -39,9 +40,10 @@ layout = html.Div([
         ], value='Reprocess',
         labelStyle={'display': 'inline-block'}),
     html.Button(id='btn-reprocess-file', n_clicks=0, children='File'),
-    html.Button(id='btn-reprocess-fact', n_clicks=0, children='Fact'),
+    html.Button(id='btn-reprocess-company', n_clicks=0, children='Company'),
     html.Button(id='btn-reprocess-entity', n_clicks=0, children='Entity'),
     html.Button(id='btn-reprocess-price', n_clicks=0, children='Price'),
+    html.Button(id='btn-reprocess-fact', n_clicks=0, children='Fact'),
     html.Button(id='btn-reprocess-copy', n_clicks=0, children='Copy'),
     html.Button(id='btn-reprocess-calculate', n_clicks=0, children='Calculate'),
     html.Button(id='btn-reprocess-expression', n_clicks=0, children='Expression'),
@@ -58,11 +60,11 @@ layout = html.Div([
 
 @app.callback(
     output=Output('dt-fileData-container', "children"),
-    inputs=[Input('btn-submit', 'n_clicks'),Input('btn-reprocess-calculate', 'n_clicks'),Input('btn-reprocess-fact', 'n_clicks'), Input('btn-reprocess-entity', 'n_clicks'),
+    inputs=[Input('btn-submit', 'n_clicks'),Input('btn-reprocess-calculate', 'n_clicks'),Input('btn-reprocess-fact', 'n_clicks'), Input('btn-reprocess-entity', 'n_clicks'),Input('btn-reprocess-company', 'n_clicks'),
             Input('btn-reprocess-file', 'n_clicks'),Input('btn-reprocess-price', 'n_clicks'),Input('btn-reprocess-copy', 'n_clicks'),Input('btn-reprocess-expression', 'n_clicks')],
     state=[State('txt-filename', "value"),State('txt-ticker', "value"), State('dt-fileData', "derived_virtual_data"),
                     State('dt-fileData', "derived_virtual_selected_rows"),State('rb-action', 'value')])
-def doButtonAction(n_clicks,n_clicks2,n_clicks3,n_clicks4,n_clicks5,n_clicks6,n_clicks7,n_clicks8, filename, ticker, rows, selected_rows, rbValue):
+def doButtonAction(n_clicks,n_clicks2,n_clicks3,n_clicks4,n_clicks5,n_clicks6,n_clicks7,n_clicks8,n_clicks9, filename, ticker, rows, selected_rows, rbValue):
     if (n_clicks > 0):
         ctx = dash.callback_context
         if not ctx.triggered:
@@ -84,6 +86,8 @@ def doButtonAction(n_clicks,n_clicks2,n_clicks3,n_clicks4,n_clicks5,n_clicks6,n_
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterCopy)
         elif(button_id == 'btn-reprocess-expression'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterExpression)
+        elif(button_id == 'btn-reprocess-company'):
+            doAction(n_clicks, rows, selected_rows, rbValue, ImporterCompany)
 
         return doSubmit(filename, ticker)
 
@@ -161,7 +165,7 @@ def doGoToDir(n_clicks, rows, selected_rows):
 
 def doAction(n_clicks, rows, selected_rows, rbValue, importerClass):
     if (n_clicks > 0):  
-        if (len(rows) != 0 and len(rows) < 50):#Protect massive running
+        if (len(rows) != 0 and len(rows) < 120):#Protect massive running
             if(selected_rows is not None and len(selected_rows) != 0):
                 for rowIndex in selected_rows:
                     fileName = rows[rowIndex]["fileName"]

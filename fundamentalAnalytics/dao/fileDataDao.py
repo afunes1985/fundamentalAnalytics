@@ -30,7 +30,7 @@ class FileDataDao():
             query = session.query(FileData)\
             .join(FileData.company)\
             .join(Company.tickerList)\
-            .with_entities(Company.CIK, Ticker.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.factStatus, FileData.entityStatus, FileData.priceStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
+            .with_entities(Company.CIK, Ticker.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.companyStatus, FileData.entityStatus, FileData.priceStatus, FileData.factStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Ticker.ticker == ticker, ticker != '')))
             objectResult = query.all()
@@ -57,7 +57,7 @@ class FileDataDao():
             raise e
     
     def setErrorMessage(self, errorMessage, errorKey, fileData):
-        if (errorMessage is not None):
+        if (errorMessage is not None and errorMessage != ''):
                     em = ErrorMessage()
                     em.errorKey = errorKey
                     em.errorMessage = errorMessage
@@ -118,7 +118,7 @@ class FileDataDao():
             session = dbconnector.getNewSession()
         query = session.query(FileData)\
             .outerjoin(FileData.errorMessageList)\
-            .order_by(FileData.documentPeriodEndDate)\
+            .order_by(FileData.documentPeriodEndDate.desc())\
             .filter(and_(getattr(FileData, statusAttr) == statusValue, or_(errorMessage2 == '', ErrorMessage.errorMessage.like(errorMessage2))))\
             .with_entities(FileData.fileName)\
             .limit(limit)
@@ -136,19 +136,6 @@ class FileDataDao():
             .filter(and_(getattr(FileData, statusAttr) == statusValue))\
             .with_entities(FileData.fileName)\
             .limit(limit)
-        objectResult = query.all()
-        return objectResult
-    
-    def getFileData7(self, session):
-        """get FD for entityfactValue without explicit member"""
-        dbconnector = DBConnector()
-        if (session is None): 
-            session = dbconnector.getNewSession()
-        query = session.query(func.max(FileData.fileName))\
-            .join(FileData.entityFactValueList)\
-            .filter(EntityFactValue.explicitMember.isnot(None))\
-            .with_entities(FileData.fileName)\
-            .group_by(FileData.companyOID)
         objectResult = query.all()
         return objectResult
     

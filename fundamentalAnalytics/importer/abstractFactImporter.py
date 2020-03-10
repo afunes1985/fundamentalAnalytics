@@ -211,7 +211,7 @@ class AbstractFactImporter(object):
         self.logger.debug("REPORT LIST " + str(reportDict))
         return reportDict
     
-    def fillFileData(self, fileData, processCache, filename, session):
+    def fillFileData(self, fileData, processCache, session):
         insXMLDict = processCache[Constant.DOCUMENT_INS]
         documentType = self.getValueFromElement(['#text'], insXMLDict['dei:DocumentType'])
         #logging.getLogger(Constant.LOGGER_GENERAL).debug("documentType " + documentType)
@@ -230,7 +230,6 @@ class AbstractFactImporter(object):
         if(len(documentFiscalYearFocus) <= 4):
             fileData.documentFiscalYearFocus = documentFiscalYearFocus
         fileData.documentFiscalPeriodFocus = documentFiscalPeriodFocus
-        fileData.company = self.company
         #fileData.entityRegistrantName = entityRegistrantName
         Dao().addObject(objectToAdd = fileData, session = session, doCommit = True)
         return fileData

@@ -125,6 +125,12 @@ class PriceNotFoundException(CustomException):
     
 class EntityFactNotFoundException(CustomException):
     status = Constant.STATUS_ERROR
+    
+class LastPriceNotFound(CustomException):
+    status = Constant.STATUS_LAST_PRICE_NF
+    
+class LastPriceIsTooOld(CustomException):
+    status = Constant.STATUS_LAST_PRICE_IS_TOO_OLD
            
 def getXMLDictFromGZCache(filename, documentName):
     finalFileName = Constant.CACHE_FOLDER + filename[0: filename.find(".txt")] + "/" + documentName + ".gz"

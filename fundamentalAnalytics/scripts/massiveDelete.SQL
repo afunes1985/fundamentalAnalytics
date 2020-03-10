@@ -10,7 +10,7 @@ select a.oid from (SELECT c.oid
     group by c.oid
 	having sum(efv.value) = 0) as a);
 
-update fa_file_data set entityStatus = 'PENDING' where fileStatus != 'OK';
+update fa_file_data set entityStatus = 'PENDING' where companyStatus != 'OK';
 update fa_file_data set priceStatus = 'PENDING' where entityStatus != 'OK';
 update fa_file_data set factStatus = 'PENDING' where priceStatus != 'OK';
 update fa_file_data set copyStatus = 'PENDING' where (factStatus != 'OK' and factStatus != 'NO_DATA');
@@ -141,6 +141,8 @@ where fv.OID is null
     and cfv.oid is null
     and pri.oid is null)as c);
 
+#delete errorMessage empty
+delete from fa_error_message where errorMessage = '';
 
 ######################################### quries
 

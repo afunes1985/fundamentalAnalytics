@@ -1,3 +1,7 @@
 arreglar filtro app2, un query filename y otro query ticker
 FK companyOID to file_data
 reprocesar todos los precios!!!
+arreglar cuando cambia de log que queda pegado la instancia anterior
+crear una interface para precios
+latestTime of price has to say hour not date, if it is date this stock is not listed
+inactivar tickets en importerCOmpany
