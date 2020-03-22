@@ -18,8 +18,8 @@ import chart_studio.plotly as py
 
 class PlotlyEngineInterface():
     @staticmethod
-    def getTraceData(reportShortName, ticker, conceptName, periodType):
-        rs = FactDao.getFactValues2(reportShortName = reportShortName, ticker = ticker, conceptName = conceptName, periodType = periodType)
+    def getTraceData(reportShortName, conceptName, CIK, periodType):
+        rs = FactDao.getFactValues2(reportShortName = reportShortName, conceptName = conceptName, CIK=CIK, periodType = periodType)
         rows = rs.fetchall()
         if (len(rows) != 0):
             df = DataFrame(rows)
@@ -39,9 +39,8 @@ class PlotlyEngineInterface():
         Initializer()
         
         for filterFactVO in filterFactVOList:
-            data.append(PlotlyEngineInterface.getTraceData(filterFactVO.reportShortName, filterFactVO.ticker, filterFactVO.conceptName, filterFactVO.periodType))
+            data.append(PlotlyEngineInterface.getTraceData(filterFactVO.reportShortName, filterFactVO.conceptName, filterFactVO.CIK, filterFactVO.periodType))
             filename = filename + " " + filterFactVO.conceptName
-        print(filename)   
         layout = go.Layout(
             title=filename[0:100]
         )

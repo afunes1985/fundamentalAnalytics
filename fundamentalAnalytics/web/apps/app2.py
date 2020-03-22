@@ -56,7 +56,7 @@ layout = html.Div([
     html.Div(id='hidden-div3', style={'display':'none'}),
     html.Div(id='hidden-div4', style={'display':'none'})
 ])
-
+app.layout = layout
 
 @app.callback(
     output=Output('dt-fileData-container', "children"),

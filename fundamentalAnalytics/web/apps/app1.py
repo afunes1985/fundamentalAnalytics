@@ -36,6 +36,8 @@ if (len(rows) != 0):
         dcc.Link('Go to Fact Import', href='/apps/app2'),
         html.Div(id='hidden-div', style={'display':'none'})
     ])
+app.layout = layout
+
 
 @app.callback(
     Output('dt-factList-container', "children"),
@@ -78,7 +80,7 @@ def doSubmitShowFact(n_clicks, rows, selected_rows):
             return dt2
  
 def getFactValues(CIK, ticker):
-    rs = FactDao.getFactValues2(CIK = CIK, ticker = ticker, conceptName = None)
+    rs = FactDao.getFactValues2(CIK = CIK, conceptName = None)
     rows = rs.fetchall()
     rows_list = []
     rowDict = {}
@@ -110,6 +112,7 @@ def getFactValues(CIK, ticker):
     
     df = DataFrame(rows_list, columns=columnKeys)
     df = df.sort_values(["reportName", "conceptName"], ascending=[True,True])
+    app.CIK = CIK
     app.ticker = ticker
     return df
  
@@ -126,6 +129,7 @@ def doSubmitSendPlotlyData(n_clicks, rows, selected_rows):
             filterFactVO = FilterFactVO()
             filterFactVO.conceptName = rows[selected_row]["conceptName"]
             filterFactVO.reportShortName = rows[selected_row]["reportName"]
+            filterFactVO.CIK = app.CIK
             filterFactVO.ticker = app.ticker
             filterFactVO.periodType = rows[selected_row]["periodType"]
             filterFactVOList.append(filterFactVO)

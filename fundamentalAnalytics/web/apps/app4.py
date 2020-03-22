@@ -22,6 +22,7 @@ layout = html.Div([
     html.Div(id='dt-entityFactList-container'),
     dcc.Link('Go to App1', href='/apps/app1'),
     html.Div(id='hidden-div', style={'display':'none'})])
+app.layout = layout
 
 def getFactValues(ticker):
     rs = Dao().getValuesForApp4(ticker = ticker)

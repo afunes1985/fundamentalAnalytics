@@ -20,7 +20,10 @@ class ExpressionEngine(object):
         errorList = []
         rs = Dao().getValuesForExpression(fileData.OID, session)
         for row in rs:
-            cfvDict[row.conceptName] = dict(row.items())
+            if cfvDict.get(row.conceptName, None) is None:
+                cfvDict[row.conceptName] = dict(row.items())
+            else:
+                raise Exception("Duplicated values " + row.conceptName)
                 
         for expression, expr in expressionDict.items():
             if (expression.customConcept.conceptName not in cfvDict.keys()):

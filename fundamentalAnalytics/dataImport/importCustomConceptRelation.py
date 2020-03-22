@@ -115,7 +115,10 @@ from modelClass.customConcept import RelCustomConceptConcept
 #                      "TOTAL_SHAREHOLDERS_EQUITY": ["StockholdersEquity"],
 #                      "SHARES_OUTSTANDING": ["CommonStockSharesOutstanding"],
 #                        "NET_CHANGE_IN_CASH": ["CashAndCashEquivalentsPeriodIncreaseDecrease"]}
-
+# "TOTAL_CASH_FROM_OPERATING_ACTIVITIES": ["NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
+# "TOTAL_CASH_FROM_INVESTING_ACTIVITIES": ["NetCashProvidedByUsedInInvestingActivitiesContinuingOperations"],
+# "TOTAL_CASH_FROM_FINANCING_ACTIVITIES": ["NetCashProvidedByUsedInFinancingActivitiesContinuingOperations"]
+#"CASH_AND_CASH_EQUIVALENTS": ["CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"]
 
 Initializer()
 session = DBConnector().getNewSession()
@@ -131,10 +134,7 @@ if(createCustomConcept):
     for itemToAdd in ccList:
         Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
 
-customConceptDict = {"TOTAL_CASH_FROM_OPERATING_ACTIVITIES": ["NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
-                     "TOTAL_CASH_FROM_INVESTING_ACTIVITIES": ["NetCashProvidedByUsedInInvestingActivitiesContinuingOperations"],
-                     "TOTAL_CASH_FROM_FINANCING_ACTIVITIES": ["NetCashProvidedByUsedInFinancingActivitiesContinuingOperations"]
-                     }
+customConceptDict = {"NET_CHANGE_IN_CASH": ["CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsPeriodIncreaseDecreaseIncludingExchangeRateEffect"]}
 
 #session.query(RelCustomConceptConcept).delete()
 #session.flush()

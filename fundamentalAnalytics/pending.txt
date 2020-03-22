@@ -3,5 +3,7 @@ FK companyOID to file_data
 reprocesar todos los precios!!!
 arreglar cuando cambia de log que queda pegado la instancia anterior
 crear una interface para precios
-latestTime of price has to say hour not date, if it is date this stock is not listed
-inactivar tickets en importerCOmpany
+latestTime of price has to show hour not date, if it is date this stock is not listed
+inactivar tickets en importerCompany
+importerCalculate is slowly, MSFT , edgar/data/789019/0001193125-13-160748.txt
+there are gaps in calculated method, CSCO for example, 12m -9m, 9m-6m, 6m-3m etc
