@@ -66,10 +66,15 @@ class AbstractImporter(object):
             
     @abstractmethod
     def setFileDataStatus(self, voList):
-        if(voList is None or len(voList) != 0):
-            setattr(self.fileData , self.actualStatus, Constant.STATUS_OK)
+        if(voList is not None):
+            missingObjects = self.getMissingObjects()
+            if(len(missingObjects) > 0):
+                setattr(self.fileData, self.actualStatus, Constant.STATUS_WARNING)
+                FileDataDao().setErrorMessage(errorMessage=str(missingObjects)[0:149], errorKey=self.errorKey, fileData=self.fileData)
+            else:    
+                setattr(self.fileData, self.actualStatus, Constant.STATUS_OK)
         else: 
-            setattr(self.fileData , self.actualStatus, Constant.STATUS_NO_DATA) 
+            setattr(self.fileData, self.actualStatus, Constant.STATUS_NO_DATA) 
         Dao().addObject(objectToAdd=self.fileData, session=self.session, doCommit=True)
     
     @abstractmethod
@@ -87,6 +92,10 @@ class AbstractImporter(object):
     @abstractmethod
     def doImport2(self):
         pass
+    
+    @abstractmethod
+    def getMissingObjects(self):
+        return []
     
     @abstractmethod
     def skipOrProcess(self):

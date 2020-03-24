@@ -13,6 +13,7 @@ from modelClass.customFact import CustomFact
 from modelClass.customFactValue import CustomFactValue
 from modelClass.customReport import CustomReport
 from valueobject.valueobject import CustomFactValueVO
+from valueobject.constant import Constant
 
 
 class CustomFactEngine():
@@ -107,55 +108,104 @@ class CustomFactEngine():
                             cfvVO = CustomFactValueVO(value=row.value, origin='COPY',fileDataOID=fileData.OID, 
                                           customConcept=customConcept, endDate=row.endDate, order_ = relationConcept.order_ )
                             newCFVDict[customConcept.conceptName] = cfvVO
+    
+    def getPrevPeriodFocus(self, currentPeriodFocus):
+        prevPeriodFocus = Constant.PERIOD_FOCUS_REL_DICT.get(currentPeriodFocus, None)
+        if(prevPeriodFocus is None):
+            raise Exception("Period Focus doesn't found in constant" + currentPeriodFocus)
+        return prevPeriodFocus
         
     def calculateMissingQTDValues2(self, fileData, customConceptList, session):
         cfvVOList = []
         ytdDict = {}
+        qtdDict = {}
+        if(fileData.documentFiscalYearFocus is None):
+            raise Exception("fileData documentFiscalYearFocus is None")
+        currentPeriodFocus = fileData.documentFiscalPeriodFocus
         listYTD = FactDao().getFactValue4(companyOID=fileData.companyOID, periodType='YTD', documentFiscalYearFocus=fileData.documentFiscalYearFocus, session=session)
         for itemYTD in listYTD:
-            ytdDict.setdefault(itemYTD.conceptOID, []).append(itemYTD)
+            itemYTDDict = ytdDict.get(itemYTD.conceptOID, {})
+            itemYTDDict[itemYTD.documentFiscalPeriodFocus] = itemYTD
+            ytdDict[itemYTD.conceptOID] = itemYTDDict
+        
+        listQTD = FactDao().getFactValue4(companyOID=fileData.companyOID, periodType='QTD', documentFiscalYearFocus=fileData.documentFiscalYearFocus, session=session)
+        for itemQTD in listQTD:
+            itemQTDDict = qtdDict.get(itemQTD.conceptOID, {})
+            itemQTDDict[itemQTD.documentFiscalPeriodFocus] = itemQTD
+            qtdDict[itemQTD.conceptOID] = itemQTDDict
         
         for customConcept in customConceptList:
             for relationConcept in customConcept.relationConceptList:
-                prevRow = None 
                 customFactValueVO = None
-                for itemYTD in ytdDict.get(relationConcept.concept.OID, []):  # itero todos los YTD y cuando corresponde con un faltante busco el YTD anterior y se lo resto o busco los 3 QTD anteriores
-                    if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100 and itemYTD.fileDataOID == fileData.OID:
-                        # estrategia de calculo usando el YTD
-                        print("NEW FACT VALUE 1 " + customConcept.conceptName + " " + str(itemYTD.value - prevRow.value) + " " + relationConcept.concept.conceptName)
-                        customFactValueVO = CustomFactValueVO(value=(itemYTD.value - prevRow.value), origin='CALCULATED', 
-                                                              fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
-                        break
-                    else:
-                        prevRow = itemYTD
-                        
-                    if customFactValueVO is None:
-                        listQTD = CustomFactDao().getCustomFactValue4(companyOID=fileData.company.OID, documentFiscalYearFocus=fileData.documentFiscalYearFocus, customConceptOID=customConcept.OID, session=session)
-                        sumValue = 0
-                        listQTD_2 = []
-                        if itemYTD.documentFiscalPeriodFocus == 'Q2':
-                            for itemQTD in listQTD:
-                                if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285 and itemQTD.fileData.documentFiscalPeriodFocus == 'Q1':
-                                    sumValue += itemQTD.value
-                                    listQTD_2.append(itemQTD)
-                                    break
-                            if(len(listQTD_2) == 1 and itemYTD.fileDataOID == fileData.OID):
-                                print("NEW FACT VALUE 2 " + customConcept.conceptName + " " + str(itemYTD.value - sumValue))
-                                customFactValueVO = CustomFactValueVO(value=(itemYTD.value - sumValue), origin='CALCULATED', 
-                                                                  fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
-                                break
-                        else:
-                            # estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
-                            for itemQTD in listQTD:
-                                if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285:
-                                    sumValue += itemQTD.value
-                                    listQTD_2.append(itemQTD)
-                            if(len(listQTD_2) == 3 and itemYTD.fileDataOID == fileData.OID):
-                                print("NEW FACT VALUE 3 " + customConcept.conceptName + " " + str(itemYTD.value - sumValue))
-                                customFactValueVO = CustomFactValueVO(value=(itemYTD.value - sumValue), origin='CALCULATED', 
-                                                                  fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
-                                break
+                #YTD STRATEGY Q1
+                if(currentPeriodFocus == 'Q1'):
+                    itemYTDDict = ytdDict.get(relationConcept.concept.OID, None)
+                    if(itemYTDDict is not None):
+                        itemYTD = itemYTDDict.get('Q1', None)
+                        if(itemYTD is not None):
+                            print("NEW FACT VALUE 1 " + customConcept.conceptName + " " + str(itemYTD.value) + " " + relationConcept.concept.conceptName)
+                            customFactValueVO = CustomFactValueVO(value=(itemYTD.value), origin='CALCULATED', 
+                                                                  fileDataOID=fileData.OID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+                #YTD STRATEGY YTD-YTD
+                itemYTDDict = ytdDict.get(relationConcept.concept.OID, None)
+                if(itemYTDDict is not None):
+                    itemYTD = itemYTDDict.get(currentPeriodFocus, None)
+                    prevYTD = itemYTDDict.get(self.getPrevPeriodFocus(currentPeriodFocus), None)
+                    if(itemYTD is not None and prevYTD is not None):
+                        print("NEW FACT VALUE 2 " + customConcept.conceptName + " " + str(itemYTD.value - prevYTD.value) + " " + relationConcept.concept.conceptName)
+                        customFactValueVO = CustomFactValueVO(value=(itemYTD.value - prevYTD.value), origin='CALCULATED', 
+                                                                  fileDataOID=fileData.OID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+                
+                #YTD STRATEFY YTD-QTD
+                if(itemYTDDict is not None):
+                    itemYTD = itemYTDDict.get(currentPeriodFocus, None)
+                    itemQTDDict = qtdDict.get(relationConcept.concept.OID, None)
+                    if(itemQTDDict is not None):
+                        prevQTD = itemQTDDict.get(self.getPrevPeriodFocus(currentPeriodFocus), None)
+                        if(itemYTD is not None and prevQTD is not None and currentPeriodFocus == 'Q2'):
+                            print("NEW FACT VALUE 3 " + customConcept.conceptName + " " + str(itemYTD.value) + " " + relationConcept.concept.conceptName)
+                            customFactValueVO = CustomFactValueVO(value=(itemYTD.value - prevQTD.value), origin='CALCULATED', 
+                                                                      fileDataOID=fileData.OID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
                 if(customFactValueVO is not None):
                     cfvVOList.append(customFactValueVO)
-                    break
+                    break                
+#                 prevRow = None 
+#                 customFactValueVO = None
+#                 for itemYTD in ytdDict.get(relationConcept.concept.OID, []):  # itero todos los YTD y cuando corresponde con un faltante busco el YTD anterior y se lo resto o busco los 3 QTD anteriores
+#                     if prevRow != None and 80 < (itemYTD.endDate - prevRow.endDate).days < 100 and itemYTD.fileDataOID == fileData.OID:
+#                         # estrategia de calculo usando el YTD
+#                         print("NEW FACT VALUE 1 " + customConcept.conceptName + " " + str(itemYTD.value - prevRow.value) + " " + relationConcept.concept.conceptName)
+#                         customFactValueVO = CustomFactValueVO(value=(itemYTD.value - prevRow.value), origin='CALCULATED', 
+#                                                               fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+#                         break
+#                     else:
+#                         prevRow = itemYTD
+#                         
+#                     if customFactValueVO is None:
+#                         listQTD = CustomFactDao().getCustomFactValue4(companyOID=fileData.company.OID, documentFiscalYearFocus=fileData.documentFiscalYearFocus, customConceptOID=customConcept.OID, session=session)
+#                         sumValue = 0
+#                         listQTD_2 = []
+#                         if itemYTD.documentFiscalPeriodFocus == 'Q2':
+#                             for itemQTD in listQTD:
+#                                 if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285 and itemQTD.fileData.documentFiscalPeriodFocus == 'Q1':
+#                                     sumValue += itemQTD.value
+#                                     listQTD_2.append(itemQTD)
+#                                     break
+#                             if(len(listQTD_2) == 1 and itemYTD.fileDataOID == fileData.OID):
+#                                 print("NEW FACT VALUE 2 " + customConcept.conceptName + " " + str(itemYTD.value - sumValue))
+#                                 customFactValueVO = CustomFactValueVO(value=(itemYTD.value - sumValue), origin='CALCULATED', 
+#                                                                   fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+#                                 break
+#                         else:
+#                             # estrategia de calculo usando los QTD, sumando los ultimos 3 y restandoselo al YTD
+#                             for itemQTD in listQTD:
+#                                 if 0 < (itemYTD.endDate - itemQTD.period.endDate).days < 285:
+#                                     sumValue += itemQTD.value
+#                                     listQTD_2.append(itemQTD)
+#                             if(len(listQTD_2) == 3 and itemYTD.fileDataOID == fileData.OID):
+#                                 print("NEW FACT VALUE 3 " + customConcept.conceptName + " " + str(itemYTD.value - sumValue))
+#                                 customFactValueVO = CustomFactValueVO(value=(itemYTD.value - sumValue), origin='CALCULATED', 
+#                                                                   fileDataOID=itemYTD.fileDataOID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+#                                 break
+                
         return cfvVOList

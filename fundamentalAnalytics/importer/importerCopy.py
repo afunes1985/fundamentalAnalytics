@@ -3,6 +3,8 @@ Created on Jul 11, 2019
 
 @author: afunes
 '''
+from sqlalchemy.sql.elements import or_
+
 from dao.customFactDao import CustomFactDao
 from dao.dao import GenericDao
 from engine.customFactEngine import CustomFactEngine
@@ -15,7 +17,7 @@ class ImporterCopy(AbstractImporter):
     
     def __init__(self, filename, replace):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_COPY, filename, replace, 'factStatus', 'copyStatus')
-        self.customConceptList = GenericDao().getAllResult(objectClazz=CustomConcept, condition=(CustomConcept.fillStrategy == "COPY_CALCULATE"), session=self.session)
+        self.customConceptList = GenericDao().getAllResult(objectClazz=CustomConcept, condition=(or_(CustomConcept.fillStrategy == "COPY_CALCULATE", CustomConcept.fillStrategy == "COPY")), session=self.session)
     
     def doImport2(self):
         return CustomFactEngine().copyToCustomFact2(fileData=self.fileData, customConceptList=self.customConceptList, session=self.session)

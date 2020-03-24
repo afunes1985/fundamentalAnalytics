@@ -19,8 +19,9 @@ class ImporterCalculate(AbstractImporter):
     def doImport2(self):
         customConceptList = GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = self.session)
         customConceptListFilled= CustomFactDao().getCustomConceptFilled(self.fileData.OID, self.session)
-        customConceptListMissing =[x for x in customConceptList if not x.conceptName in customConceptListFilled]
-        return CustomFactEngine().calculateMissingQTDValues2(fileData = self.fileData, customConceptList = customConceptListMissing, session=self.session)
+        self.customConceptListMissing =[x for x in customConceptList if not x.conceptName in customConceptListFilled]
+        self.customConceptListResult = CustomFactEngine().calculateMissingQTDValues2(fileData = self.fileData, customConceptList = self.customConceptListMissing, session=self.session)
+        return self.customConceptListResult
 
     def getPersistent(self, cfvVO):
         customFactValue = CustomFactEngine().getNewCustomFactValue(value=cfvVO.value, origin=cfvVO.origin, fileDataOID=cfvVO.fileDataOID,
@@ -29,3 +30,8 @@ class ImporterCalculate(AbstractImporter):
     
     def deleteImportedObject(self):
         CustomFactDao().deleteCFVByFD(self.fileData.OID, "CALCULATED", self.session)
+
+    def getMissingObjects(self):
+        listResult = [x.customConcept.conceptName for x in self.customConceptListResult]
+        print([x.conceptName for x in self.customConceptListMissing if not x.conceptName in listResult])
+        return [x.conceptName for x in self.customConceptListMissing if not x.conceptName in listResult]

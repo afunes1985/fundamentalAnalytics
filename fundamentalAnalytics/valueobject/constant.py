@@ -4,12 +4,14 @@ Created on 18 sep. 2018
 @author: afunes
 '''
 
+
 class Constant:
     
     STATUS_PENDING = "PENDING"
     STATUS_INIT = "INIT"
     STATUS_OK = "OK"
     STATUS_ERROR = "ERROR"
+    STATUS_WARNING = "WARNING"
     STATUS_XSD_FNF = "XSD_FNF"
     STATUS_NO_DATA = "NO_DATA"
     STATUS_LAST_PRICE_NF = "LAST_PRICE_NF"
@@ -37,30 +39,30 @@ class Constant:
     ENTITY_DICT = "ENTITY_DICT"
     
     DOCUMENT_FISCAL_PERIOD_FOCUS = ['dei:DocumentFiscalPeriodFocus']
-    DOCUMENT_FISCAL_YEAR_FOCUS =['dei:DocumentFiscalYearFocus']
-    DOCUMENT_PERIOD_END_DATE =['dei:DocumentPeriodEndDate']
+    DOCUMENT_FISCAL_YEAR_FOCUS = ['dei:DocumentFiscalYearFocus']
+    DOCUMENT_PERIOD_END_DATE = ['dei:DocumentPeriodEndDate']
     DEI_TRADING_SYMBOL = ['dei:TradingSymbol']
     DEI_CIK = ['dei:EntityCentralIndexKey']
-    XBRL_ROOT =['xbrli:xbrl','xbrl']
-    XBRL_CONTEXT = ['xbrli:context','context']
-    XBRL_PERIOD =['xbrli:period','period']
-    XBRL_START_DATE =['xbrli:startDate','startDate']
-    XBRL_END_DATE =['xbrli:endDate','endDate']
-    XBRL_INSTANT =['xbrli:instant','instant']
-    XBRL_ENTITY =['xbrli:entity','entity']
-    XBRL_SEGMENT =['xbrli:segment','segment']
+    XBRL_ROOT = ['xbrli:xbrl', 'xbrl']
+    XBRL_CONTEXT = ['xbrli:context', 'context']
+    XBRL_PERIOD = ['xbrli:period', 'period']
+    XBRL_START_DATE = ['xbrli:startDate', 'startDate']
+    XBRL_END_DATE = ['xbrli:endDate', 'endDate']
+    XBRL_INSTANT = ['xbrli:instant', 'instant']
+    XBRL_ENTITY = ['xbrli:entity', 'entity']
+    XBRL_SEGMENT = ['xbrli:segment', 'segment']
     XBRL_EXPLICIT_MEMBER = ['xbrldi:explicitMember', 'explicitMember']
     XBRL_SEGMENT = ['xbrli:segment', 'segment' ]
-    LINKBASE =['link:linkbase','linkbase']
-    PRESENTATON_LINK =["link:presentationLink","presentationLink"]
-    LOC =["link:loc", "loc"]
-    SCHEMA =["xs:schema", "xsd:schema", "schema"]
-    ELEMENT =["xs:element", "xsd:element","element"]
-    UNIT =["xbrli:unit","unit"]
-    MEASURE =["xbrli:measure","measure"]
-    PRESENTATIONARC =["link:presentationArc", "presentationArc"]
-    CONTEXT_REF =["@contextRef"]
-    ALLOWED_ABSTRACT_CONCEPT =["us-gaap_StatementOfFinancialPositionAbstract", "us-gaap_StatementOfCashFlowsAbstract", "us-gaap_IncomeStatementAbstract", "us-gaap_AssetsAbstract", "us-gaap_CommonStockSharesOutstanding", "us-gaap_OperatingExpensesAbstract", "us-gaap_StatementTable", "us-gaap_NetCashProvidedByUsedInOperatingActivitiesAbstract"]
+    LINKBASE = ['link:linkbase', 'linkbase']
+    PRESENTATON_LINK = ["link:presentationLink", "presentationLink"]
+    LOC = ["link:loc", "loc"]
+    SCHEMA = ["xs:schema", "xsd:schema", "schema"]
+    ELEMENT = ["xs:element", "xsd:element", "element"]
+    UNIT = ["xbrli:unit", "unit"]
+    MEASURE = ["xbrli:measure", "measure"]
+    PRESENTATIONARC = ["link:presentationArc", "presentationArc"]
+    CONTEXT_REF = ["@contextRef"]
+    ALLOWED_ABSTRACT_CONCEPT = ["us-gaap_StatementOfFinancialPositionAbstract", "us-gaap_StatementOfCashFlowsAbstract", "us-gaap_IncomeStatementAbstract", "us-gaap_AssetsAbstract", "us-gaap_CommonStockSharesOutstanding", "us-gaap_OperatingExpensesAbstract", "us-gaap_StatementTable", "us-gaap_NetCashProvidedByUsedInOperatingActivitiesAbstract"]
     
     LOGGER_ERROR = "Error"
     LOGGER_NONEFACTVALUE = "NoneFactValue"
@@ -69,3 +71,5 @@ class Constant:
     LOGGER_IMPORT_GENERAL = "importGeneral"
     
     ERROR_DICT_KEY = {}
+    
+    PERIOD_FOCUS_REL_DICT = {"FY":"Q3", "Q4":"Q3", "Q3": "Q2", "Q2": "Q1", "Q1":"N/A"}
