@@ -27,5 +27,34 @@ class CompanyDao():
             rs = con.execute(query, [])
             return rs 
     
+    def getCompanyListByTicker(self, tickerList, session = None):
+        if (session is None): 
+                dbconnector = DBConnector()
+                session = dbconnector.getNewSession()
+        query = session.query(Company)\
+            .join(Company.tickerList)\
+            .filter(Ticker.ticker.in_(tickerList))\
+            .with_entities(Company.CIK, Company.entityRegistrantName, Ticker.ticker)
+        objectResult = query.all()
+        return objectResult
+    
     def getTicker(self, ticker, session):
         return GenericDao().getOneResult(Ticker,Ticker.ticker.__eq__(ticker), session, raiseNoResultFound = False)
+    
+    def getTickerLike(self, tickerLike, session = None):
+        if (session is None): 
+                dbconnector = DBConnector()
+                session = dbconnector.getNewSession()
+        objectResult = session.query(Ticker)\
+            .filter(Ticker.ticker.like(tickerLike))\
+            .all()
+        return objectResult
+    
+    def getAllTicker(self, session = None):
+        if (session is None): 
+                dbconnector = DBConnector()
+                session = dbconnector.getNewSession()
+        objectResult = session.query(Ticker)\
+            .with_entities(Ticker.ticker)\
+            .all()
+        return objectResult

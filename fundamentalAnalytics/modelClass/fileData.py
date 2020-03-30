@@ -46,3 +46,4 @@ class FileData(PersistenObject):
         self.copyStatus = Constant.STATUS_PENDING
         self.calculateStatus = Constant.STATUS_PENDING
         self.expressionStatus = Constant.STATUS_PENDING
+        self.companyStatus = Constant.STATUS_PENDING

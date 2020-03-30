@@ -56,27 +56,31 @@ def doSubmitShowFact(n_clicks, rows, selected_rows):
                 data=df2.to_dict("rows"),
                 filter_action="native",
                 sort_action="native",
-                sort_mode="multi",
+                fixed_rows={ 'headers': True, 'data': 0 },
+                style_as_list_view=True,
+#                 sort_mode="multi",
                 row_selectable="multi",
                 page_action = 'none',
-                style_table={'overflowX': 'scroll'},
-                fixed_rows={ 'headers': True, 'data': 0 },
+#                 style_table={'overflowX': 'scroll'},
+#                 fixed_rows={ 'headers': True, 'data': 0 },
                 style_cell={
                     'minWidth': '110px', 'maxWidth': '220px',
                     'whiteSpace': 'no-wrap',
                     'textOverflow': 'ellipsis',
                     'overflow': 'hidden',
                 },
+                virtualization=True
 #                  css=[{
 #                      'selector': '.dash-cell div.dash-cell-value',
 #                      'rule': 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
 #                  }],
-                style_cell_conditional=[
-                     {'if': {'column_id': 'reportName'},
-                         'textAlign': 'left'},
-                     {'if': {'column_id': 'conceptName'},
-                         'textAlign': 'left'}
-                 ])
+#                 style_cell_conditional=[
+#                      {'if': {'column_id': 'reportName'},
+#                          'textAlign': 'left'},
+#                      {'if': {'column_id': 'conceptName'},
+#                          'textAlign': 'left'}
+#                  ]
+                )
             return dt2
  
 def getFactValues(CIK, ticker):

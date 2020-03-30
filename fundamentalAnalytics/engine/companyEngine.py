@@ -10,7 +10,7 @@ from modelClass.company import Company
 
 class CompanyEngine():
     
-    def getOrCreateCompany(self, CIK, entityRegistrantName, session):
+    def getOrCreateCompany(self, CIK, entityRegistrantName = None, session = None):
         company = CompanyDao().getCompany2(CIK, session)
         if(company is None):    
             company = Company()

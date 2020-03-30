@@ -146,4 +146,18 @@ def getXMLDictFromGZCache(filename, documentName):
         raise FileNotFoundException("File not found " + finalFileName.replace("//", "/"))
         
 
-
+def getNumberValueAsString(value):
+    if(value % 1):
+        return value
+    else:
+        intLen = len(str(int(value)))
+        if(intLen < 4):
+            return value
+        elif(intLen < 7):
+            return str(int(value/1000)) + " m" 
+        elif(intLen >= 7):
+            return str(int(value/1000000)) + " M" 
+        # elif(intLen < 13):
+        #    return str(int(value/1000000000)) + " B"
+        else:
+            value

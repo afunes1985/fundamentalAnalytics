@@ -8,3 +8,5 @@ inactivar tickets en importerCompany
 importerCalculate is slowly, MSFT , edgar/data/789019/0001193125-13-160748.txt
 there are gaps in calculated method, CSCO for example, 12m -9m, 9m-6m, 6m-3m etc
 csco_IncomeLossFromContinuingOperationsBeforeIncomeTaxes -> income_pre_tax, no soporta el prefijo csco
+WFC -> doesnt work CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents importing
+Procesar 20-f para empresas extranjeras

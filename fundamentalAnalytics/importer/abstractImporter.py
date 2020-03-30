@@ -68,13 +68,15 @@ class AbstractImporter(object):
     def setFileDataStatus(self, voList):
         if(voList is not None):
             missingObjects = self.getMissingObjects()
-            if(len(missingObjects) > 0):
+            if(len(voList) == 0):
+                setattr(self.fileData, self.actualStatus, Constant.STATUS_NO_DATA)
+            elif(len(missingObjects) > 0):
                 setattr(self.fileData, self.actualStatus, Constant.STATUS_WARNING)
                 FileDataDao().setErrorMessage(errorMessage=str(missingObjects)[0:149], errorKey=self.errorKey, fileData=self.fileData)
             else:    
                 setattr(self.fileData, self.actualStatus, Constant.STATUS_OK)
         else: 
-            setattr(self.fileData, self.actualStatus, Constant.STATUS_NO_DATA) 
+            setattr(self.fileData, self.actualStatus, Constant.STATUS_OK) 
         Dao().addObject(objectToAdd=self.fileData, session=self.session, doCommit=True)
     
     @abstractmethod
@@ -111,11 +113,9 @@ class AbstractImporter(object):
     @abstractmethod
     def getPersistentList(self, voList):
         if(voList is not None):
-            # customConceptCreated = [cfv.customFact.customConcept.conceptName for cfv in self.fileData.customFactValueList]
             persistentList = []
             for vo in voList:
-                # if(vo.customConcept.conceptName not in customConceptCreated):
-                    persistentList.append(self.getPersistent(vo))
+                persistentList.append(self.getPersistent(vo))
             return persistentList
         else:
             return []

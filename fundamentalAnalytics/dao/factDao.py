@@ -48,13 +48,14 @@ class FactDao():
             return rs 
         
     @staticmethod
-    def getFactValues2(reportShortName=None, CIK=None, conceptName=None, periodType=None):
+    def getFactValues2(CIK, customOrFact = 'Both', reportShortName=None, conceptName=None, periodType=None):
         dbconnector = DBConnector()
         with dbconnector.engine.connect() as con:
             params = { 'conceptName' : conceptName,
                        'CIK' : CIK,
                        'reportShortName' : reportShortName,
-                       'periodType' : periodType}
+                       'periodType' : periodType,
+                       'customOrFact' : customOrFact}
             
             query = text("""select * from(
                             select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
@@ -72,6 +73,7 @@ class FactDao():
                                     and (:reportShortName is null or report.shortName = :reportShortName )
                                     and (:periodType is null or period.type = :periodType )
                                     and (:CIK is null or company.CIK = :CIK )
+                                    and (:customOrFact = 'Both' or :customOrFact = 'Fact')
                             union
                             select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
                                     IFNULL(period.endDate, period.instant) date_, period.type as periodType, concept.defaultOrder as order_
@@ -86,24 +88,9 @@ class FactDao():
                                     (:conceptName is null or concept.conceptName = :conceptName)
                                     and (:reportShortName is null or report.shortName = :reportShortName )
                                     and (:periodType is null or period.type = :periodType )
-                                    and (:CIK is null or company.CIK = :CIK)) as rs
+                                    and (:CIK is null or company.CIK = :CIK)
+                                    and (:customOrFact = 'Both' or :customOrFact = 'Custom')) as rs
                                         order by reportShortName, conceptName, periodType, date_""")
-            
-#             union
-#                             select report.shortName as reportShortName, concept.conceptName, concept.label, factValue.value, 
-#                                     IFNULL(period.endDate, period.instant) date_, period.type as periodType, null as order_
-#                                  FROM fa_entity_fact fact
-#                                      join fa_entity_fact_value factValue on factValue.entityFactOID = fact.OID
-#                                      join fa_file_data fd on fd.OID = factValue.fileDataOID
-#                                      join fa_company company on fd.companyOID = company.OID
-#                                      join fa_concept concept on fact.conceptOID = concept.OID
-#                                      join fa_report report on fact.reportOID = report.OID
-#                                      join fa_period period on factValue.periodOID = period.OID
-#                                  where 
-#                                     (:conceptName is null or concept.conceptName = :conceptName)
-#                                     and (:reportShortName is null or report.shortName = :reportShortName )
-#                                     and (:periodType is null or period.type = :periodType )
-#                                     and (:CIK is null or company.CIK = :CIK )
             rs = con.execute(query, params)
             return rs 
         
