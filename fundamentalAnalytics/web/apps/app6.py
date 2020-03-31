@@ -156,7 +156,7 @@ def getFactValues(CIK, ticker, customOrFact):
     columnKeys.extend(columnNameForDate)
     
     df = DataFrame(rows_list, columns=columnKeys)
-    df = df.sort_values(["reportName", "conceptName"], ascending=[True,True])
+    df = df.sort_values(["reportName", "order"], ascending=[True,True])
     app.CIK = CIK
     app.ticker = ticker
     return df
