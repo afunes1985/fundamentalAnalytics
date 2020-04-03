@@ -107,7 +107,7 @@ def doSubmit(filename, ticker):
                 filter_action="native",
                 sort_action="native",
                 sort_mode="multi",
-                row_selectable="multi",
+                row_selectable="multi"
                 ) 
             return dt2
 

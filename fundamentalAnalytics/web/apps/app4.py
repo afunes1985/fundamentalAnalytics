@@ -13,15 +13,16 @@ import dash_html_components as html
 import dash_table as dt
 from web.app import app
 from web.apps.app1 import getNumberValueAsString
+import dash_bootstrap_components as dbc
 
 
-layout = html.Div([
-    dcc.Input(id='txt-ticker', value='', type='text'),
-    html.Button(id='btn-submit', n_clicks=0, children='Submit'),
-    html.Div(dt.DataTable(data=[{}], id='dt-entityFactList'), style={'display': 'none'}),
-    html.Div(id='dt-entityFactList-container'),
-    dcc.Link('Go to App1', href='/apps/app1'),
-    html.Div(id='hidden-div', style={'display':'none'})])
+layout = dbc.Container([
+    dbc.Row([dbc.Col(dcc.Input(id='txt-ticker', value='', type='text')),
+             dbc.Col(html.Button(id='btn-submit', n_clicks=0, children='Submit'))]),
+    dbc.Row([html.Div(dt.DataTable(data=[{}], id='dt-entityFactList'), style={'display': 'none'}),
+             html.Div(id='dt-entityFactList-container')]),
+             html.Div(id='hidden-div', style={'display':'none'})],
+    style={"max-width":"95%"})
 app.layout = layout
 
 def getFactValues(ticker):
@@ -68,25 +69,11 @@ def doSubmit(n_clicks, ticker):
                 data=df2.to_dict("rows"),
                 filter_action="native",
                 sort_action="native",
-                sort_mode="multi",
-                row_selectable="multi",
                 page_action = 'none',
-                style_table={'overflowX': 'scroll'},
-                fixed_rows={ 'headers': True, 'data': 0 },
                 style_cell={
                     'minWidth': '90px', 'maxWidth': '220px',
                     'whiteSpace': 'no-wrap',
                     'textOverflow': 'ellipsis',
                     'overflow': 'hidden',
-                },
-#                 css=[{
-#                     'selector': '.dash-cell div.dash-cell-value',
-#                     'rule': 'display: inline; white-space: inherit; overflow: inherit; text-overflow: inherit;'
-#                 }],
-                style_cell_conditional=[
-                     {'if': {'column_id': 'reportName'},
-                         'textAlign': 'left'},
-                     {'if': {'column_id': 'conceptName'},
-                         'textAlign': 'left'}
-                 ])
+                })
             return dt2

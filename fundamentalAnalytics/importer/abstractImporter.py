@@ -130,7 +130,7 @@ class AbstractImporter(object):
     
     @abstractmethod
     def initLogger(self):
-        if (AbstractImporter.logger is None):
+        if (AbstractImporter.logger is None or self.__class__.__name__ != AbstractImporter.logger.name):
             AbstractImporter.logger = createLog(self.__class__.__name__, logging.INFO)
             
     def doCommit(self):

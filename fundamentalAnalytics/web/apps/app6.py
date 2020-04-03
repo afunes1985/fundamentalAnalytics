@@ -14,7 +14,6 @@ from tools.tools import getNumberValueAsString
 from valueobject.valueobject import FilterFactVO
 from web.app import app
 
-
 options = CompanyDao().getAllTicker()
 options2 = []
 for o in options:
@@ -22,8 +21,8 @@ for o in options:
  
 layout = dbc.Container(
     [
-        dbc.Row([dbc.Col(html.Label(["Company Tickers",dcc.Dropdown(id="dd-companyTicker", multi=True)],style={"width": "90%"}), width=2),
-                 dbc.Col(html.Label(["Company list",dt.DataTable(data=[{}], id='dt-companyData'), html.Div(id='dt-companyDataContainer',style={"width": "90%"})],style={"width": "90%"}), width=4)],
+        dbc.Row([dbc.Col(html.Label(["Company Tickers", dcc.Dropdown(id="dd-companyTicker", multi=True)], style={"width": "90%"}), width=2),
+                 dbc.Col(html.Label(["Company list", dt.DataTable(data=[{}], id='dt-companyData'), html.Div(id='dt-companyDataContainer', style={"width": "90%"})], style={"width": "90%"}), width=4)],
 #                  no_gutters=True,
                  justify="center"),
         dbc.Row([dbc.Col(dbc.Button(id='btn-executeReport', n_clicks=0, children='Submit'))]),
@@ -36,12 +35,13 @@ layout = dbc.Container(
             ],
             value='Custom'
         )),
-        dbc.Row([html.Div(dt.DataTable(data=[{}], id='dt-factReport')),html.Div(id='dt-factReportContainer')]),
+        dbc.Row([html.Div(dt.DataTable(data=[{}], id='dt-factReport')), html.Div(id='dt-factReportContainer')]),
         dbc.Row([dbc.Col(dbc.Button(id='btn-sendPlotyData', n_clicks=0, children='Submit'))]),
         dbc.Row(html.Div(id='hidden-div2', style={'display':'none'}))
-    ], style= {"max-width":"95%"}
+    ], style={"max-width":"95%"}
 )
 app.layout = layout
+
  
 @app.callback(
     Output("dd-companyTicker", "options"),
@@ -56,11 +56,12 @@ def updateDDCompanyTicker(search_value, value):
     ]
     return returnList
 
+
 @app.callback(
     Output('dt-companyDataContainer', "children"),
     [Input("dd-companyTicker", "value")])
 def updateDTCompanyData(values): 
-    if(values is not None and len(values)>0):
+    if(values is not None and len(values) > 0):
         rows = CompanyDao().getCompanyListByTicker(values)
         if (len(rows) != 0):
             df = DataFrame(rows)
@@ -75,6 +76,7 @@ def updateDTCompanyData(values):
                         style_as_list_view=True,
                 )
             return dtCompanyData
+
 
 @app.callback(
     Output('dt-factReportContainer', "children"),
@@ -93,18 +95,16 @@ def executeFactReport(n_clicks, rows, riValue):
                 data=df2.to_dict("rows"),
                 filter_action="native",
                 sort_action="native",
-#                 sort_mode="multi",
                 row_selectable="multi",
-#                 page_action = 'none',
                 style_cell={
                     'minWidth': '110px', 'maxWidth': '220px',
                     'whiteSpace': 'no-wrap',
                     'textOverflow': 'ellipsis',
                     'overflow': 'hidden',
-                },
-#                 virtualization=True
-                )
+                }
+            )
             return dt2
+
 
 @app.callback(
     Output('hidden-div2', "children"),
@@ -123,9 +123,10 @@ def doSubmitSendPlotlyData(n_clicks, rows, selected_rows):
             filterFactVO.periodType = rows[selected_row]["periodType"]
             filterFactVOList.append(filterFactVO)
         PlotlyEngineInterface().sendToPlotly(filterFactVOList)
+
  
 def getFactValues(CIK, ticker, customOrFact):
-    rs = FactDao.getFactValues2(CIK = CIK, customOrFact = customOrFact)
+    rs = FactDao.getFactValues2(CIK=CIK, customOrFact=customOrFact)
     rows = rs.fetchall()
     rows_list = []
     rowDict = {}
@@ -137,7 +138,7 @@ def getFactValues(CIK, ticker, customOrFact):
         valueDate = row[4]
         periodType = row[5]
         order = row[6]
-        #print(conceptName + " " + str(value) + " " + str(valueDate))
+        # print(conceptName + " " + str(value) + " " + str(valueDate))
         if(rowDict.get('conceptName', None) != conceptName or rowDict.get('periodType', None) != periodType):
             if(rowDict.get('conceptName', None) is not None):
                 rows_list.append(rowDict)
@@ -156,7 +157,7 @@ def getFactValues(CIK, ticker, customOrFact):
     columnKeys.extend(columnNameForDate)
     
     df = DataFrame(rows_list, columns=columnKeys)
-    df = df.sort_values(["reportName", "order"], ascending=[True,True])
+    df = df.sort_values(["reportName", "order"], ascending=[True, True])
     app.CIK = CIK
     app.ticker = ticker
     return df

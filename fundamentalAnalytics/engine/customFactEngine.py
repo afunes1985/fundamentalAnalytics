@@ -161,11 +161,26 @@ class CustomFactEngine():
                     itemYTD = itemYTDDict.get(currentPeriodFocus, None)
                     itemQTDDict = qtdDict.get(relationConcept.concept.OID, None)
                     if(itemQTDDict is not None):
-                        prevQTD = itemQTDDict.get(self.getPrevPeriodFocus(currentPeriodFocus), None)
-                        if(itemYTD is not None and prevQTD is not None and currentPeriodFocus == 'Q2'):
-                            print("NEW FACT VALUE 3 " + customConcept.conceptName + " " + str(itemYTD.value) + " " + relationConcept.concept.conceptName)
-                            customFactValueVO = CustomFactValueVO(value=(itemYTD.value - prevQTD.value), origin='CALCULATED', 
+                        q1QTD = itemQTDDict.get('Q1', None)
+                        q2QTD = itemQTDDict.get('Q2', None)
+                        q3QTD = itemQTDDict.get('Q3', None)
+                        q4QTD = itemQTDDict.get('Q4', None)
+                        if q4QTD is None:
+                            q4QTD = itemQTDDict.get('FY', None)
+                        if(itemYTD is not None and q1QTD is not None and currentPeriodFocus == 'Q2'):
+                            print("NEW FACT VALUE 3 " + customConcept.conceptName + " " + str(itemYTD.value - q1QTD.value) + " " + relationConcept.concept.conceptName)
+                            customFactValueVO = CustomFactValueVO(value=(itemYTD.value - q1QTD.value), origin='CALCULATED', 
                                                                       fileDataOID=fileData.OID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+                        elif(itemYTD is not None and q1QTD is not None and q2QTD is not None and currentPeriodFocus == 'Q3'):
+                            print("NEW FACT VALUE 4 " + customConcept.conceptName + " " + str(itemYTD.value - q1QTD.value - q2QTD.value) + " " + relationConcept.concept.conceptName)
+                            customFactValueVO = CustomFactValueVO(value=(itemYTD.value - q1QTD.value - q2QTD.value), origin='CALCULATED', 
+                                                                      fileDataOID=fileData.OID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+                        elif(itemYTD is not None and q1QTD is not None and q2QTD is not None and q3QTD is not None and (currentPeriodFocus == 'Q4' or currentPeriodFocus == 'FY')):
+                            print("NEW FACT VALUE 5 " + customConcept.conceptName + " " + str(itemYTD.value - q1QTD.value - q2QTD.value - q3QTD.value) + " " + relationConcept.concept.conceptName)
+                            customFactValueVO = CustomFactValueVO(value=(itemYTD.value - q1QTD.value - q2QTD.value), origin='CALCULATED', 
+                                                                      fileDataOID=fileData.OID, customConcept=customConcept, endDate=itemYTD.endDate, order_ = customConcept.defaultOrder)
+                            
+                            
                 if(customFactValueVO is not None):
                     cfvVOList.append(customFactValueVO)
                     break                

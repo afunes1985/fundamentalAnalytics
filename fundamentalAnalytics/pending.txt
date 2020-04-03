@@ -1,7 +1,6 @@
 arreglar filtro app2, un query filename y otro query ticker
 FK companyOID to file_data
 reprocesar todos los precios!!!
-arreglar cuando cambia de log que queda pegado la instancia anterior
 crear una interface para precios
 latestTime of price has to show hour not date, if it is date this stock is not listed
 inactivar tickets en importerCompany
@@ -9,3 +8,7 @@ there are gaps in calculated method, CSCO for example, 12m -9m, 9m-6m, 6m-3m etc
 csco_IncomeLossFromContinuingOperationsBeforeIncomeTaxes -> income_pre_tax, no soporta el prefijo csco
 WFC -> doesnt work CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents importing
 Procesar 20-f para empresas extranjeras
+BAC -> Fix Revenue missing, RevenuesNetOfInterestExpenseBeforeProvisionForLoanLoss
+CNK -> cnk_IncomeBeforeIncomeTaxes, same before line, prefix it is not GAAP
+fix importerFact.getReport, it is a shit. Find the way to obtain cash, balance and income report
+Reprocess evita la jerarquia de priceStatus == OK before import fact

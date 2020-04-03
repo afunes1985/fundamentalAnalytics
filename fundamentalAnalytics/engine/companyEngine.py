@@ -17,7 +17,7 @@ class CompanyEngine():
             company.CIK = CIK
             company.entityRegistrantName = entityRegistrantName
             company.listed = True
-        else:
+        elif entityRegistrantName is not None or entityRegistrantName != '':
             company.entityRegistrantName = entityRegistrantName
         Dao().addObject(objectToAdd = company, session = session, doCommit = True)
         return company

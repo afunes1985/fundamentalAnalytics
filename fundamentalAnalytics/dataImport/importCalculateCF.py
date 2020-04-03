@@ -15,6 +15,6 @@ if __name__ == "__main__":
     maxProcessInQueue = 5
     Initializer()
     session = DBConnector().getNewSession()
-    fileDataList = FileDataDao().getFileData2(statusAttr='fileName', statusValue='edgar/data/315545/0001193125-12-221968.txt', session=session)
+    fileDataList = FileDataDao().getFileData6(statusAttr='fileName', statusValue='edgar/data/1385280/0001564590-19-040051.txt', session=session)
     importerExecutor = ImporterExecutor(threadNumber = 1, maxProcessInQueue = 5, replace = True, isSequential = True, importerClass= ImporterCalculate)
     importerExecutor.execute(fileDataList)

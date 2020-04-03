@@ -208,7 +208,7 @@ class AbstractFactImporter(object):
                         reportDict[reportRole] = report
                 except Exception:
                     pass
-        self.logger.debug("REPORT LIST " + str(reportDict))
+        logging.getLogger(Constant.LOGGER_GENERAL).debug("REPORT LIST " + str(reportDict))
         return reportDict
     
     def fillFileData(self, fileData, processCache, session):
@@ -279,7 +279,7 @@ class AbstractFactImporter(object):
         return entityDict    
     
     def isReportAllowed(self, reportRole):
-        keyList = ["INCOME", "balance", "CASH", "CONSOLIDATED", "OPERATION"]
+        keyList = ["INCOME", "balance", "CASH", "CONSOLIDATED", "OPERATION", "position"]
         for key in keyList:
             if key.upper() in reportRole.upper(): 
                 return True
