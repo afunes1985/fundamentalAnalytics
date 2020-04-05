@@ -22,8 +22,7 @@ from modelClass.entityFactValue import EntityFactValue
 
 class FileDataDao():
 
-    def getFileDataList3(self, filename='', ticker='', session=None):
-        try:
+    def getFileDataList3(self, filename, session=None):
             dbconnector = DBConnector()
             if (session is None): 
                 session = dbconnector.getNewSession()
@@ -32,11 +31,22 @@ class FileDataDao():
             .join(Company.tickerList)\
             .with_entities(Company.CIK, Ticker.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.companyStatus, FileData.entityStatus, FileData.priceStatus, FileData.factStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
             .order_by(FileData.documentPeriodEndDate)\
-            .filter(or_(and_(FileData.fileName.like('%' + filename + '%'), filename != ''), and_(Ticker.ticker == ticker, ticker != '')))
+            .filter(FileData.fileName.like('%' + filename + '%'))
             objectResult = query.all()
             return objectResult
-        except NoResultFound:
-            return None
+        
+    def getFileDataList4(self, ticker, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(FileData)\
+        .join(FileData.company)\
+        .join(Company.tickerList)\
+        .with_entities(Company.CIK, Ticker.ticker, FileData.fileName, FileData.documentPeriodEndDate, FileData.documentType, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, FileData.fileStatus, FileData.companyStatus, FileData.entityStatus, FileData.priceStatus, FileData.factStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus)\
+        .order_by(FileData.documentPeriodEndDate)\
+        .filter(Ticker.ticker == ticker)
+        objectResult = query.all()
+        return objectResult
         
     def addOrModifyFileData(self, statusKey=None, statusValue=None, filename=None, externalSession=None, errorMessage=None, errorKey=None, fileData=None):
         try:

@@ -21,22 +21,23 @@ for o in options:
  
 layout = dbc.Container(
     [
-        dbc.Row([dbc.Col(html.Label(["Company Tickers", dcc.Dropdown(id="dd-companyTicker", multi=True)], style={"width": "90%"}), width=2),
-                 dbc.Col(html.Label(["Company list", dt.DataTable(data=[{}], id='dt-companyData'), html.Div(id='dt-companyDataContainer', style={"width": "90%"})], style={"width": "90%"}), width=4)],
-#                  no_gutters=True,
-                 justify="center"),
-        dbc.Row([dbc.Col(dbc.Button(id='btn-executeReport', n_clicks=0, children='Submit'))]),
-        dbc.Row(dcc.RadioItems(
-            id="ri-CustomOrFact",
-            options=[
-                {'label': 'Custom', 'value': 'Custom'},
-                {'label': 'Fact', 'value': 'Fact'},
-                {'label': 'Both', 'value': 'Both'}
-            ],
-            value='Custom'
-        )),
+        dbc.Row([dbc.Col([html.Label("Company Tickers"),
+                          dcc.Dropdown(id="dd-companyTicker", multi=True),
+                          dcc.RadioItems(
+                                id="ri-CustomOrFact",
+                                options=[
+                                    {'label': 'Custom', 'value': 'Custom'},
+                                    {'label': 'Fact', 'value': 'Fact'},
+                                    {'label': 'Both', 'value': 'Both'}
+                                ],
+                                value='Custom',
+                                style = {'margin' : 2}
+                            )], width=2),
+                 dbc.Col([html.Label("Company list"), dt.DataTable(data=[{}], id='dt-companyData'), html.Div(id='dt-companyDataContainer')], width=4),
+                 dbc.Col(dbc.Button(id='btn-executeReport', n_clicks=0, children='Submit'), align='end')],
+                 justify="center", style={'margin':10}),
         dbc.Row([html.Div(dt.DataTable(data=[{}], id='dt-factReport')), html.Div(id='dt-factReportContainer')]),
-        dbc.Row([dbc.Col(dbc.Button(id='btn-sendPlotyData', n_clicks=0, children='Submit'))]),
+        dbc.Row([dbc.Col(dbc.Button(id='btn-sendPlotyData', n_clicks=0, children='Submit', style = {'margin' : 5}))]),
         dbc.Row(html.Div(id='hidden-div2', style={'display':'none'}))
     ], style={"max-width":"95%"}
 )
@@ -84,7 +85,7 @@ def updateDTCompanyData(values):
     [State('dt-companyData', "derived_virtual_data"),
      State('ri-CustomOrFact', "value")])
 def executeFactReport(n_clicks, rows, riValue):
-    if (rows is not None and len(rows) != 0):
+    if (rows is not None and len(rows) != 0 and len(rows[0]) != 0):
         for row in rows:
             df2 = getFactValues(CIK=row["CIK"], ticker=row["ticker"], customOrFact=riValue)
             dt2 = dt.DataTable(

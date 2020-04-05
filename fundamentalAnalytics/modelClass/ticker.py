@@ -16,3 +16,4 @@ class Ticker(PersistenObject):
     tickerOrigin = Column(String(45), nullable=False)
     companyOID = Column(Integer, ForeignKey('fa_company.OID'))
     company = relationship("Company", back_populates="tickerList")
+    active = Column(Boolean, nullable=False)

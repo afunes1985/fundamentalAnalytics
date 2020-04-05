@@ -8,17 +8,18 @@ from dash.dependencies import Output, Input, State
 from pandas.core.frame import DataFrame
 
 from dao.dao import Dao
+import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table as dt
+from tools.tools import getNumberValueAsString
 from web.app import app
-from web.apps.app1 import getNumberValueAsString
-import dash_bootstrap_components as dbc
 
 
 layout = dbc.Container([
-    dbc.Row([dbc.Col(dcc.Input(id='txt-ticker', value='', type='text')),
-             dbc.Col(html.Button(id='btn-submit', n_clicks=0, children='Submit'))]),
+    dbc.Row([dbc.Col(html.Label(["Company ticker", dcc.Input(id='txt-ticker', value='', type='text')]), width=2),
+             dbc.Col(html.Button(id='btn-submit', n_clicks=0, children='Submit'))],
+            justify="center"),
     dbc.Row([html.Div(dt.DataTable(data=[{}], id='dt-entityFactList'), style={'display': 'none'}),
              html.Div(id='dt-entityFactList-container')]),
              html.Div(id='hidden-div', style={'display':'none'})],
