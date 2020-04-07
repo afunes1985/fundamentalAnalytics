@@ -70,14 +70,18 @@ class CustomFactDao():
         except NoResultFound:
             return None
         
-    def getCustomFactValue4(self, companyOID, documentFiscalYearFocus, customConceptOID, session = None):
+    def getCustomFactValue4(self, companyOID, periodType, documentFiscalYearFocus, session = None):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
         query = session.query(CustomFactValue)\
             .join(CustomFactValue.customFact)\
             .join(CustomFactValue.fileData)\
-            .filter(and_(FileData.documentFiscalYearFocus == documentFiscalYearFocus, CustomFact.customConceptOID == customConceptOID, FileData.companyOID == companyOID))\
+            .join(CustomFactValue.period)\
+            .filter(and_(FileData.documentFiscalYearFocus == documentFiscalYearFocus, \
+                         FileData.companyOID == companyOID, \
+                         Period.type.__eq__(periodType)))\
+            .with_entities(CustomFactValue.value, CustomFactValue.periodOID, Period.endDate, FileData.documentFiscalYearFocus, FileData.documentFiscalPeriodFocus, CustomFactValue.fileDataOID, CustomFact.customConceptOID)\
             .order_by(FileData.documentPeriodEndDate)
         objectResult = query.all()
         return objectResult

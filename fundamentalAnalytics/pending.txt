@@ -12,3 +12,8 @@ BAC -> Fix Revenue missing, RevenuesNetOfInterestExpenseBeforeProvisionForLoanLo
 CNK -> cnk_IncomeBeforeIncomeTaxes, same before line, prefix it is not GAAP
 fix importerFact.getReport, it is a shit. Find the way to obtain cash, balance and income report
 Reprocess evita la jerarquia de priceStatus == OK before import fact
+highlight select row
+table.dataTable tbody tr.selected {
+    color: white !important;
+    background-color: #eeeeee !important;
+}

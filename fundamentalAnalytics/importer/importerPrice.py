@@ -37,7 +37,7 @@ class ImporterPrice(AbstractImporter):
         self.webSession.headers.update({"Accept":"application/json","Authorization":"Bearer XGabnWN7VqBkIuSVvS6QrhwtiQcK"})
         self.webSession.trust_env = False
         priceList = []
-        daysToBack = 0
+        daysToBack = 10
         if dateToImportEnd is not None:
             for ticker in self.fileData.company.tickerList:
                 dateToImportStart = dateToImportEnd + timedelta(days=(daysToBack * -1))
@@ -59,21 +59,24 @@ class ImporterPrice(AbstractImporter):
 #                         priceList.append(price)
                 if len(priceList) == 0:
                     if (ticker.active != False):
-                        dateForUrl = dateToImportEnd.strftime('%Y%m%d')
-                        #url = 'https://cloud.iexapis.com/stable/stock/' + ticker.ticker + '/chart/date/' + dateForUrl + '?chartByDay=true&token=pk_c4c339ea14ba4aad92d9256ac75705e4'
-                        url = 'https://cloud.iexapis.com/stable/stock/' + ticker.ticker + '/chart/date/' + dateForUrl + '?chartByDay=true&token=pk_55cd20ce5c41439886a06ea27e1eb2e5'
-                        result = requests.get(url)
-                        if(result.ok):
-                            json_data = json.loads(result.text)
-                            if (len(json_data) > 0 and json_data[0]['date'] == dateToImportEnd.strftime('%Y-%m-%d')):
-                                price = Price()
-                                price.fileDataOID = self.fileData.OID
-                                price.periodOID = self.periodOID
-                                price.ticker = ticker
-                                price.value = json_data[0]['close']
-                                if (isinstance(price.value, float)
-                                        or isinstance(price.value, int)):
-                                    priceList.append(price)
+                        for offset in range(0, daysToBack):
+                            dateToImport = dateToImportEnd + timedelta(days=(offset * -1))
+                            dateForUrl = dateToImport.strftime('%Y%m%d')
+                            #url = 'https://cloud.iexapis.com/stable/stock/' + ticker.ticker + '/chart/date/' + dateForUrl + '?chartByDay=true&token=pk_c4c339ea14ba4aad92d9256ac75705e4'
+                            url = 'https://cloud.iexapis.com/stable/stock/' + ticker.ticker + '/chart/date/' + dateForUrl + '?chartByDay=true&token=pk_55cd20ce5c41439886a06ea27e1eb2e5'
+                            result = requests.get(url)
+                            if(result.ok):
+                                json_data = json.loads(result.text)
+                                if (len(json_data) > 0 and json_data[0]['date'] == dateToImport.strftime('%Y-%m-%d')):
+                                    price = Price()
+                                    price.fileDataOID = self.fileData.OID
+                                    price.periodOID = self.periodOID
+                                    price.ticker = ticker
+                                    price.value = json_data[0]['close']
+                                    if (isinstance(price.value, float)
+                                            or isinstance(price.value, int)):
+                                        priceList.append(price)
+                                        break
             if len(priceList) == 0:
                 #raise Exception("DTB = "+ str(daysToBack) +" - Price not found for " + ticker.ticker +" Start=" + dateToImportStart.strftime("%Y-%m-%d") + " End=" + dateToImportEnd.strftime("%Y-%m-%d"))
                 raise Exception("DTB = "+ str(daysToBack) +" - Price not found " + url)

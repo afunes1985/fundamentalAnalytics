@@ -130,8 +130,6 @@ def doSubmit(filename, tickerRows):
      State('dt-fileData', "derived_virtual_selected_rows")])
 def showErrors(n_clicks, rows, selected_rows):
     if (n_clicks > 0):
-        print(rows)
-        print(selected_rows)
         if(selected_rows is not None and len(selected_rows) != 0):
             fileName = rows[selected_rows[0]]["fileName"]
             rs2 = FileDataDao().getErrorList(fileName)

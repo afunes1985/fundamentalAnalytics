@@ -134,7 +134,7 @@ if(createCustomConcept):
     for itemToAdd in ccList:
         Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
 
-customConceptDict = {"NET_INCOME": ["NetIncomeLossAvailableToCommonStockholdersBasic"]}
+customConceptDict = {"REVENUE": ["RevenuesNetOfInterestExpense"]}
 
 
 #session.query(RelCustomConceptConcept).delete()
