@@ -13,7 +13,7 @@ import dash_bootstrap_components as dbc
 # external_stylesheets = ['https://codepen.io/anon/pen/mardKv.css']
 
 app = dash.Dash(__name__)
-#app.config.suppress_callback_exceptions = True, commented because hide errors
+app.config.suppress_callback_exceptions = True
 app.ticker = None
 app.CIK = None
 app.title = 'Fundalytics'

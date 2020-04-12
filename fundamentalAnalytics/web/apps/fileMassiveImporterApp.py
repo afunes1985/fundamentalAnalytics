@@ -107,7 +107,6 @@ layout = html.Div(
                 ])    
             ]
         )
-app.layout = layout
 
 @app.callback(
     [Output('graph', "figure"),

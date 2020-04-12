@@ -100,7 +100,7 @@ class CustomFactDao():
             .join(CustomConcept.relationConceptList)\
             .join(RelCustomConceptConcept.concept)\
             .join(CustomConcept.defaultCustomReport)\
-            .with_entities(CustomReport.shortName,CustomConcept.conceptName.label("CustomConceptName"), Concept.conceptName, RelCustomConceptConcept.order_)\
+            .with_entities(CustomReport.shortName,CustomConcept.conceptName.label("CustomConceptName"), Concept.conceptName, RelCustomConceptConcept.order_, RelCustomConceptConcept.customConceptOID, RelCustomConceptConcept.conceptOID)\
             .order_by(CustomReport.shortName, CustomConcept.conceptName, RelCustomConceptConcept.order_)
         objectResult = query.all()
         return objectResult

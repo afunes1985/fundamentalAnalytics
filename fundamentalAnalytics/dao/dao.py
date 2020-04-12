@@ -113,19 +113,22 @@ class Dao():
                         FROM fa_entity_fact ef
                             join fa_entity_fact_value efv on ef.oid = efv.entityFactOID
                             join fa_concept concept on ef.conceptOID = concept.OID
+                            join fa_explicit_member em on em.oid = efv.explicitMemberOID
                         where efv.fileDataOID = :fileDataOID
+                            and em.explicitMemberValue = 'NO_EXPLICIT_MEMBER'
                         union
                         select 'PRICE', p.value, null as periodOID
                         from fa_price p
                         where p.fileDataOID = :fileDataOID""")
         return session.execute(query, params)
     
-    def getValuesForApp4(self, ticker, session = None):
+    def getValuesForApp4(self, CIK, session = None):
         if (session is None): 
             dbconnector = DBConnector()
             session = dbconnector.getNewSession()
-        params = { 'ticker' : ticker}
-        query = text(""" select concept.conceptName,  efv.value, p.instant as endDate
+        params = { 'CIK' : CIK}
+        query = text(""" select conceptName,  value, endDate, explicitMemberValue
+                        from (select concept.conceptName,  efv.value, p.instant as endDate, em.explicitMemberValue
                         FROM fa_entity_fact ef
                             join fa_entity_fact_value efv on ef.oid = efv.entityFactOID
                             join fa_concept concept on ef.conceptOID = concept.OID
@@ -133,13 +136,15 @@ class Dao():
                             join fa_file_Data fd on fd.oid = efv.fileDataOID
                             join fa_company c on c.oid = fd.companyOID
                             join fa_ticker t on t.companyOID = c.OID
-                        where t.ticker = :ticker
+                            join fa_explicit_member em on em.oid = efv.explicitMemberOID
+                        where c.CIK = :CIK
                         union
-                        select 'PRICE', pri.value, p.instant as endDate
+                        select 'PRICE', pri.value, p.instant as endDate, null as explicitMemberValue
                         from fa_price pri
                             join fa_period p on p.oid = pri.periodOID
                             join fa_file_Data fd on fd.oid = pri.fileDataOID
                             join fa_company c on c.oid = fd.companyOID
                             join fa_ticker t on t.companyOID = c.OID
-                        where t.ticker = :ticker""")
+                        where c.CIK = :CIK) as a
+                        order by conceptName, explicitMemberValue""")
         return session.execute(query, params)

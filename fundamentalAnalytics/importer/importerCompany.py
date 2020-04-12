@@ -69,8 +69,11 @@ class ImporterCompany(AbstractImporter, AbstractFactImporter):
                 resultList.append(result)
                 if(result.ok):
                     atLeastOnePriceFound = True
+                    ticker.active = 1 #if price is found, enable ticker
                 elif(result.status_code == 402):
                     raise Exception("Error in price provider")
+                else:
+                    ticker.active = 0 #if price doesn't found, disable ticker
             if(not atLeastOnePriceFound):
                 self.fileData.company.listed = False
                 self.fileData.company.notListedDescription = Constant.STATUS_LAST_PRICE_NF

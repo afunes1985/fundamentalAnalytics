@@ -41,7 +41,6 @@ layout = dbc.Container(
         dbc.Row(html.Div(id='hidden-div2', style={'display':'none'}))
     ], style={"max-width":"95%"}
 )
-app.layout = layout
 
  
 @app.callback(

@@ -8,17 +8,36 @@ import dash_html_components as html
 from tools.tools import createLog
 from valueobject.constant import Constant
 from web.app import app
-from web.apps import  app3, app4, factReportApp, fileDataSumApp, \
+from web.apps import  entityFactReport, ccrcReportApp, factReportApp, fileDataSumApp, \
     fileMassiveImporterApp
 
 
-navbar = dbc.NavbarSimple(
-    children=[
-        dbc.NavItem(dcc.Link("Fact Report", href="/apps/factReportApp"), style={"margin-left" : 10}),
-        dbc.NavItem(dcc.Link("File Data Summary", href="/apps/fileDataSumApp", style={"margin-left" : 10})),
-        dbc.NavItem(dcc.Link("File Massive Importer", href="/apps/fileMassiveImporterApp", style={"margin-left" : 10})),
+dropDownMenu = dbc.DropdownMenu(
+            children=[
+                dbc.DropdownMenuItem(dcc.Link("Custom Concept Rel Concept", href="/apps/ccrcReportApp")),
+                dbc.DropdownMenuItem(dcc.Link("Entity Fact Report", href="/apps/entityFactReport"))
+            ],
+            #nav=True,
+            in_navbar=True,
+            label="More"
+        )
+
+navbar = dbc.Navbar(
+    [
+        html.A(
+            dbc.Row(
+                [
+                    dbc.Col(dbc.NavbarBrand("Fundalytics", className="ml-2")),
+                    dbc.Col(dcc.Link("Fact Report", href="/apps/factReportApp")),
+                    dbc.Col(dcc.Link("File Data Summary", href="/apps/fileDataSumApp")),
+                    dbc.Col(dcc.Link("File Massive Importer", href="/apps/fileMassiveImporterApp")),
+                    dbc.Col(dropDownMenu)
+                ],
+                align="center",
+                justify="end"
+            )
+        ),
     ],
-    brand="Fundalytics",
     color="dark",
     dark=True,
 )
@@ -34,10 +53,10 @@ app.layout = html.Div([
 def display_page(pathname):
     if pathname == '/apps/fileDataSumApp':
         return fileDataSumApp.layout
-    elif pathname == '/apps/app3':
-        return app3.layout
-    elif pathname == '/apps/app4':
-        return app4.layout
+    elif pathname == '/apps/ccrcReportApp':
+        return ccrcReportApp.layout
+    elif pathname == '/apps/entityFactReport':
+        return entityFactReport.layout
     elif pathname == '/apps/fileMassiveImporterApp':
         return fileMassiveImporterApp.layout
     elif pathname == '/apps/factReportApp':

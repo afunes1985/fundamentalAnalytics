@@ -134,7 +134,7 @@ if(createCustomConcept):
     for itemToAdd in ccList:
         Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
 
-customConceptDict = {"REVENUE": ["RevenuesNetOfInterestExpense"]}
+customConceptDict = {"TOTAL_LIABILITIES": ["LiabilitiesNoncurrent"]}
 
 
 #session.query(RelCustomConceptConcept).delete()
@@ -150,6 +150,6 @@ for customConceptName, conceptList in customConceptDict.items():
         relCCC.concept = concept
         relCCC.order_ = orderCount
         customConcept.relationConceptList.append(relCCC)
-        print("    Concept added " + conceptName)
+        print("    Concept added " + conceptName + " order " + str(relCCC.order_))
     Dao().addObject(objectToAdd=customConcept, session=session, doCommit=True)
 
