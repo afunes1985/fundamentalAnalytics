@@ -101,8 +101,11 @@ class AbstractImporter(object):
     
     @abstractmethod
     def skipOrProcess(self):
-        if((self.previousStatus is None or (getattr(self.fileData, self.previousStatus) == Constant.STATUS_OK) and getattr(self.fileData, self.actualStatus) != Constant.STATUS_OK) or self.replace == True):
-            return True
+        if(getattr(self.fileData, self.previousStatus) in [Constant.STATUS_OK, Constant.STATUS_WARNING, Constant.STATUS_NO_DATA]):
+            if (getattr(self.fileData, self.actualStatus) != Constant.STATUS_OK or self.replace == True):
+                return True
+            else:
+                return False
         else:
             return False  
     

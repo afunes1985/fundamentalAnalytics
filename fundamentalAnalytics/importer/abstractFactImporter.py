@@ -115,7 +115,7 @@ class AbstractFactImporter(object):
         #CIK
         entityCentralIndexKey = self.getConceptValue(Constant.DEI_CIK, noSegment = True)
         #ENTITY REGISTRANT NAME
-        entityRegistrantName = self.getValueFromElement(['#text'], self.getElementFromElement(['dei:EntityRegistrantName'], self.processCache[Constant.DOCUMENT_INS], False), False) 
+        entityRegistrantName = self.getConceptValue(Constant.DEI_REGISTRANT_NAME, noSegment = True)
         #COMPANY
         if (entityCentralIndexKey is None):
             raise Exception("ERROR - CIK wasn't found", self.filename)

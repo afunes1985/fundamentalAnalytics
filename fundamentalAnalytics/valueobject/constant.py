@@ -43,6 +43,7 @@ class Constant:
     DOCUMENT_PERIOD_END_DATE = ['dei:DocumentPeriodEndDate']
     DEI_TRADING_SYMBOL = ['dei:TradingSymbol']
     DEI_CIK = ['dei:EntityCentralIndexKey']
+    DEI_REGISTRANT_NAME = ['dei:EntityRegistrantName']
     XBRL_ROOT = ['xbrli:xbrl', 'xbrl']
     XBRL_CONTEXT = ['xbrli:context', 'context']
     XBRL_PERIOD = ['xbrli:period', 'period']
