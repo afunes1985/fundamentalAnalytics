@@ -13,7 +13,6 @@ from dao.fileDataDao import FileDataDao
 from tools.tools import FileNotFoundException, XSDNotFoundException, createLog, \
     XMLNotFoundException, CustomException
 from valueobject.constant import Constant
-from _socket import close
 
 
 class AbstractImporter(object):
