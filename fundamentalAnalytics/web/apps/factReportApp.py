@@ -104,7 +104,8 @@ def executeFactReport(n_clicks, rows, riValue):
                 }
             )
             return dt2
-
+    else:
+        raise PreventUpdate
 
 @app.callback(
     Output('hidden-div2', "children"),

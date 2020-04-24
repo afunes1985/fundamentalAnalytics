@@ -29,12 +29,14 @@ if __name__ == "__main__":
     logging.info("START")
     createLog(Constant.LOGGER_IMPORT_GENERAL, logging.DEBUG)
     if(importFDFromSEC):
-        periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2020, QuarterPeriod.quarter == 1)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
+        periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2020, QuarterPeriod.quarter == 2)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
         #periodList = session.query(QuarterPeriod).filter(and_(QuarterPeriod.year == 2011)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
         #periodList = session.query(QuarterPeriod).filter(and_(or_(QuarterPeriod.year < 2020, and_(QuarterPeriod.year >= 2018, QuarterPeriod.quarter > 3)), QuarterPeriod.year > 2017)).order_by(QuarterPeriod.year.asc(), QuarterPeriod.quarter.asc()).all()
         for period in periodList:
             ImportFileEngine().importMasterIndexFor(period = period, replaceMasterFile = replaceMasterFile, session = session,threadNumber = threadNumber)
     else: 
         fileDataList = FileDataDao().getFileData6(statusAttr='fileStatus', statusValue ='PENDING', session = session)
+        #fileDataList = FileDataDao().getFileData6(statusAttr='fileName', statusValue ='edgar/data/1000209/0001564590-20-014310.txt', session = session)
+        #fileDataList = FileDataDao().getFileData7(statusAttr='fileStatus', statusValue ='ERROR', session = session)
         importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterFile)
         importerExecutor.execute(fileDataList)

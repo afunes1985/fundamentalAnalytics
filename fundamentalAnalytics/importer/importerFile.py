@@ -17,7 +17,7 @@ from valueobject.constant import Constant
 class ImporterFile(AbstractImporter):
     
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_EXPRESSION, filename, replace, None, 'fileStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_FILE, filename, replace, None, 'fileStatus')
     
     def doImport2(self):
         fullFileName = Constant.CACHE_FOLDER + self.filename
@@ -34,7 +34,6 @@ class ImporterFile(AbstractImporter):
             except XMLNotFoundException:#TODO mejorar esto
                 summaryDict = getXMLDictFromGZCache(self.filename, Constant.DOCUMENT_SUMMARY)
                 for file in summaryDict["FilingSummary"]["InputFiles"]['File']:
-                    print(file)
                     if isinstance(file, dict):
                         if(file["@doctype"] == "10-Q") or file["@doctype"] =="10-K":
                             instFilename = file["#text"]

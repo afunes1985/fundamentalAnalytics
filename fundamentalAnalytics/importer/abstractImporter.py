@@ -13,6 +13,7 @@ from dao.fileDataDao import FileDataDao
 from tools.tools import FileNotFoundException, XSDNotFoundException, createLog, \
     XMLNotFoundException, CustomException
 from valueobject.constant import Constant
+from _socket import close
 
 
 class AbstractImporter(object):
@@ -54,11 +55,13 @@ class AbstractImporter(object):
             self.logger.error(self.filename + " " + str(e))
             self.addOrModifyFDError1(e)
         except MemoryError as e:
-            self.logger.error(self.filename, str(e))
-            FileDataDao().addOrModifyFileData(fileStatus=Constant.STATUS_ERROR, filename=self.filename, errorMessage='MemoryError', errorKey=self.errorKey)
+            self.logger.error(self.filename + " " + str(e))
+            FileDataDao().addOrModifyFileData(statusKey=self.actualStatus, statusValue=Constant.STATUS_ERROR, filename=self.filename, errorMessage='MemoryError', errorKey=self.errorKey)
         except Exception as e:
             self.logger.error(self.filename + " " + str(e))
             self.session.rollback()
+            self.session.close()
+            self.session = DBConnector().getNewSession()
             self.addOrModifyFDError2(e)
         finally:
             self.session.commit()
@@ -89,7 +92,7 @@ class AbstractImporter(object):
     
     @abstractmethod
     def addOrModifyFDError2(self, e):
-        FileDataDao().addOrModifyFileData(statusKey=self.actualStatus, statusValue=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey, externalSession=self.session)   
+        FileDataDao().addOrModifyFileData(statusKey=self.actualStatus, statusValue=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey)   
             
     @abstractmethod
     def doImport2(self):
@@ -101,7 +104,8 @@ class AbstractImporter(object):
     
     @abstractmethod
     def skipOrProcess(self):
-        if(getattr(self.fileData, self.previousStatus) in [Constant.STATUS_OK, Constant.STATUS_WARNING, Constant.STATUS_NO_DATA]):
+        #self.previousStatus is None for fileStatus
+        if(self.previousStatus is None or (getattr(self.fileData, self.previousStatus) in [Constant.STATUS_OK, Constant.STATUS_WARNING, Constant.STATUS_NO_DATA])):
             if (getattr(self.fileData, self.actualStatus) != Constant.STATUS_OK or self.replace == True):
                 return True
             else:

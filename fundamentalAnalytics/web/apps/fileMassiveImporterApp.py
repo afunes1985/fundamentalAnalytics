@@ -71,14 +71,14 @@ ddExpressionStatus = dcc.Dropdown(
     clearable=False
 )
 
-layout = html.Div(
+layout = dbc.Container(
             [
                 dbc.Row([
                     dbc.Col([
                         dcc.Graph(
                             id='graph',
                             figure=go.Figure(go.Sunburst()),
-                            style={'width': '50%'}),
+                            style={'width': '100%'}),
                         html.Div(id='fig-status1')
                     ]),
                     dbc.Col([
@@ -95,7 +95,7 @@ layout = html.Div(
                         dcc.Graph(
                             id='graph2',
                             figure=go.Figure(go.Sunburst()),
-                            style={'width': '50%'}),
+                            style={'width': '100%'}),
                         html.Div(id='fig-status2'),
                     ]),
                     dbc.Col([

@@ -23,7 +23,7 @@ from valueobject.constant import Constant
 class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
     
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'fileStatus', 'entityStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'fileStatus', 'companyStatus')
         self.processCache = None
         self.conceptName = 'dei:EntityCommonStockSharesOutstanding'
             
@@ -126,5 +126,17 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
             for em in self.EXPLICIT_MEMBER_ALLOWED:
                 if(value.find(em) != -1):
                     return True
-            
+    
+    def skipOrProcess(self):
+        if (self.fileData.company is not None and self.fileData.company.listed):
+            #self.previousStatus is None for fileStatus
+            if(self.previousStatus is None or (getattr(self.fileData, self.previousStatus) in [Constant.STATUS_OK, Constant.STATUS_WARNING, Constant.STATUS_NO_DATA])):
+                if (getattr(self.fileData, self.actualStatus) != Constant.STATUS_OK or self.replace == True):
+                    return True
+                else:
+                    return False
+            else:
+                return False  
+        else:
+            return False
         

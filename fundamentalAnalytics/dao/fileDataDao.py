@@ -68,15 +68,19 @@ class FileDataDao():
     
     def setErrorMessage(self, errorMessage, errorKey, fileData):
         if (errorMessage is not None and errorMessage != ''):
-                    em = ErrorMessage()
-                    em.errorKey = errorKey
-                    em.errorMessage = errorMessage
-                    fileData.errorMessageList.append(em)
+            self.deleteErrorMessage(fileData, errorKey)
+            em = ErrorMessage()
+            em.errorKey = errorKey
+            em.errorMessage = errorMessage
+            fileData.errorMessageList.append(em)
         else:
-            for em in fileData.errorMessageList:
+            self.deleteErrorMessage(fileData, errorKey)
+    
+    def deleteErrorMessage(self, fileData, errorKey):
+        for em in fileData.errorMessageList:
                 if (em.errorKey == errorKey):
                     fileData.errorMessageList.remove(em)
-    
+                    
     @staticmethod   
     def getFileData(filename, session=None):
         return GenericDao().getOneResult(FileData, and_(FileData.fileName == filename), session, raiseNoResultFound=False)
@@ -144,6 +148,20 @@ class FileDataDao():
         query = session.query(FileData)\
             .order_by(FileData.documentPeriodEndDate)\
             .filter(and_(getattr(FileData, statusAttr) == statusValue))\
+            .with_entities(FileData.fileName)\
+            .limit(limit)
+        objectResult = query.all()
+        return objectResult
+    
+    def getFileData7(self, statusAttr, statusValue, session=None, limit=None):
+        """get FD by one attribute"""
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(FileData)\
+            .outerjoin(FileData.errorMessageList)\
+            .order_by(FileData.documentPeriodEndDate)\
+            .filter(and_(getattr(FileData, statusAttr) == statusValue, ErrorMessage.errorMessage.is_(None)))\
             .with_entities(FileData.fileName)\
             .limit(limit)
         objectResult = query.all()
