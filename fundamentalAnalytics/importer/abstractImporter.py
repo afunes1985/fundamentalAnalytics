@@ -50,6 +50,8 @@ class AbstractImporter(object):
                     self.logger.info("***********FINISH AT " + str(datetime.now() - time1) + " " + self.filename)
                 else:
                     self.logger.info("***********FINISH AT " + str(datetime.now() - time1) + " " + self.filename + " objects added " + str(len(voList)))
+            else:
+                self.logger.info("Skipped " + self.filename)
         except (CustomException) as e:
             self.logger.error(self.filename + " " + str(e))
             self.addOrModifyFDError1(e)

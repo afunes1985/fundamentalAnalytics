@@ -23,7 +23,7 @@ from valueobject.constant import Constant
 class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
     
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'fileStatus', 'companyStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'companyStatus', 'entityStatus')
         self.processCache = None
         self.conceptName = 'dei:EntityCommonStockSharesOutstanding'
             
@@ -52,7 +52,11 @@ class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
                 if(explicitMemberValue is None):
                     efv.explicitMember = GenericDao().getOneResult(ExplicitMember, (ExplicitMember.explicitMemberValue == 'NO_EXPLICIT_MEMBER'), self.session, raiseNoResultFound = True)
                 else:
-                    efv.explicitMember = GenericDao().getOneResult(ExplicitMember, (ExplicitMember.explicitMemberValue == explicitMemberValue), self.session, raiseNoResultFound = True)
+                    efv.explicitMember = GenericDao().getOneResult(ExplicitMember, (ExplicitMember.explicitMemberValue == explicitMemberValue), self.session, raiseNoResultFound = False)
+                    if(efv.explicitMember is None):
+                        em = ExplicitMember(explicitMemberValue=explicitMemberValue, order_=99)
+                        Dao().addObject(objectToAdd=em, session=self.session)
+                        efv.explicitMember = em
                 efvList.append(efv)
         Dao().addObjectList(objectList = efvList, session = self.session)
         return efvList

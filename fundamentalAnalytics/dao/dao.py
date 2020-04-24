@@ -40,7 +40,7 @@ class GenericDao():
             .one()
         except NoResultFound as e:
             if(raiseNoResultFound):
-                raise e
+                raise Exception(str(e) + " " + str(objectClazz))
             return None
         return objectResult
     

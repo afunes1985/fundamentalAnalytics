@@ -17,7 +17,7 @@ from engine.companyEngine import CompanyEngine
 from engine.periodEngine import PeriodEngine
 from importer.abstractFactImporter import AbstractFactImporter
 from importer.abstractImporter import AbstractImporter
-from tools.tools import getXSDFileFromCache, LastPriceNotFound, \
+from tools.tools import LastPriceNotFound, \
     LastPriceIsTooOld
 from valueobject.constant import Constant
 
@@ -35,6 +35,8 @@ class ImporterCompany(AbstractImporter, AbstractFactImporter):
         company = self.fillCompanyData(self.session)
         self.fileData.company = company
         self.validateLastPrice()
+        if(not self.priceValidated):
+            raise Exception("Couldn't validate price")
             
     def getPersistentList(self, voList):
         return []    
@@ -59,7 +61,7 @@ class ImporterCompany(AbstractImporter, AbstractFactImporter):
 #         AbstractImporter.cacheDict["XSD_CACHE"] = xsdCache
 
     def validateLastPrice(self):
-        if(self.fileData.company is not None and self.fileData.company.listed and not self.priceValidated):
+        if(self.fileData.company is not None and not self.priceValidated):
             atLeastOnePriceFound = False
             atLeastOnePriceIsNew = False
             resultList = []

@@ -54,6 +54,7 @@ class ImporterExecutor(object):
                         future.add_done_callback(lambda x: self.semaphore.release())
                 except Exception as e:
                         self.logger.exception("ERROR " + fileData.fileName + " " + str(e))
+        self.logger.info("PROCESS FINISHED FOR " + str(len(fileDataList)) + " FILEDATA")
                         
     @abstractmethod
     def initLogger(self):

@@ -1,17 +1,17 @@
 #udate listed company with shares = 0
 #update fa_company set listed = 0, notListedDescription = 'sum EntityCommonStockSharesOutstanding = 0' 
-where oid in (     
-select a.oid from (SELECT c.oid
-	FROM fa_entity_fact_value efv
-		join fa_entity_fact ef on ef.oid = efv.entityFactOID
-		join fa_file_data fd on fd.oid = efv.fileDataOID
-        join fa_company	c on c.oid = fd.companyOID
-        join fa_concept	co on co.oid = ef.conceptOID
-    group by c.oid
-	having sum(efv.value) = 0) as a);
+#where oid in (     
+#select a.oid from (SELECT c.oid
+#	FROM fa_entity_fact_value efv
+#		join fa_entity_fact ef on ef.oid = efv.entityFactOID
+#		join fa_file_data fd on fd.oid = efv.fileDataOID
+#        join fa_company	c on c.oid = fd.companyOID
+#        join fa_concept	co on co.oid = ef.conceptOID
+#    group by c.oid
+#	having sum(efv.value) = 0) as a);
 
 update fa_file_data set entityStatus = 'PENDING' where companyStatus != 'OK';
-update fa_file_data set priceStatus = 'PENDING' where entityStatus != 'OK';
+update fa_file_data set priceStatus = 'PENDING' where (entityStatus != 'OK' and entityStatus!= 'NO_DATA');
 update fa_file_data set factStatus = 'PENDING' where priceStatus != 'OK';
 update fa_file_data set copyStatus = 'PENDING' where (factStatus != 'OK' and factStatus != 'NO_DATA');
 update fa_file_data set calculateStatus = 'PENDING' where (copyStatus != 'OK' and copyStatus != 'NO_DATA');
@@ -87,6 +87,26 @@ from fa_fact_value fv
 left join fa_fact f on fv.oid = f.factValueOID
 where  f.oid is null)as a);
 
+#delete orphans fa_error_message for FILE_ERROR
+delete from fa_error_message where fileDataOID in(
+select a.fileDataOID from (
+select em.fileDataOID
+	from fa_error_message em
+		inner join fa_file_data fd on fd.OID = em.fileDataOID
+    where em.errorKey = 'FILE_ERROR'
+		and fileStatus = 'PENDING') as a)
+and errorKey = 'FILE_ERROR';
+
+#delete orphans fa_error_message for FILE_ERROR
+delete from fa_error_message where fileDataOID in(
+select a.fileDataOID from (
+select em.fileDataOID
+	from fa_error_message em
+		inner join fa_file_data fd on fd.OID = em.fileDataOID
+    where em.errorKey = 'COMPANY_ERROR'
+		and fileStatus = 'PENDING') as a)
+and errorKey = 'COMPANY_ERROR';
+
 #delete orphans fa_error_message for EXPRESSION_ERROR
 delete from fa_error_message where fileDataOID in(
 select a.fileDataOID from (
@@ -117,15 +137,7 @@ select em.fileDataOID
 		and factStatus = 'PENDING') as a)
 and errorKey = 'FACT_ERROR';
 
-#delete orphans fa_error_message for FILE_ERROR
-delete from fa_error_message where fileDataOID in(
-select a.fileDataOID from (
-select em.fileDataOID
-	from fa_error_message em
-		inner join fa_file_data fd on fd.OID = em.fileDataOID
-    where em.errorKey = 'FILE_ERROR'
-		and fileStatus = 'PENDING') as a)
-and errorKey = 'FILE_ERROR';
+
 
 #delete orphans fa_period
 delete from fa_period where oid in(

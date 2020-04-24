@@ -109,7 +109,11 @@ class LoggingException(Exception):
         logging.getLogger(self.loggerName).debug(self.message)
  
 class CustomException(Exception):
-    pass 
+    def __init__(self, message):
+        if (message is not None):
+            super().__init__(message)
+        else:
+            super().__init__(self.status)
 
 class FileNotFoundException(CustomException):
     status = "FNF"
@@ -125,6 +129,8 @@ class PriceNotFoundException(CustomException):
     
 class EntityFactNotFoundException(CustomException):
     status = Constant.STATUS_ERROR
+    def __init__(self, message):
+        super().__init__(message)
     
 class LastPriceNotFound(CustomException):
     status = Constant.STATUS_LAST_PRICE_NF

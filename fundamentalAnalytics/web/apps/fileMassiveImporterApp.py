@@ -3,6 +3,7 @@ import math
 
 from dash.dependencies import Input, Output, State
 from pandas.core.frame import DataFrame
+from plotly.graph_objs import Layout
 
 from base.dbConnector import DBConnector
 from dao.fileDataDao import FileDataDao
@@ -10,8 +11,10 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 from dataImport.importerExecutor import ImporterExecutor
+from importer.importerCalculate import ImporterCalculate
 from importer.importerCopy import ImporterCopy
 from importer.importerEntityFact import ImporterEntityFact
+from importer.importerExpression import ImporterExpression
 from importer.importerFact import ImporterFact
 from importer.importerFile import ImporterFile
 from importer.importerPrice import ImporterPrice
@@ -20,10 +23,9 @@ import plotly.graph_objects as go
 from tools.tools import createLog
 from valueobject.constant import Constant
 from web.app import app
-from importer.importerCalculate import ImporterCalculate
-from importer.importerExpression import ImporterExpression
+from importer.importerCompany import ImporterCompany
 
-levels = ['factStatus', 'priceStatus', 'entityStatus', 'companyStatus', 'fileStatus']  # levels used for the hierarchical chart
+
 levels2 = ['expressionStatus', 'calculateStatus', 'copyStatus', 'factStatus']  # levels used for the hierarchical chart
 value_column = 'value_'
 
@@ -35,6 +37,11 @@ ddFileStatus = dcc.Dropdown(
 
 ddCompanyStatus = dcc.Dropdown(
     id='dd-companyStatus',
+    value=None,
+)
+
+ddListedStatus = dcc.Dropdown(
+    id='dd-listedStatus',
     value=None,
 )
 
@@ -71,19 +78,24 @@ ddExpressionStatus = dcc.Dropdown(
     clearable=False
 )
 
+layout2 = Layout(
+    paper_bgcolor='#002B36'
+)
+
 layout = dbc.Container(
             [
                 dbc.Row([
                     dbc.Col([
                         dcc.Graph(
                             id='graph',
-                            figure=go.Figure(go.Sunburst()),
+                            figure=go.Figure(data=go.Sunburst(), layout=layout2),
                             style={'width': '100%'}),
                         html.Div(id='fig-status1')
                     ]),
                     dbc.Col([
                         dbc.Row(html.Label(["Import File Status", ddFileStatus])),
                         dbc.Row(html.Label(["Import Company Status", ddCompanyStatus])),
+                        dbc.Row(html.Label(["Import Listed Status", ddListedStatus])),
                         dbc.Row(html.Label(["Import Entity Status", ddEntityStatus])),
                         dbc.Row(html.Label(["Import Price Status", ddPriceStatus])),
                         dbc.Row(html.Label(["Import Fact Status", ddFactStatus])),
@@ -112,16 +124,18 @@ layout = dbc.Container(
     [Output('graph', "figure"),
      Output('dd-fileStatus', "options"),
      Output('dd-companyStatus', "options"),
+     Output('dd-listedStatus', "options"),
      Output('dd-entityStatus', "options"),
      Output('dd-priceStatus', "options"),
      Output('dd-factStatus', "options")],
     [Input('btn-submit-processStatus', 'n_clicks')],
     [State('dd-fileStatus', 'value'),
      State('dd-companyStatus', 'value'),
+     State('dd-listedStatus', 'value'),
      State('dd-entityStatus', 'value'),
      State('dd-priceStatus', 'value'),
      State('dd-factStatus', 'value')])
-def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, priceStatus, factStatus):
+def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, listedStatus, entityStatus, priceStatus, factStatus):
     if (n_clicks > 0):
         logging.info("START")
         print("Start")  
@@ -137,12 +151,16 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, pr
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=False, importerClass=ImporterPrice)
             importerExecutor.execute(fileDataList)
         elif (entityStatus is not None):
-            if(companyStatus == 'LISTED'): 
+            if(listedStatus == 'LISTED'): 
                 listed = 1 
             else: 
                 listed = 0
-            fileDataList = FileDataDao().getFileData3(statusAttr='fileStatus', statusValue=fileStatus, statusAttr2='entityStatus', statusValue2=entityStatus, session=session, listed=listed)
+            fileDataList = FileDataDao().getFileData3(statusAttr='companyStatus', statusValue=companyStatus, statusAttr2='entityStatus', statusValue2=entityStatus, session=session, listed=listed)
             importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterEntityFact)
+            importerExecutor.execute(fileDataList)
+        elif (companyStatus is not None):
+            fileDataList = FileDataDao().getFileData4(statusAttr='fileStatus', statusValue=fileStatus, statusAttr2='companyStatus', statusValue2=companyStatus, session=session)
+            importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterCompany)
             importerExecutor.execute(fileDataList)
         elif (fileStatus is not None):    
             fileDataList = FileDataDao().getFileData6(statusAttr='fileStatus', statusValue=fileStatus, session=session)
@@ -150,7 +168,8 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, pr
             importerExecutor.execute(fileDataList)
 
     rs = FileDataDao().getStatusCount2()
-    df = DataFrame(rs, columns=['fileStatus', 'companyStatus', 'entityStatus', 'priceStatus', 'factStatus', 'value_'])
+    df = DataFrame(rs, columns=['fileStatus', 'companyStatus', 'listedStatus', 'entityStatus', 'priceStatus', 'factStatus', 'value_'])
+    levels = ['factStatus', 'priceStatus', 'entityStatus', 'listedStatus', 'companyStatus', 'fileStatus']
     df_all_trees = build_hierarchical_dataframe(df, levels, value_column)
     sunburstImportStatus = go.Figure(go.Sunburst(
                                 labels=df_all_trees['label'],
@@ -162,18 +181,19 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, entityStatus, pr
                                 marker=dict(
                                     colors=df_all_trees['color'],
                                     colorscale='RdBu'),
-                                hovertemplate='<b>%{customdata} </b>'
-                                    ))
+                                hovertemplate='<b>%{customdata} </b> <br>%{label}<br>%{text} '
+                                    ), layout=layout2)
     
     sunburstImportStatus.update_layout(margin=dict(t=0, l=0, r=0, b=0))
     
     listFileStatus = getUniqueValues(df_all_trees, 'fileStatus')
     listCompanyStatus = getUniqueValues(df_all_trees, 'companyStatus')
+    listListedStatus = getUniqueValues(df_all_trees, 'listedStatus')
     listEntityStatus = getUniqueValues(df_all_trees, 'entityStatus')
     listPriceStatus = getUniqueValues(df_all_trees, 'priceStatus')
     listFactStatus = getUniqueValues(df_all_trees, 'factStatus')
     
-    return sunburstImportStatus, listFileStatus, listCompanyStatus, listEntityStatus, listPriceStatus, listFactStatus
+    return sunburstImportStatus, listFileStatus, listCompanyStatus, listListedStatus, listEntityStatus, listPriceStatus, listFactStatus
 
 
 @app.callback(
@@ -208,18 +228,18 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
     df = DataFrame(rs, columns=['factStatus', 'copyStatus', 'calculateStatus', 'expressionStatus', 'value_'])
     df_all_trees = build_hierarchical_dataframe(df, levels2, value_column)
     s = go.Sunburst(
-                                labels=df_all_trees['label'],
-                                parents=df_all_trees['parent'],
-                                ids=df_all_trees['id'],
-                                customdata= df_all_trees['level'],
-                                text = df_all_trees['value'],
-                                name="",
-                                marker=dict(
-                                    colors=df_all_trees['color'],
-                                    colorscale='RdBu'),
-                                hovertemplate='<b>%{customdata} </b> '
-                                    )
-    sunburstStatus2 = go.Figure(s)
+            labels=df_all_trees['label'],
+            parents=df_all_trees['parent'],
+            ids=df_all_trees['id'],
+            customdata= df_all_trees['level'],
+            text = df_all_trees['value'],
+            name="",
+            marker=dict(
+                colors=df_all_trees['color'],
+                colorscale='RdBu'),
+            hovertemplate='<b>%{customdata} </b> '
+                )
+    sunburstStatus2 = go.Figure(s, layout=layout2)
     sunburstStatus2.update_layout(margin=dict(t=0, l=0, r=0, b=0))
     
     listCopyStatus = getUniqueValues(df_all_trees, 'copyStatus')
