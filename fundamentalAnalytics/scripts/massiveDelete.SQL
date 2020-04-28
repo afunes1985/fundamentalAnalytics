@@ -107,16 +107,6 @@ select em.fileDataOID
 		and fileStatus = 'PENDING') as a)
 and errorKey = 'COMPANY_ERROR';
 
-#delete orphans fa_error_message for EXPRESSION_ERROR
-delete from fa_error_message where fileDataOID in(
-select a.fileDataOID from (
-select em.fileDataOID
-	from fa_error_message em
-		inner join fa_file_data fd on fd.OID = em.fileDataOID
-    where em.errorKey = 'EXPRESSION_ERROR'
-		and expressionStatus = 'PENDING') as a)
-and errorKey = 'EXPRESSION_ERROR';
-
 #delete orphans fa_error_message for PRICE_ERROR
 delete from fa_error_message where fileDataOID in(
 select a.fileDataOID from (
@@ -136,6 +126,37 @@ select em.fileDataOID
     where em.errorKey = 'FACT_ERROR'
 		and factStatus = 'PENDING') as a)
 and errorKey = 'FACT_ERROR';
+
+#delete orphans fa_error_message for FACT_ERROR
+delete from fa_error_message where fileDataOID in(
+select a.fileDataOID from (
+select em.fileDataOID
+	from fa_error_message em
+		inner join fa_file_data fd on fd.OID = em.fileDataOID
+    where em.errorKey = 'COPY_ERROR'
+		and factStatus = 'PENDING') as a)
+and errorKey = 'COPY_ERROR';
+
+
+#delete orphans fa_error_message for FACT_ERROR
+delete from fa_error_message where fileDataOID in(
+select a.fileDataOID from (
+select em.fileDataOID
+	from fa_error_message em
+		inner join fa_file_data fd on fd.OID = em.fileDataOID
+    where em.errorKey = 'CALCULATE_ERROR'
+		and factStatus = 'PENDING') as a)
+and errorKey = 'CALCULATE_ERROR';
+
+#delete orphans fa_error_message for EXPRESSION_ERROR
+delete from fa_error_message where fileDataOID in(
+select a.fileDataOID from (
+select em.fileDataOID
+	from fa_error_message em
+		inner join fa_file_data fd on fd.OID = em.fileDataOID
+    where em.errorKey = 'EXPRESSION_ERROR'
+		and expressionStatus = 'PENDING') as a)
+and errorKey = 'EXPRESSION_ERROR';
 
 
 
