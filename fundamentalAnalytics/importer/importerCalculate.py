@@ -4,7 +4,8 @@ Created on Jul 12, 2019
 @author: afunes
 '''
 from dao.customFactDao import CustomFactDao
-from dao.dao import GenericDao
+from dao.dao import GenericDao, Dao
+from dao.fileDataDao import FileDataDao
 from engine.customFactEngine import CustomFactEngine
 from importer.abstractImporter import AbstractImporter
 from modelClass.customConcept import CustomConcept
@@ -35,3 +36,15 @@ class ImporterCalculate(AbstractImporter):
         listResult = [x.customConcept.conceptName for x in self.customConceptListResult]
         print([x.conceptName for x in self.customConceptListMissing if not x.conceptName in listResult])
         return [x.conceptName for x in self.customConceptListMissing if not x.conceptName in listResult]
+    
+    def setFileDataStatus(self, voList):
+        if(voList is not None):
+            missingObjects = self.getMissingObjects()
+            if(len(missingObjects) > 0):
+                setattr(self.fileData, self.actualStatus, Constant.STATUS_WARNING)
+                FileDataDao().setErrorMessage(errorMessage=str(missingObjects)[0:149], errorKey=self.errorKey, fileData=self.fileData)
+            else:    
+                setattr(self.fileData, self.actualStatus, Constant.STATUS_OK)
+        else: 
+            setattr(self.fileData, self.actualStatus, Constant.STATUS_OK) 
+        Dao().addObject(objectToAdd=self.fileData, session=self.session, doCommit=True)

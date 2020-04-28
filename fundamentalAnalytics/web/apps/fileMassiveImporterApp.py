@@ -25,7 +25,7 @@ from valueobject.constant import Constant
 from web.app import app
 from importer.importerCompany import ImporterCompany
 
-
+hoverTemplate = '<b>%{customdata} </b> <br>%{label}<br>%{text} '
 levels2 = ['expressionStatus', 'calculateStatus', 'copyStatus', 'factStatus']  # levels used for the hierarchical chart
 value_column = 'value_'
 
@@ -181,7 +181,7 @@ def doSubmitProcessStatus1(n_clicks, fileStatus, companyStatus, listedStatus, en
                                 marker=dict(
                                     colors=df_all_trees['color'],
                                     colorscale='RdBu'),
-                                hovertemplate='<b>%{customdata} </b> <br>%{label}<br>%{text} '
+                                hovertemplate=hoverTemplate
                                     ), layout=layout2)
     
     sunburstImportStatus.update_layout(margin=dict(t=0, l=0, r=0, b=0))
@@ -237,7 +237,7 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
             marker=dict(
                 colors=df_all_trees['color'],
                 colorscale='RdBu'),
-            hovertemplate='<b>%{customdata} </b> '
+            hovertemplate=hoverTemplate
                 )
     sunburstStatus2 = go.Figure(s, layout=layout2)
     sunburstStatus2.update_layout(margin=dict(t=0, l=0, r=0, b=0))

@@ -13,11 +13,11 @@ from sqlalchemy.sql.functions import func
 from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
 from modelClass.company import Company
+from modelClass.entityFactValue import EntityFactValue
 from modelClass.errorMessage import ErrorMessage
 from modelClass.fileData import FileData
 from modelClass.ticker import Ticker
 from valueobject.constant import Constant
-from modelClass.entityFactValue import EntityFactValue
 
 
 class FileDataDao():
@@ -206,3 +206,24 @@ class FileDataDao():
                     where c.listed = 1
                     group by factStatus, copyStatus, calculateStatus, expressionStatus""")
         return session.execute(query, '')
+    
+    def getErrorMessageGroup(self, errorKey, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(ErrorMessage)\
+            .filter(ErrorMessage.errorKey == errorKey)\
+            .with_entities(ErrorMessage.errorMessage, func.count())\
+            .order_by(ErrorMessage.errorMessage)\
+            .group_by(ErrorMessage.errorMessage)
+        objectResult = query.all()
+        return objectResult
+    
+    def getErrorKeyList(self, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(ErrorMessage)\
+            .with_entities(ErrorMessage.errorKey.distinct())
+        objectResult = query.all()
+        return objectResult

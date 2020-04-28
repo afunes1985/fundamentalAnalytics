@@ -10,10 +10,10 @@ WFC -> doesnt work CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents
 Procesar 20-f para empresas extranjeras
 BAC -> Fix Revenue missing, RevenuesNetOfInterestExpenseBeforeProvisionForLoanLoss
 CNK -> cnk_IncomeBeforeIncomeTaxes, same before line, prefix it is not GAAP
-fix importerFact.getReport, it is a shit. Find the way to obtain cash, balance and income report
-Reprocess evita la jerarquia de priceStatus == OK before import fact
+fix importerFact.getReport, this is a shit. Find the way to obtain cash, balance and income report
 highlight select row
 table.dataTable tbody tr.selected {
     color: white !important;
     background-color: #eeeeee !important;
 }
+fix importerCalculate only show warnigs for important CF

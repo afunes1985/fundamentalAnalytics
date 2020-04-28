@@ -15,8 +15,6 @@ import dash_table as dt
 from web.app import app
 
 
-rs2 = CustomFactDao().getCConceptAndConcept()
-df2 = DataFrame(rs2)
 layout = dbc.Container([
             dbc.Row(dbc.Col(dbc.Button(id='btn-executeReport', n_clicks=0, children='Submit'), align='end')),
             dbc.Row([html.Div(dt.DataTable(data=[{}], id='dt-ccRelationConcept')), html.Div(id='dt-ccRelationConceptContainer')])])
@@ -27,6 +25,7 @@ layout = dbc.Container([
     [Input('btn-executeReport', 'n_clicks')])
 def executeCCRCReport(n_clicks):
     rs2 = CustomFactDao().getCConceptAndConcept()
+    print(rs2)
     df2 = DataFrame(rs2)
     dt2 = dt.DataTable(
         id='dt-ccRelationConcept',
