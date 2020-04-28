@@ -31,8 +31,9 @@ class ImporterFile(AbstractImporter):
             self.saveFile2(fileText,"FILENAME", Constant.DOCUMENT_SUMMARY, ["XML", "XBRL"], fullFileName)
             try:
                 self.saveFile(fileText,"TYPE", Constant.DOCUMENT_INS, "XBRL",fullFileName)
-            except XMLNotFoundException:#TODO mejorar esto
+            except XMLNotFoundException as e:#TODO mejorar esto
                 summaryDict = getXMLDictFromGZCache(self.filename, Constant.DOCUMENT_SUMMARY)
+                instFilename = None
                 for file in summaryDict["FilingSummary"]["InputFiles"]['File']:
                     if isinstance(file, dict):
                         if(file["@doctype"] == "10-Q") or file["@doctype"] =="10-K":
@@ -40,8 +41,10 @@ class ImporterFile(AbstractImporter):
                             instFilename = instFilename.replace(".", "_") + ".xml"
                             self.saveFile(fileText,"FILENAME", instFilename, "XML",fullFileName, hardKey=Constant.DOCUMENT_INS)
                             break
+                if(instFilename is None):
+                    raise e
             self.saveFile(fileText,"TYPE", Constant.DOCUMENT_SCH, "XBRL",fullFileName, True)
-            self.saveFile(fileText,"TYPE", Constant.DOCUMENT_PRE, "XBRL",fullFileName) 
+            self.saveFile(fileText,"TYPE", Constant.DOCUMENT_PRE, "XBRL",fullFileName)
     
     def validateIfSomeFilesNotExits(self, folder):
         if not os.path.exists(folder + "//" + Constant.DOCUMENT_INS + ".gz"):

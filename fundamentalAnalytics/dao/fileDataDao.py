@@ -227,3 +227,41 @@ class FileDataDao():
             .with_entities(ErrorMessage.errorKey.distinct())
         objectResult = query.all()
         return objectResult
+
+
+    def getFileStatusList(self, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(FileData)\
+            .with_entities(FileData.fileStatus.distinct())
+        objectResult = query.all()
+        return objectResult
+    
+    def getFileDataForReport(self, fileStatus, session=None, limit=None):
+        """get FD for Report"""
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(FileData)\
+            .outerjoin(FileData.errorMessageList)\
+            .order_by(FileData.documentPeriodEndDate)\
+            .filter(and_(FileData.fileStatus == fileStatus))\
+            .with_entities(FileData.fileName, FileData.fileStatus, FileData.companyStatus, FileData.entityStatus, FileData.priceStatus, FileData.factStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus, ErrorMessage.errorKey, ErrorMessage.errorMessage)\
+            .limit(limit)
+        objectResult = query.all()
+        return objectResult
+    
+    def getFileDataByError(self, errorKey, errorMessage, session=None, limit=None):
+        """get FD by error key and error message"""
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(FileData)\
+            .outerjoin(FileData.errorMessageList)\
+            .order_by(FileData.documentPeriodEndDate.desc())\
+            .filter(and_(ErrorMessage.errorKey== errorKey, ErrorMessage.errorMessage.like(errorMessage)))\
+            .with_entities(FileData.fileName)\
+            .limit(limit)
+        objectResult = query.all()
+        return objectResult

@@ -12,7 +12,10 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table as dt
+from dataImport.importerExecutor import ImporterExecutor
+from valueobject.constant import Constant
 from web.app import app
+
 
 errorKeyList = FileDataDao().getErrorKeyList()
 ddDict = []
@@ -28,7 +31,8 @@ ddErrorKey = dcc.Dropdown(
 layout = dbc.Container([
             dbc.Row([dbc.Col(html.Label(["Error Key", ddErrorKey], style={'width':'100%'}), width=3),
                 dbc.Col(dbc.Button(id='btn-executeReport', n_clicks=0, children='Submit'))]),
-            dbc.Row([html.Div(dt.DataTable(data=[{}], id='dt-errorMessage')), html.Div(id='dt-errorMessageContainer')])])
+            dbc.Row([html.Div(dt.DataTable(data=[{}], id='dt-errorMessage')), html.Div(id='dt-errorMessageContainer')]),
+            dbc.Row(dbc.Col(dbc.Button(id='btn-executeImporter', n_clicks=0, children='Submit')))])
 
 @app.callback(
     Output('dt-errorMessageContainer', "children"),
@@ -36,6 +40,9 @@ layout = dbc.Container([
     [State('dd-errorKey', 'value')])
 def executeReport(n_clicks, errorKey):
     if(n_clicks > 0):
+        return refreshDT(errorKey)
+        
+def refreshDT(errorKey):
         rs2 = FileDataDao().getErrorMessageGroup(errorKey)
         df2 = DataFrame(rs2, columns=["errorMessage", "count"])
         dt2 = dt.DataTable(
@@ -55,3 +62,22 @@ def executeReport(n_clicks, errorKey):
             }]
         )
         return dt2
+    
+@app.callback(
+    Output('dt-errorMessage', "children"),
+    [Input('btn-executeImporter', 'n_clicks')],
+    [State('dt-errorMessage', "derived_virtual_data"),
+     State('dt-errorMessage', "derived_virtual_selected_rows"),
+     State('dd-errorKey', 'value')])
+def importeFileData(n_clicks, rows, selected_rows, errorKey):
+    if(n_clicks > 0):
+        if (selected_rows != None and len(selected_rows) >= 1):
+            for selected_row in selected_rows:
+                errorMessage = rows[selected_row]["errorMessage"]
+                fileDataList = FileDataDao().getFileDataByError(errorKey=errorKey, errorMessage=errorMessage)
+                importerClass = Constant().getErrorKeyDict()[errorKey]
+                importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=importerClass)
+                importerExecutor.execute(fileDataList)
+            return refreshDT(errorKey)
+        elif(selected_rows != None and len(selected_rows) > 1):
+            raise Exception("More than one row selected")

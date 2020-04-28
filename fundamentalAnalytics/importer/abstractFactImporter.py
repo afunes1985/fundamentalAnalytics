@@ -118,7 +118,7 @@ class AbstractFactImporter(object):
         entityRegistrantName = self.getConceptValue(Constant.DEI_REGISTRANT_NAME, noSegment = True)
         #COMPANY
         if (entityCentralIndexKey is None):
-            raise Exception("ERROR - CIK wasn't found", self.filename)
+            raise Exception("ERROR - CIK wasn't found")
         company = CompanyEngine().getOrCreateCompany(CIK = entityCentralIndexKey, entityRegistrantName = entityRegistrantName, session = session)
         #TICKER - Imported from ticker.txt
         #NO TRADING SYMBOL

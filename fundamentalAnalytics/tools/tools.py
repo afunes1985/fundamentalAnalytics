@@ -109,7 +109,7 @@ class LoggingException(Exception):
         logging.getLogger(self.loggerName).debug(self.message)
  
 class CustomException(Exception):
-    def __init__(self, message):
+    def __init__(self, message=None):
         if (message is not None):
             super().__init__(message)
         else:

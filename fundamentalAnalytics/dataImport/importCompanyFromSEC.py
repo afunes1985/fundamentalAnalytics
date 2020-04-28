@@ -10,15 +10,16 @@ from dao.fileDataDao import FileDataDao
 from dataImport.importerExecutor import ImporterExecutor
 from importer.importerCompany import ImporterCompany
 from modelClass.fileData import FileData
+from valueobject.constant import Constant
 
 
 if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
-    fileDataList = FileDataDao().getFileData6(statusAttr='fileName', statusValue='edgar/data/1460602/0001062993-20-001299.txt', session = session)
+    fileDataList = FileDataDao().getFileData6(statusAttr='fileName', statusValue='edgar/data/1089598/0001014897-19-000042.txt', session = session)
     #fileDataList = FileDataDao().getLastFileData(session)
-    #fileDataList = FileDataDao().getFileData6( statusAttr='companyStatus', statusValue='ERROR', session=session)
-    importerExecutor = ImporterExecutor(threadNumber=1, maxProcessInQueue=5, replace=True, isSequential=True, importerClass=ImporterCompany)
+#     fileDataList = FileDataDao().getFileDataByError(errorKey=Constant.ERROR_KEY_COMPANY, errorMessage='%not well-formed (invalid token)%', session=session)
+    importerExecutor = ImporterExecutor(threadNumber=1, maxProcessInQueue=5, replace=False, isSequential=True, importerClass=ImporterCompany)
     importerExecutor.execute(fileDataList)
             
             

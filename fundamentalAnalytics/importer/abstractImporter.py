@@ -6,6 +6,7 @@ Created on Jul 8, 2019
 from abc import abstractmethod
 from datetime import datetime
 import logging
+from pyexpat import ExpatError
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao
@@ -58,12 +59,18 @@ class AbstractImporter(object):
         except MemoryError as e:
             self.logger.error(self.filename + " " + str(e))
             FileDataDao().addOrModifyFileData(statusKey=self.actualStatus, statusValue=Constant.STATUS_ERROR, filename=self.filename, errorMessage='MemoryError', errorKey=self.errorKey)
+        except ExpatError as e:
+            self.logger.error(self.filename + " " + str(e))
+            self.session.rollback()
+            self.session.close()
+            self.session = DBConnector().getNewSession()
+            self.addOrModifyFDError2('not well-formed')
         except Exception as e:
             self.logger.error(self.filename + " " + str(e))
             self.session.rollback()
             self.session.close()
             self.session = DBConnector().getNewSession()
-            self.addOrModifyFDError2(e)
+            self.addOrModifyFDError2(str(e)[0:149])
         finally:
             self.session.commit()
             self.session.close()
@@ -92,8 +99,8 @@ class AbstractImporter(object):
         self.fileDataDao.addOrModifyFileData(statusKey=self.actualStatus, statusValue=e.status, filename=self.filename, errorMessage=str(e), errorKey=self.errorKey, externalSession=self.session)
     
     @abstractmethod
-    def addOrModifyFDError2(self, e):
-        FileDataDao().addOrModifyFileData(statusKey=self.actualStatus, statusValue=Constant.STATUS_ERROR, filename=self.filename, errorMessage=str(e)[0:149], errorKey=self.errorKey)   
+    def addOrModifyFDError2(self, errorMessage):
+        FileDataDao().addOrModifyFileData(statusKey=self.actualStatus, statusValue=Constant.STATUS_ERROR, filename=self.filename, errorMessage=errorMessage, errorKey=self.errorKey)   
             
     @abstractmethod
     def doImport2(self):
