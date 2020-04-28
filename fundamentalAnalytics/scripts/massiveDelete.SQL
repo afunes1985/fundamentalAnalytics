@@ -10,6 +10,7 @@
 #    group by c.oid
 #	having sum(efv.value) = 0) as a);
 
+update fa_file_data set companyStatus = 'PENDING' where fileStatus != 'OK';
 update fa_file_data set entityStatus = 'PENDING' where companyStatus != 'OK';
 update fa_file_data set priceStatus = 'PENDING' where (entityStatus != 'OK' and entityStatus!= 'NO_DATA');
 update fa_file_data set factStatus = 'PENDING' where priceStatus != 'OK';
@@ -97,14 +98,14 @@ select em.fileDataOID
 		and fileStatus = 'PENDING') as a)
 and errorKey = 'FILE_ERROR';
 
-#delete orphans fa_error_message for FILE_ERROR
+#delete orphans fa_error_message for COMPANY_ERROR
 delete from fa_error_message where fileDataOID in(
 select a.fileDataOID from (
 select em.fileDataOID
 	from fa_error_message em
 		inner join fa_file_data fd on fd.OID = em.fileDataOID
     where em.errorKey = 'COMPANY_ERROR'
-		and fileStatus = 'PENDING') as a)
+		and companyStatus = 'PENDING') as a)
 and errorKey = 'COMPANY_ERROR';
 
 #delete orphans fa_error_message for PRICE_ERROR
@@ -127,25 +128,25 @@ select em.fileDataOID
 		and factStatus = 'PENDING') as a)
 and errorKey = 'FACT_ERROR';
 
-#delete orphans fa_error_message for FACT_ERROR
+#delete orphans fa_error_message for COPY_ERROR
 delete from fa_error_message where fileDataOID in(
 select a.fileDataOID from (
 select em.fileDataOID
 	from fa_error_message em
 		inner join fa_file_data fd on fd.OID = em.fileDataOID
     where em.errorKey = 'COPY_ERROR'
-		and factStatus = 'PENDING') as a)
+		and copyStatus = 'PENDING') as a)
 and errorKey = 'COPY_ERROR';
 
 
-#delete orphans fa_error_message for FACT_ERROR
+#delete orphans fa_error_message for CALCULATE_ERROR
 delete from fa_error_message where fileDataOID in(
 select a.fileDataOID from (
 select em.fileDataOID
 	from fa_error_message em
 		inner join fa_file_data fd on fd.OID = em.fileDataOID
     where em.errorKey = 'CALCULATE_ERROR'
-		and factStatus = 'PENDING') as a)
+		and calculateStatus = 'PENDING') as a)
 and errorKey = 'CALCULATE_ERROR';
 
 #delete orphans fa_error_message for EXPRESSION_ERROR
