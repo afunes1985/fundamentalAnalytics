@@ -26,6 +26,17 @@ class CompanyDao():
                                 order by t.ticker""")
             rs = con.execute(query, [])
             return rs 
+        
+    def getCompanyListForReport(self, session = None):
+        if (session is None): 
+                dbconnector = DBConnector()
+                session = dbconnector.getNewSession()
+        query = session.query(Company)\
+            .join(Company.tickerList)\
+            .with_entities(Company.CIK, Company.entityRegistrantName, Company.listed, Company.notListedDescription,Ticker.ticker, Ticker.tickerOrigin, Ticker.active)
+        objectResult = query.all()
+        return objectResult
+        
     
     def getCompanyListByTicker(self, tickerList, session = None):
         if (session is None): 

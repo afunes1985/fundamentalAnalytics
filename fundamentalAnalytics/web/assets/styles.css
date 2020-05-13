@@ -1,0 +1,11 @@
+.dash-table-container .row {
+  margin: 0;
+  --accent: #1EAEDB !important;
+  --selected-background: #FF4136 !important;
+  --selected-color: #3C3C3C !important;
+}
+
+.dash-spreadsheet .row {
+  flex-wrap: nowrap;
+}
+

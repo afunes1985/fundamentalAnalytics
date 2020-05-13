@@ -9,7 +9,6 @@ from pandas.core.frame import DataFrame
 
 from dao.customFactDao import CustomFactDao
 import dash_bootstrap_components as dbc
-import dash_core_components as dcc
 import dash_html_components as html
 import dash_table as dt
 from web.app import app
@@ -24,18 +23,18 @@ layout = dbc.Container([
     Output('dt-ccRelationConceptContainer', "children"),
     [Input('btn-executeReport', 'n_clicks')])
 def executeCCRCReport(n_clicks):
-    rs2 = CustomFactDao().getCConceptAndConcept()
-    print(rs2)
-    df2 = DataFrame(rs2)
-    dt2 = dt.DataTable(
-        id='dt-ccRelationConcept',
-            columns=[
-                {"name": i, "id": i, "deletable": False} for i in df2.columns
-            ],
-            data=df2.to_dict("rows"),
-            filter_action="native",
-            sort_action="native",
-            sort_mode="multi",
-            row_selectable="multi",
-    )
-    return dt2
+    if (n_clicks > 0):
+        rs2 = CustomFactDao().getCConceptAndConcept()
+        df2 = DataFrame(rs2)
+        dt2 = dt.DataTable(
+            id='dt-ccRelationConcept',
+                columns=[
+                    {"name": i, "id": i, "deletable": False} for i in df2.columns
+                ],
+                data=df2.to_dict("rows"),
+                filter_action="native",
+                sort_action="native",
+                sort_mode="multi",
+                row_selectable="multi",
+        )
+        return dt2

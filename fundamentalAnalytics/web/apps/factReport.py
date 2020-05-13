@@ -1,4 +1,3 @@
-import dash
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from pandas.core.frame import DataFrame
@@ -97,11 +96,17 @@ def executeFactReport(n_clicks, rows, riValue):
                 sort_action="native",
                 row_selectable="multi",
                 style_cell={
-                    'minWidth': '110px', 'maxWidth': '220px',
+                    'minWidth': 'auto', 'maxWidth': '220px',
                     'whiteSpace': 'no-wrap',
                     'textOverflow': 'ellipsis',
                     'overflow': 'hidden',
-                }
+                },
+                fixed_columns={'headers': True, 'data': 2}, 
+                style_table={'overflowX': 'auto', 
+                             'minWidth': '900px', 'width': '1900px', 'maxWidth': '1900px'},
+                #style_data={ 'border': '1px grey' },
+#                 css= [{ 'selector': 'td.cell--selected, td.focused', 'rule': 'background-color: #FF4136;' }, 
+#                       { 'selector': 'td.cell--selected *, td.focused *', 'rule': 'color: #3C3C3C !important;'}]
             )
             return dt2
     else:
@@ -139,7 +144,6 @@ def getFactValues(CIK, ticker, customOrFact):
         valueDate = row[4]
         periodType = row[5]
         order = row[6]
-        # print(conceptName + " " + str(value) + " " + str(valueDate))
         if(rowDict.get('conceptName', None) != conceptName or rowDict.get('periodType', None) != periodType):
             if(rowDict.get('conceptName', None) is not None):
                 rows_list.append(rowDict)

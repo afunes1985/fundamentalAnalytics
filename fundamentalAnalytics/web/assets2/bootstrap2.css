@@ -11065,3 +11065,18 @@ a.text-dark:hover, a.text-dark:focus {
 .alert-light .alert-link {
   color: #002B36;
 }
+
+/*AFUNES*/
+
+.dash-table-container .row {
+  margin: 0;
+  display: block;
+}
+
+.dash-spreadsheet .row {
+  flex-wrap: nowrap;
+}
+
+/* .table-bordered {
+	border: 1px #073642
+} */

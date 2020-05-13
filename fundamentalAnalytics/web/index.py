@@ -8,8 +8,8 @@ import dash_html_components as html
 from tools.tools import createLog
 from valueobject.constant import Constant
 from web.app import app
-from web.apps import  entityFactReport, ccrcReportApp, factReportApp, fileDataSumApp, \
-    fileMassiveImporterApp, errorMessageReport, fileDataReport
+from web.apps import  entityFactReport, ccrcReport, factReport, fileDataSum, \
+    fileMassiveImporter, errorMessageReport, fileDataReport, companyReport
 
 
 dropDownMenu = dbc.DropdownMenu(
@@ -17,7 +17,8 @@ dropDownMenu = dbc.DropdownMenu(
                 dbc.DropdownMenuItem(dcc.Link("Custom Concept Rel Concept", href="/apps/ccrcReportApp")),
                 dbc.DropdownMenuItem(dcc.Link("Entity Fact Report", href="/apps/entityFactReport")),
                 dbc.DropdownMenuItem(dcc.Link("Error Message Report", href="/apps/errorMessageReport")),
-                dbc.DropdownMenuItem(dcc.Link("File Data Report", href="/apps/fileDataReport"))
+                dbc.DropdownMenuItem(dcc.Link("File Data Report", href="/apps/fileDataReport")),
+                dbc.DropdownMenuItem(dcc.Link("Company Report", href="/apps/companyReport"))
             ],
             #nav=True,
             in_navbar=True,
@@ -54,21 +55,23 @@ app.layout = html.Div([
               [Input('url', 'pathname')])
 def display_page(pathname):
     if pathname == '/apps/fileDataSumApp':
-        return fileDataSumApp.layout
+        return fileDataSum.layout
     elif pathname == '/apps/ccrcReportApp':
-        return ccrcReportApp.layout
+        return ccrcReport.layout
     elif pathname == '/apps/entityFactReport':
         return entityFactReport.layout
-    elif pathname == '/apps/fileMassiveImporterApp':
-        return fileMassiveImporterApp.layout
-    elif pathname == '/apps/factReportApp':
-        return factReportApp.layout
+    elif pathname == '/apps/fileMassiveImporter':
+        return fileMassiveImporter.layout
+    elif pathname == '/apps/factReport':
+        return factReport.layout
     elif pathname == '/apps/errorMessageReport':
         return errorMessageReport.layout
     elif pathname == '/apps/fileDataReport':
         return fileDataReport.layout
+    elif pathname == '/apps/companyReport':
+        return companyReport.layout
     else:
-        return factReportApp.layout
+        return factReport.layout
 
 if __name__ == '__main__':
     logging.info("START")

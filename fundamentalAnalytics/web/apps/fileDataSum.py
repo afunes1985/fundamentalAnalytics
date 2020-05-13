@@ -78,7 +78,6 @@ def doButtonAction(n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_click
             button_id = 'No clicks yet'
         else:
             button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        print(button_id)
         if(button_id == 'btn-reprocess-calculate'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterCalculate)
         elif(button_id == 'btn-reprocess-fact'):
@@ -170,7 +169,6 @@ def doGoToDir(n_clicks, rows, selected_rows):
             fileName = fileName.replace(".txt", "\\")
             fileName = fileName.replace("/", "\\")
             url = "D:\\Per\\cache\\" + fileName
-            print(url)
             subprocess.Popen(r'explorer /select,"' + url + '"')
 
 

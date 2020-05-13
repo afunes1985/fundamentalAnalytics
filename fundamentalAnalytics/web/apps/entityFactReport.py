@@ -46,7 +46,6 @@ def getFactValues(CIK):
         valueDate = row.endDate
         explicitMemberValue = row.explicitMemberValue
         key = conceptName +"-"+str(explicitMemberValue)
-        print(key)
         if(rowDict.get('key', None) != key):
             if(rowDict.get('key', None) is not None):
                 rows_list.append(rowDict)
