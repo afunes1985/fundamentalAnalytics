@@ -5,7 +5,8 @@ Created on Apr 19, 2019
 '''
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.elements import and_, or_
+from sqlalchemy.sql.elements import and_
+from sqlalchemy.sql.functions import func
 
 from base.dbConnector import DBConnector
 from dao.dao import Dao, GenericDao
@@ -14,10 +15,9 @@ from modelClass.company import Company
 from modelClass.concept import Concept
 from modelClass.entityFact import EntityFact
 from modelClass.entityFactValue import EntityFactValue
+from modelClass.explicitMember import ExplicitMember
 from modelClass.fileData import FileData
 from modelClass.period import Period
-from modelClass.ticker import Ticker
-from modelClass.explicitMember import ExplicitMember
 
 
 class EntityFactDao():
@@ -87,6 +87,25 @@ class EntityFactDao():
                              EntityFactValue.fileDataOID == fileDataOID))\
                 .order_by(ExplicitMember.order_)
             objectResult = query.first()
+        except NoResultFound:
+            objectResult = None
+        return objectResult
+    
+        
+    def getEntityFactValueForReport(self, CIK, session=None):
+        if (session is None): 
+            dbconnector = DBConnector()
+            session = dbconnector.getNewSession()
+        try:
+            query = session.query(EntityFactValue)\
+                .join(EntityFactValue.explicitMember)\
+                .join(EntityFactValue.fileData)\
+                .join(EntityFactValue.period)\
+                .join(FileData.company)\
+                .filter(and_(Company.CIK.__eq__(CIK)))\
+                .order_by(func.ifnull(Period.endDate, Period.instant),ExplicitMember.order_)\
+                .with_entities(func.date_format(func.ifnull(Period.endDate, Period.instant), '%Y-%m-%d').label("period"),func.format(EntityFactValue.value, 0).label("value"), ExplicitMember.explicitMemberValue, ExplicitMember.order_)
+            objectResult = query.all()
         except NoResultFound:
             objectResult = None
         return objectResult

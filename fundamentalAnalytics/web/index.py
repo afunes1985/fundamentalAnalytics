@@ -9,13 +9,16 @@ from tools.tools import createLog
 from valueobject.constant import Constant
 from web.app import app
 from web.apps import  entityFactReport, ccrcReport, factReport, fileDataSum, \
-    fileMassiveImporter, errorMessageReport, fileDataReport, companyReport
+    fileMassiveImporter, errorMessageReport, fileDataReport, companyReport, \
+    entityFactDetailReport, expressionCRUD
 
 
 dropDownMenu = dbc.DropdownMenu(
             children=[
                 dbc.DropdownMenuItem(dcc.Link("Custom Concept Rel Concept", href="/apps/ccrcReportApp")),
+                dbc.DropdownMenuItem(dcc.Link("Expression CRUD", href="/apps/expressionCRUD")),
                 dbc.DropdownMenuItem(dcc.Link("Entity Fact Report", href="/apps/entityFactReport")),
+                dbc.DropdownMenuItem(dcc.Link("Entity Fact Report Detail", href="/apps/entityFactDetailReport")),
                 dbc.DropdownMenuItem(dcc.Link("Error Message Report", href="/apps/errorMessageReport")),
                 dbc.DropdownMenuItem(dcc.Link("File Data Report", href="/apps/fileDataReport")),
                 dbc.DropdownMenuItem(dcc.Link("Company Report", href="/apps/companyReport"))
@@ -70,6 +73,10 @@ def display_page(pathname):
         return fileDataReport.layout
     elif pathname == '/apps/companyReport':
         return companyReport.layout
+    elif pathname == '/apps/entityFactDetailReport':
+        return entityFactDetailReport.layout
+    elif pathname == '/apps/expressionCRUD':
+        return expressionCRUD.layout
     else:
         return factReport.layout
 
