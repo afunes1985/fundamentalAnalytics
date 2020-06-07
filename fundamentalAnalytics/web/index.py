@@ -15,7 +15,7 @@ from web.apps import  entityFactReport, ccrcReport, factReport, fileDataSum, \
 
 dropDownMenu = dbc.DropdownMenu(
             children=[
-                dbc.DropdownMenuItem(dcc.Link("Custom Concept Rel Concept", href="/apps/ccrcReportApp")),
+                dbc.DropdownMenuItem(dcc.Link("Custom Concept Rel Concept", href="/apps/ccrcReport")),
                 dbc.DropdownMenuItem(dcc.Link("Expression CRUD", href="/apps/expressionCRUD")),
                 dbc.DropdownMenuItem(dcc.Link("Entity Fact Report", href="/apps/entityFactReport")),
                 dbc.DropdownMenuItem(dcc.Link("Entity Fact Report Detail", href="/apps/entityFactDetailReport")),
@@ -34,9 +34,9 @@ navbar = dbc.Navbar(
             dbc.Row(
                 [
                     dbc.Col(dbc.NavbarBrand("Fundalytics", className="ml-2")),
-                    dbc.Col(dcc.Link("Fact Report", href="/apps/factReportApp")),
-                    dbc.Col(dcc.Link("File Data Summary", href="/apps/fileDataSumApp")),
-                    dbc.Col(dcc.Link("File Massive Importer", href="/apps/fileMassiveImporterApp")),
+                    dbc.Col(dcc.Link("Fact Report", href="/apps/factReport")),
+                    dbc.Col(dcc.Link("File Data Summary", href="/apps/fileDataSum")),
+                    dbc.Col(dcc.Link("File Massive Importer", href="/apps/fileMassiveImporter")),
                     dbc.Col(dropDownMenu)
                 ],
                 align="center",
@@ -57,9 +57,9 @@ app.layout = html.Div([
 @app.callback(Output('page-content', 'children'),
               [Input('url', 'pathname')])
 def display_page(pathname):
-    if pathname == '/apps/fileDataSumApp':
+    if pathname == '/apps/fileDataSum':
         return fileDataSum.layout
-    elif pathname == '/apps/ccrcReportApp':
+    elif pathname == '/apps/ccrcReport':
         return ccrcReport.layout
     elif pathname == '/apps/entityFactReport':
         return entityFactReport.layout

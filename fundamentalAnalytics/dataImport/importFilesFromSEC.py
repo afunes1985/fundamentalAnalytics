@@ -21,7 +21,7 @@ from valueobject.constant import Constant
 
 if __name__ == "__main__":
     replaceMasterFile = True
-    importFDFromSEC = True # True add FD and False process pending FD
+    importFDFromSEC = False # True add FD and False process pending FD
     threadNumber = 3
     maxProcessInQueue = 3
     Initializer()
@@ -35,8 +35,8 @@ if __name__ == "__main__":
         for period in periodList:
             ImportFileEngine().importMasterIndexFor(period = period, replaceMasterFile = replaceMasterFile, session = session,threadNumber = threadNumber)
     else: 
-#         fileDataList = FileDataDao().getFileData6(statusAttr='fileStatus', statusValue ='PENDING', session = session)
-        fileDataList = FileDataDao().getFileData6(statusAttr='fileName', statusValue ='edgar/data/1089598/0001014897-19-000042.txt', session = session)
+        fileDataList = FileDataDao().getFileData6(statusAttr='fileStatus', statusValue ='PENDING', session = session)
+        #fileDataList = FileDataDao().getFileData6(statusAttr='fileName', statusValue ='edgar/data/1089598/0001014897-19-000042.txt', session = session)
         #fileDataList = FileDataDao().getFileData7(statusAttr='fileStatus', statusValue ='ERROR', session = session)
         importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=True, isSequential=True, importerClass=ImporterFile)
         importerExecutor.execute(fileDataList)
