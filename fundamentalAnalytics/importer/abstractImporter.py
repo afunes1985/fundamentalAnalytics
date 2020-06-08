@@ -11,8 +11,7 @@ from pyexpat import ExpatError
 from base.dbConnector import DBConnector
 from dao.dao import Dao
 from dao.fileDataDao import FileDataDao
-from tools.tools import FileNotFoundException, XSDNotFoundException, createLog, \
-    XMLNotFoundException, CustomException
+from tools.tools import createLog, CustomException
 from valueobject.constant import Constant
 
 
@@ -54,7 +53,7 @@ class AbstractImporter(object):
             else:
                 self.logger.info("Skipped " + self.filename)
         except (CustomException) as e:
-            self.logger.error(self.filename + " " + str(e))
+            self.logger.error(self.filename + " " + e.status + " " + str(e))
             self.addOrModifyFDError1(e)
         except MemoryError as e:
             self.logger.error(self.filename + " " + str(e))

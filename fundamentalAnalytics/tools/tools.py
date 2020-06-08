@@ -149,7 +149,8 @@ def getXMLDictFromGZCache(filename, documentName):
             xmlDict = xmltodict.parse(text)
             return xmlDict
     else:
-        raise FileNotFoundException("File not found " + finalFileName.replace("//", "/"))
+        shortFileName = finalFileName[finalFileName.rfind("/") + 1: len(finalFileName)]
+        raise FileNotFoundException(shortFileName)
         
 
 def getNumberValueAsString(value):

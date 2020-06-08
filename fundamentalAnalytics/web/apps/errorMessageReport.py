@@ -43,8 +43,8 @@ def executeReport(n_clicks, errorKey):
         return refreshDT(errorKey)
         
 def refreshDT(errorKey):
-        rs2 = FileDataDao().getErrorMessageGroup(errorKey)
-        df2 = DataFrame(rs2, columns=["errorMessage", "count"])
+        rs2 = FileDataDao().getErrorMessageGroup(errorKey, 'factStatus')
+        df2 = DataFrame(rs2)
         dt2 = dt.DataTable(
             id='dt-errorMessage',
             columns=[

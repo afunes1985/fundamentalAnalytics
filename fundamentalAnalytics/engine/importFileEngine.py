@@ -18,9 +18,7 @@ from dao.dao import Dao
 from dao.fileDataDao import FileDataDao
 from engine.companyEngine import CompanyEngine
 from modelClass.fileData import FileData
-from tools.tools import getBinaryFileFromCache, getXMLFromText, \
-    FileNotFoundException, getXMLDictFromGZCache, XSDNotFoundException, \
-    XMLNotFoundException
+from tools.tools import getBinaryFileFromCache
 from valueobject.constant import Constant
 
 

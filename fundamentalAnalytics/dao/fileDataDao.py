@@ -207,15 +207,16 @@ class FileDataDao():
                     group by factStatus, copyStatus, calculateStatus, expressionStatus""")
         return session.execute(query, '')
     
-    def getErrorMessageGroup(self, errorKey, session=None):
+    def getErrorMessageGroup(self, errorKey, statusAttr, session=None):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
         query = session.query(ErrorMessage)\
+            .join(ErrorMessage.fileData)\
             .filter(ErrorMessage.errorKey == errorKey)\
-            .with_entities(ErrorMessage.errorMessage, func.count())\
+            .with_entities(getattr(FileData, statusAttr), ErrorMessage.errorMessage, func.count().label('Count'))\
             .order_by(ErrorMessage.errorMessage)\
-            .group_by(ErrorMessage.errorMessage)
+            .group_by(FileData.companyStatus, ErrorMessage.errorMessage)
         objectResult = query.all()
         return objectResult
     

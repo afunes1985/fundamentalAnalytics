@@ -63,7 +63,7 @@ class ImporterCompany(AbstractImporter, AbstractFactImporter):
             for ticker in self.fileData.company.tickerList:
 #                result = requests.get('https://cloud.iexapis.com/stable/stock/' + ticker.ticker + '/quote?token=pk_c4c339ea14ba4aad92d9256ac75705e4')
                 url = 'https://cloud.iexapis.com/stable/stock/' + ticker.ticker + '/quote?token=pk_55cd20ce5c41439886a06ea27e1eb2e5'
-                self.logger.info(url)
+                self.logger.debug(url)
                 result = requests.get(url)
                 resultList.append(result)
                 if(result.ok):
@@ -75,15 +75,15 @@ class ImporterCompany(AbstractImporter, AbstractFactImporter):
                         if(latestTime != 'N/A'):
                             datetime.strptime(latestTime, '%H:%M:%S %p')
                             atLeastOnePriceIsNew = True
-                            self.logger.info("Ticker OK: " + ticker.ticker + " " + str(result))
+                            self.logger.debug("Ticker OK: " + ticker.ticker + " " + str(result))
                     except (ValueError):
                         dateTime = datetime.strptime(latestTime, '%B %d, %Y')
                         if(PeriodEngine().getDaysBetweenDates(dateTime, datetime.now()) > 30):
                             ticker.active = 0
-                            self.logger.info("Ticker NOT OK: " + ticker.ticker + " " + str(result))
+                            self.logger.debug("Ticker NOT OK: " + ticker.ticker + " " + str(result))
                         else:
                             atLeastOnePriceIsNew = True
-                            self.logger.info("Ticker OK: " + ticker.ticker + " " + str(result))
+                            self.logger.debug("Ticker OK: " + ticker.ticker + " " + str(result))
                 elif(result.status_code == 402):
                     raise Exception("Error in price provider")
                 else:

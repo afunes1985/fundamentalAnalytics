@@ -9,7 +9,8 @@ class Constant:
     def getErrorKeyDict(self):
         from importer.importerFile import ImporterFile
         from importer.importerCompany import ImporterCompany
-        ERROR_KEY_DICT = {Constant.ERROR_KEY_FILE: ImporterFile, Constant.ERROR_KEY_COMPANY: ImporterCompany}
+        from importer.importerFact import ImporterFact
+        ERROR_KEY_DICT = {Constant.ERROR_KEY_FILE: ImporterFile, Constant.ERROR_KEY_COMPANY: ImporterCompany, Constant.ERROR_KEY_FACT: ImporterFact}
         return ERROR_KEY_DICT
     
     STATUS_PENDING = "PENDING"
