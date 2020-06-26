@@ -140,7 +140,7 @@ class AbstractFactImporter(object):
         if(len(resultList) == 1):
             return resultList[0]
         elif(len(resultList) > 1):
-            raise Exception("Concept Value has more than one row")
+            raise Exception("Concept Value has more than one row - " + str(conceptName))
         else:
             return None
     

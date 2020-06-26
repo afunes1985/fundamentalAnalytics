@@ -108,6 +108,16 @@ select em.fileDataOID
 		and companyStatus = 'PENDING') as a)
 and errorKey = 'COMPANY_ERROR';
 
+#delete orphans fa_error_message for ENTITY_ERROR
+delete from fa_error_message where fileDataOID in(
+select a.fileDataOID from (
+select em.fileDataOID
+	from fa_error_message em
+		inner join fa_file_data fd on fd.OID = em.fileDataOID
+    where em.errorKey = 'ENTITYFACT_ERROR'
+		and entityStatus = 'PENDING') as a)
+and errorKey = 'ENTITYFACT_ERROR';
+
 #delete orphans fa_error_message for PRICE_ERROR
 delete from fa_error_message where fileDataOID in(
 select a.fileDataOID from (
@@ -115,7 +125,7 @@ select em.fileDataOID
 	from fa_error_message em
 		inner join fa_file_data fd on fd.OID = em.fileDataOID
     where em.errorKey = 'PRICE_ERROR'
-		and priceStatus = 'PENDING') as a)
+		and priceStatus in ('PENDING', 'OK')) as a)
 and errorKey = 'PRICE_ERROR';
 
 #delete orphans fa_error_message for FACT_ERROR

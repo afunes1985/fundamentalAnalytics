@@ -95,7 +95,8 @@ class AbstractImporter(object):
     
     @abstractmethod
     def addOrModifyFDError1(self, e):
-        self.fileDataDao.addOrModifyFileData(statusKey=self.actualStatus, statusValue=e.status, filename=self.filename, errorMessage=str(e), errorKey=self.errorKey, externalSession=self.session)
+        self.fileDataDao.addOrModifyFileData(statusKey=self.actualStatus, statusValue=e.status, filename=self.filename, errorMessage=e.message, 
+                                             errorKey=self.errorKey, externalSession=self.session, extraData=e.extraData)
     
     @abstractmethod
     def addOrModifyFDError2(self, errorMessage):

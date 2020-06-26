@@ -12,7 +12,6 @@ from pathlib import Path
 import requests
 import xmltodict
 
-from valueobject import constant
 from valueobject.constant import Constant
 
 
@@ -109,11 +108,15 @@ class LoggingException(Exception):
         logging.getLogger(self.loggerName).debug(self.message)
  
 class CustomException(Exception):
+    extraData = None
+    message = None
     def __init__(self, message=None):
         if (message is not None):
             super().__init__(message)
+            self.message=message
         else:
             super().__init__(self.status)
+            self.message=self.status
 
 class FileNotFoundException(CustomException):
     status = "FNF"
@@ -125,7 +128,10 @@ class XMLNotFoundException(CustomException):
     status = Constant.FILE_STATUS_XML_FNF
         
 class PriceNotFoundException(CustomException):
-    status = Constant.STATUS_NO_DATA
+    status = Constant.STATUS_PRICE_NOT_FOUND
+    message = 'Price not found'
+    def __init__(self, extraData):
+        self.extraData=extraData  
     
 class EntityFactNotFoundException(CustomException):
     status = Constant.STATUS_ERROR
@@ -168,3 +174,9 @@ def getNumberValueAsString(value):
         #    return str(int(value/1000000000)) + " B"
         else:
             value
+            
+def convertListToDDDict(resultList):
+    ddDict = []
+    for row in resultList:
+            ddDict.append({'label': row[0], 'value': row[0]})  
+    return ddDict

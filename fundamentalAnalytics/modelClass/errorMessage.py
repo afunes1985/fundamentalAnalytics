@@ -19,3 +19,4 @@ class ErrorMessage(Base):
     fileDataOID = Column(Integer, ForeignKey('fa_file_data.OID'))
     fileData = relationship("FileData", back_populates="errorMessageList")
     errorMessage= Column(String(45), nullable=False)
+    extraData= Column(String(45), nullable=False)

@@ -48,7 +48,8 @@ class FileDataDao():
         objectResult = query.all()
         return objectResult
         
-    def addOrModifyFileData(self, statusKey=None, statusValue=None, filename=None, externalSession=None, errorMessage=None, errorKey=None, fileData=None):
+    def addOrModifyFileData(self, statusKey=None, statusValue=None, filename=None, externalSession=None, 
+                            errorMessage=None, errorKey=None, fileData=None, extraData=None):
         try:
             if (externalSession is None):
                 session = DBConnector().getNewSession()
@@ -57,7 +58,7 @@ class FileDataDao():
             if (fileData is None):
                 fileData = FileDataDao.getFileData(filename, session)
                 setattr(fileData, statusKey, statusValue)
-            self.setErrorMessage(errorMessage, errorKey, fileData)
+            self.setErrorMessage(errorMessage=errorMessage, errorKey=errorKey, extraData=extraData, fileData=fileData)
             Dao().addObject(objectToAdd=fileData, session=session, doCommit=True)
             if (externalSession is None):
                 session.close()
@@ -66,12 +67,13 @@ class FileDataDao():
             logging.getLogger(Constant.LOGGER_GENERAL).exception(e)
             raise e
     
-    def setErrorMessage(self, errorMessage, errorKey, fileData):
+    def setErrorMessage(self, errorMessage, errorKey, fileData, extraData=None):
         if (errorMessage is not None and errorMessage != ''):
             self.deleteErrorMessage(fileData, errorKey)
             em = ErrorMessage()
             em.errorKey = errorKey
             em.errorMessage = errorMessage
+            em.extraData = extraData
             fileData.errorMessageList.append(em)
         else:
             self.deleteErrorMessage(fileData, errorKey)
@@ -239,7 +241,25 @@ class FileDataDao():
         objectResult = query.all()
         return objectResult
     
-    def getFileDataForReport(self, fileStatus, session=None, limit=None):
+    def getPriceStatusList(self, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(FileData)\
+            .with_entities(FileData.priceStatus.distinct())
+        objectResult = query.all()
+        return objectResult
+    
+    def getEntityFactStatusList(self, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(FileData)\
+            .with_entities(FileData.entityStatus.distinct())
+        objectResult = query.all()
+        return objectResult
+    
+    def getFileDataForReport(self, statusAttr, statusValue, session=None, limit=None):
         """get FD for Report"""
         dbconnector = DBConnector()
         if (session is None): 
@@ -247,7 +267,7 @@ class FileDataDao():
         query = session.query(FileData)\
             .outerjoin(FileData.errorMessageList)\
             .order_by(FileData.documentPeriodEndDate)\
-            .filter(and_(FileData.fileStatus == fileStatus))\
+            .filter(getattr(FileData, statusAttr) == statusValue)\
             .with_entities(FileData.fileName, FileData.fileStatus, FileData.companyStatus, FileData.entityStatus, FileData.priceStatus, FileData.factStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus, ErrorMessage.errorKey, ErrorMessage.errorMessage)\
             .limit(limit)
         objectResult = query.all()

@@ -11,20 +11,21 @@ from dash.dependencies import Output, Input, State
 from pandas.core.frame import DataFrame
 
 from dao.fileDataDao import FileDataDao
+import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table as dt
-from engine.factEngine import FactEngine
+from engine.fileDataEngine import FileDataEngine
 from importer.importerCalculate import ImporterCalculate
+from importer.importerCompany import ImporterCompany
 from importer.importerCopy import ImporterCopy
+from importer.importerEntityFact import ImporterEntityFact
 from importer.importerExpression import ImporterExpression
 from importer.importerFact import ImporterFact
 from importer.importerFile import ImporterFile
 from importer.importerPrice import ImporterPrice
 from web.app import app
-from importer.importerEntityFact import ImporterEntityFact
-from importer.importerCompany import ImporterCompany
-import dash_bootstrap_components as dbc
+
 
 layout = dbc.Container([
         dbc.Row([
@@ -94,7 +95,6 @@ def doButtonAction(n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_click
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterExpression)
         elif(button_id == 'btn-reprocess-company'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterCompany)
-
         return doSubmit(filename, tickerRows)
 
 
@@ -178,28 +178,9 @@ def doAction(n_clicks, rows, selected_rows, rbValue, importerClass):
             if(selected_rows is not None and len(selected_rows) != 0):
                 for rowIndex in selected_rows:
                     fileName = rows[rowIndex]["fileName"]
-                    if rbValue == 'Reprocess':
-                        importer = importerClass(filename=fileName, replace=True)
-                        importer.doImport()
-                    elif rbValue == 'Process':
-                        importer = importerClass(filename=fileName, replace=False)
-                        importer.doImport()
-                    elif rbValue == 'Delete':
-                        importer = importerClass(filename=fileName, replace=True)
-                        importer.deleteImportedObject()
-                        importer.addOrModifyFDPending()
+                    FileDataEngine().processFileData(action=rbValue, fileName=fileName, importerClass=importerClass)
             else:
                 for row in rows:
                     fileName = row["fileName"]
-                    importer = importerClass(filename=fileName, replace=True)
-                    if rbValue == 'Reprocess':
-                        importer = importerClass(filename=fileName, replace=True)
-                        importer.doImport()
-                    elif rbValue == 'Process':
-                        importer = importerClass(filename=fileName, replace=False)
-                        importer.doImport()
-                    elif rbValue == 'Delete':
-                        importer = importerClass(filename=fileName, replace=True)
-                        importer.deleteImportedObject()
-                        importer.addOrModifyFDPending()
+                    FileDataEngine().processFileData(action=rbValue, fileName=fileName, importerClass=importerClass)
             

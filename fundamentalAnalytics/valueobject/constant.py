@@ -4,13 +4,20 @@ Created on 18 sep. 2018
 @author: afunes
 '''
 
+
 class Constant:
     
     def getErrorKeyDict(self):
         from importer.importerFile import ImporterFile
         from importer.importerCompany import ImporterCompany
         from importer.importerFact import ImporterFact
-        ERROR_KEY_DICT = {Constant.ERROR_KEY_FILE: ImporterFile, Constant.ERROR_KEY_COMPANY: ImporterCompany, Constant.ERROR_KEY_FACT: ImporterFact}
+        from importer.importerPrice import ImporterPrice
+        from importer.importerEntityFact import ImporterEntityFact
+        ERROR_KEY_DICT = {Constant.ERROR_KEY_FILE: {'importerClass':ImporterFile, 'status':'fileStatus'}, 
+                          Constant.ERROR_KEY_COMPANY: {'importerClass':ImporterCompany, 'status':'companyStatus'}, 
+                          Constant.ERROR_KEY_ENTITY_FACT: {'importerClass':ImporterEntityFact, 'status':'entityStatus'},
+                          Constant.ERROR_KEY_FACT: {'importerClass':ImporterFact, 'status':'factStatus'}, 
+                          Constant.ERROR_KEY_PRICE: {'importerClass':ImporterPrice, 'status':'priceStatus'}}
         return ERROR_KEY_DICT
     
     STATUS_PENDING = "PENDING"
@@ -22,6 +29,7 @@ class Constant:
     STATUS_NO_DATA = "NO_DATA"
     STATUS_LAST_PRICE_NF = "LAST_PRICE_NF"
     STATUS_LAST_PRICE_IS_TOO_OLD = "L_P_IS_TOO_OLD"
+    STATUS_PRICE_NOT_FOUND = "PRICE_NOT_FOUND"
     FILE_STATUS_XML_FNF = "XML_FNF"
     PRICE_STATUS_TIMEOUT = "TIMEOUT"
     

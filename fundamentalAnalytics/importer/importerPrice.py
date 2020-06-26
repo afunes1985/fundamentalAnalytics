@@ -16,7 +16,7 @@ from dao.priceDao import PriceDao
 from importer.abstractImporter import AbstractImporter
 from modelClass.price import Price
 from valueobject.constant import Constant
-from tools.tools import EntityFactNotFoundException
+from tools.tools import EntityFactNotFoundException, PriceNotFoundException
 
 
 class ImporterPrice(AbstractImporter):
@@ -79,7 +79,7 @@ class ImporterPrice(AbstractImporter):
                                         break
             if len(priceList) == 0:
                 #raise Exception("DTB = "+ str(daysToBack) +" - Price not found for " + ticker.ticker +" Start=" + dateToImportStart.strftime("%Y-%m-%d") + " End=" + dateToImportEnd.strftime("%Y-%m-%d"))
-                raise Exception("DTB = "+ str(daysToBack) +" - Price not found " + url)
+                raise PriceNotFoundException("DTB="+ str(daysToBack) +" " + url)
 #         except ReadTimeout:
 #             FileDataDao().addOrModifyFileData(priceStatus = Constant.PRICE_STATUS_TIMEOUT, filename = self.filename, externalSession = self.session)
         return priceList
