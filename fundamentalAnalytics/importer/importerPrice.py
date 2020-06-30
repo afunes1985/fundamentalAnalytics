@@ -8,21 +8,20 @@ from datetime import timedelta
 import json
 
 import requests
-from requests.exceptions import ReadTimeout
 
 from dao.entityFactDao import EntityFactDao
-from dao.fileDataDao import FileDataDao
 from dao.priceDao import PriceDao
 from importer.abstractImporter import AbstractImporter
 from modelClass.price import Price
-from valueobject.constant import Constant
 from tools.tools import EntityFactNotFoundException, PriceNotFoundException
+from valueobject.constant import Constant
+from valueobject.constantStatus import ConstantStatus
 
 
 class ImporterPrice(AbstractImporter):
 
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_PRICE, filename, replace, 'entityStatus', 'priceStatus', isNullPool=True)
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_PRICE, filename, replace, ConstantStatus.ENTITY_FACT_STATUS, ConstantStatus.PRICE_STATUS, isNullPool=True)
 
     def doImport2(self):
 #         try:

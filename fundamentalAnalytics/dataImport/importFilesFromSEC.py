@@ -17,6 +17,7 @@ from importer.importerFile import ImporterFile
 from modelClass.period import QuarterPeriod
 from tools.tools import createLog
 from valueobject.constant import Constant
+from valueobject.constantStatus import ConstantStatus
 
 
 if __name__ == "__main__":
@@ -35,8 +36,8 @@ if __name__ == "__main__":
         for period in periodList:
             ImportFileEngine().importMasterIndexFor(period = period, replaceMasterFile = replaceMasterFile, session = session,threadNumber = threadNumber)
     else: 
-        fileDataList = FileDataDao().getFileData6(statusAttr='fileStatus', statusValue ='PENDING', session = session)
+        fileDataList = FileDataDao().getFileData6(statusAttr=ConstantStatus.FILE_STATUS, statusValue ='PENDING', session = session)
         #fileDataList = FileDataDao().getFileData6(statusAttr='fileName', statusValue ='edgar/data/1089598/0001014897-19-000042.txt', session = session)
-        #fileDataList = FileDataDao().getFileData7(statusAttr='fileStatus', statusValue ='ERROR', session = session)
+        #fileDataList = FileDataDao().getFileData7(statusAttr=ConstantStatus.FILE_STATUS, statusValue ='ERROR', session = session)
         importerExecutor = ImporterExecutor(threadNumber=4, maxProcessInQueue=5, replace=True, isSequential=True, importerClass=ImporterFile)
         importerExecutor.execute(fileDataList)

@@ -10,6 +10,7 @@ from base.initializer import Initializer
 from dao.fileDataDao import FileDataDao
 from dataImport.importerExecutor import ImporterExecutor
 from importer.importerFact import ImporterFact
+from valueobject.constantStatus import ConstantStatus
 
 
 if __name__ == "__main__":
@@ -17,7 +18,7 @@ if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
     #statusAttr='documentFiscalYearFocus', statusValue='2018'
-    fileDataList = FileDataDao().getFileData6( statusAttr='factStatus', statusValue='PENDING', session=session)
+    fileDataList = FileDataDao().getFileData6( statusAttr=ConstantStatus.FACT_STATUS, statusValue='PENDING', session=session)
     importerExecutor = ImporterExecutor(threadNumber=1, maxProcessInQueue=5, replace=True, isSequential=True, importerClass=ImporterFact)
     importerExecutor.execute(fileDataList)
             

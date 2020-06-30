@@ -15,12 +15,13 @@ from importer.abstractFactImporter import AbstractFactImporter
 from importer.abstractImporter import AbstractImporter
 from tools.tools import getXSDFileFromCache
 from valueobject.constant import Constant
+from valueobject.constantStatus import ConstantStatus
 
 
 class ImporterFact(AbstractImporter, AbstractFactImporter):
 
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_FACT, filename, replace, 'priceStatus', 'factStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_FACT, filename, replace, ConstantStatus.PRICE_STATUS, ConstantStatus.FACT_STATUS)
         self.processCache = None
             
     def doImport2(self):

@@ -15,12 +15,13 @@ from importer.abstractImporter import AbstractImporter
 from tools.tools import LastPriceNotFound, \
     LastPriceIsTooOld
 from valueobject.constant import Constant
+from valueobject.constantStatus import ConstantStatus
 
 
 class ImporterCompany(AbstractImporter, AbstractFactImporter):
 
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_COMPANY, filename, replace, 'fileStatus', 'companyStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_COMPANY, filename, replace, ConstantStatus.FILE_STATUS, ConstantStatus.COMPANY_STATUS)
         self.processCache = None
             
     def doImport2(self):

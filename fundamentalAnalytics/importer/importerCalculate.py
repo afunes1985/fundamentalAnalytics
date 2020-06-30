@@ -10,12 +10,13 @@ from engine.customFactEngine import CustomFactEngine
 from importer.abstractImporter import AbstractImporter
 from modelClass.customConcept import CustomConcept
 from valueobject.constant import Constant
+from valueobject.constantStatus import ConstantStatus
 
 
 class ImporterCalculate(AbstractImporter):
 
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_CALCULATE, filename, replace, 'copyStatus', 'calculateStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_CALCULATE, filename, replace, ConstantStatus.COPY_STATUS, ConstantStatus.CALCULATE_STATUS)
             
     def doImport2(self):
         customConceptList = GenericDao().getAllResult(objectClazz = CustomConcept, condition = (CustomConcept.fillStrategy == "COPY_CALCULATE"), session = self.session)

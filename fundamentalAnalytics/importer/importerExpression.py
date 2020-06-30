@@ -5,12 +5,13 @@ Created on Jul 10, 2019
 '''
 from sympy.parsing.sympy_parser import parse_expr
 
+from dao.customFactDao import CustomFactDao
 from dao.expressionDao import ExpressionDao
 from engine.customFactEngine import CustomFactEngine
 from engine.expressionEngine import ExpressionEngine
 from importer.abstractImporter import AbstractImporter
 from valueobject.constant import Constant
-from dao.customFactDao import CustomFactDao
+from valueobject.constantStatus import ConstantStatus
 
 
 class ImporterExpression(AbstractImporter):
@@ -18,7 +19,7 @@ class ImporterExpression(AbstractImporter):
     expressionDict = {}
     
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_EXPRESSION, filename, replace, 'factStatus', 'expressionStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_EXPRESSION, filename, replace, ConstantStatus.COPY_STATUS, ConstantStatus.EXPRESSION_STATUS)
         expressionList = ExpressionDao().getExpressionList(session=self.session)
         self.expressionDict = {}
         for expression in expressionList:

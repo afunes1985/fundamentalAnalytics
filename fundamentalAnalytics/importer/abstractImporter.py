@@ -117,8 +117,10 @@ class AbstractImporter(object):
             if (getattr(self.fileData, self.actualStatus) != Constant.STATUS_OK or self.replace == True):
                 return True
             else:
+                self.logger.info("File Data Skipped " + self.filename)
                 return False
         else:
+            self.logger.info("File Data Skipped " + self.filename)
             return False  
     
     @abstractmethod

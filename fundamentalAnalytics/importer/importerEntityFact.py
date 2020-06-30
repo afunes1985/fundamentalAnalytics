@@ -3,10 +3,6 @@ Created on 19 sep. 2018
 
 @author: afunes
 '''
-from nt import listdir
-
-import pandas
-import xmltodict
 
 from dao.dao import Dao, GenericDao
 from dao.entityFactDao import EntityFactDao
@@ -16,14 +12,14 @@ from importer.abstractFactImporter import AbstractFactImporter
 from importer.abstractImporter import AbstractImporter
 from modelClass.entityFactValue import EntityFactValue
 from modelClass.explicitMember import ExplicitMember
-from tools.tools import  getXSDFileFromCache
 from valueobject.constant import Constant
+from valueobject.constantStatus import ConstantStatus
 
 
 class ImporterEntityFact(AbstractImporter, AbstractFactImporter):
     
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, 'companyStatus', 'entityStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_ENTITY_FACT, filename, replace, ConstantStatus.COMPANY_STATUS, ConstantStatus.ENTITY_FACT_STATUS)
         self.processCache = None
         self.conceptName = 'dei:EntityCommonStockSharesOutstanding'
             

@@ -12,12 +12,13 @@ from importer.abstractImporter import AbstractImporter
 from tools.tools import XMLNotFoundException, getXMLDictFromGZCache, \
     getXMLFromText
 from valueobject.constant import Constant
+from valueobject.constantStatus import ConstantStatus
 
 
 class ImporterFile(AbstractImporter):
     
     def __init__(self, filename, replace):
-        AbstractImporter.__init__(self, Constant.ERROR_KEY_FILE, filename, replace, None, 'fileStatus')
+        AbstractImporter.__init__(self, Constant.ERROR_KEY_FILE, filename, replace, None, ConstantStatus.FILE_STATUS)
     
     def doImport2(self):
         fullFileName = Constant.CACHE_FOLDER + self.filename
