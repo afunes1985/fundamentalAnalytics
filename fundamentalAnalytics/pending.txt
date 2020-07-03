@@ -33,3 +33,5 @@ table.dataTable tbody tr.selected {
 fix importerCalculate only show warnigs for important CF
 
 replace importerClass from executor for string class
+
+one FD of Calcuation is blocked at INIT

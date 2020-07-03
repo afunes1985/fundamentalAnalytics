@@ -15,6 +15,9 @@ import xmltodict
 from valueobject.constant import Constant
 
 
+def showQuery(query, dbconnector):
+    print (query.statement.compile(dbconnector.engine))
+
 def getBinaryFileFromCache(filename, url = None, replaceMasterFile = False):
     #logging.getLogger(Constant.LOGGER_GENERAL).debug("BIN - Processing filename " + filename.replace("//", "/"))
     xbrlFile = Path(filename)

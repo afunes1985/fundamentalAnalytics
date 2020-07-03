@@ -17,8 +17,8 @@ from modelClass.entityFactValue import EntityFactValue
 from modelClass.errorMessage import ErrorMessage
 from modelClass.fileData import FileData
 from modelClass.ticker import Ticker
+from tools import tools
 from valueobject.constant import Constant
-
 
 class FileDataDao():
 
@@ -232,44 +232,33 @@ class FileDataDao():
         return objectResult
 
 
-    def getFileStatusList(self, session=None):
+    def getStatusList(self, statusAttr, session=None):
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
         query = session.query(FileData)\
-            .with_entities(FileData.fileStatus.distinct())
+            .with_entities(getattr(FileData, statusAttr).distinct())
         objectResult = query.all()
         return objectResult
     
-    def getPriceStatusList(self, session=None):
-        dbconnector = DBConnector()
-        if (session is None): 
-            session = dbconnector.getNewSession()
-        query = session.query(FileData)\
-            .with_entities(FileData.priceStatus.distinct())
-        objectResult = query.all()
-        return objectResult
-    
-    def getEntityFactStatusList(self, session=None):
-        dbconnector = DBConnector()
-        if (session is None): 
-            session = dbconnector.getNewSession()
-        query = session.query(FileData)\
-            .with_entities(FileData.entityStatus.distinct())
-        objectResult = query.all()
-        return objectResult
-    
-    def getFileDataForReport(self, statusAttr, statusValue, session=None, limit=None):
+    def getFileDataForReport(self, fileStatus, companyStatus, entityFactStatus, priceStatus, factStatus, copyStatus, calculateStatus, expressionStatus, session=None, limit=None):
         """get FD for Report"""
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
         query = session.query(FileData)\
             .outerjoin(FileData.errorMessageList)\
-            .order_by(FileData.documentPeriodEndDate)\
-            .filter(getattr(FileData, statusAttr) == statusValue)\
+            .filter(and_(or_(fileStatus == None, FileData.fileStatus == fileStatus),
+                        or_(companyStatus == None, FileData.companyStatus == companyStatus),
+                        or_(entityFactStatus == None, FileData.entityStatus == entityFactStatus),
+                        or_(priceStatus == None, FileData.priceStatus == priceStatus),
+                        or_(factStatus == None, FileData.factStatus == factStatus),
+                        or_(copyStatus == None, FileData.copyStatus == copyStatus),
+                        or_(calculateStatus == None, FileData.calculateStatus == calculateStatus),
+                        or_(expressionStatus == None, FileData.expressionStatus == expressionStatus)))\
             .with_entities(FileData.fileName, FileData.fileStatus, FileData.companyStatus, FileData.entityStatus, FileData.priceStatus, FileData.factStatus, FileData.copyStatus, FileData.calculateStatus, FileData.expressionStatus, ErrorMessage.errorKey, ErrorMessage.errorMessage)\
             .limit(limit)
+        #tools.showQuery(query, dbconnector) 
         objectResult = query.all()
         return objectResult
     

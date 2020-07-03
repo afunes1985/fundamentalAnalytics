@@ -6,22 +6,42 @@ Created on Jun 11, 2020
 from dao.fileDataDao import FileDataDao
 from dataImport.importerExecutor import ImporterExecutor
 from tools import tools
+from valueobject.constantStatus import ConstantStatus
 
 
 class FileDataEngine():
     
     def getFileStatusDict(self):  
-        resultList = FileDataDao().getFileStatusList()
+        resultList = FileDataDao().getStatusList(statusAttr=ConstantStatus.FILE_STATUS)
+        return tools.convertListToDDDict(resultList)
+
+    def getCompanyStatusDict(self):  
+        resultList = FileDataDao().getStatusList(statusAttr=ConstantStatus.COMPANY_STATUS)
         return tools.convertListToDDDict(resultList)
     
     def getPriceStatusDict(self):  
-        resultList = FileDataDao().getPriceStatusList()
+        resultList = FileDataDao().getStatusList(statusAttr=ConstantStatus.PRICE_STATUS)
         return tools.convertListToDDDict(resultList)
-    
         
     def getEntityFactStatusDict(self):  
-        resultList = FileDataDao().getEntityFactStatusList()
+        resultList = FileDataDao().getStatusList(statusAttr=ConstantStatus.ENTITY_FACT_STATUS)
         return tools.convertListToDDDict(resultList)
+    
+    def getFactStatusDict(self):  
+        resultList = FileDataDao().getStatusList(statusAttr=ConstantStatus.FACT_STATUS)
+        return tools.convertListToDDDict(resultList)
+    
+    def getCopyStatusDict(self):  
+        resultList = FileDataDao().getStatusList(statusAttr=ConstantStatus.COPY_STATUS)
+        return tools.convertListToDDDict(resultList)
+
+    def getCalculateStatusDict(self):  
+        resultList = FileDataDao().getStatusList(statusAttr=ConstantStatus.CALCULATE_STATUS)
+        return tools.convertListToDDDict(resultList)    
+    
+    def getExpressionStatusDict(self):  
+        resultList = FileDataDao().getStatusList(statusAttr=ConstantStatus.EXPRESSION_STATUS)
+        return tools.convertListToDDDict(resultList)   
     
     def processFileData(self, action, fileName, importerClass):
         if action == 'Reprocess':
