@@ -4,7 +4,6 @@ Created on 9 nov. 2017
 @author: afunes
 '''
 import logging
-from threading import BoundedSemaphore
 
 from sqlalchemy.sql.expression import and_
 
@@ -22,7 +21,7 @@ from valueobject.constantStatus import ConstantStatus
 
 if __name__ == "__main__":
     replaceMasterFile = True
-    importFDFromSEC = False # True add FD and False process pending FD
+    importFDFromSEC = True # True add FD and False process pending FD
     threadNumber = 3
     maxProcessInQueue = 3
     Initializer()

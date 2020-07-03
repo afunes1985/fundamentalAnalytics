@@ -9,11 +9,20 @@ import logging
 import os
 from pathlib import Path
 
+import dash
 import requests
 import xmltodict
 
 from valueobject.constant import Constant
 
+
+def getButtonID():
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        button_id = 'No clicks yet'
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    return button_id
 
 def showQuery(query, dbconnector):
     print (query.statement.compile(dbconnector.engine))
@@ -178,8 +187,9 @@ def getNumberValueAsString(value):
         else:
             value
             
-def convertListToDDDict(resultList):
+def convertListToDDDict(resultList, indexLabel=0, indexValue=0):
     ddDict = []
     for row in resultList:
-            ddDict.append({'label': row[0], 'value': row[0]})  
+            ddDict.append({'label': row[indexLabel], 'value': row[indexValue]})  
     return ddDict
+

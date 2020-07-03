@@ -6,6 +6,7 @@ Created on Apr 19, 2019
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql import functions
 from sqlalchemy.sql.elements import and_
 from sqlalchemy.sql.expression import text, or_, outerjoin
 from sqlalchemy.sql.functions import func
@@ -16,9 +17,11 @@ from modelClass.company import Company
 from modelClass.entityFactValue import EntityFactValue
 from modelClass.errorMessage import ErrorMessage
 from modelClass.fileData import FileData
+from modelClass.period import QuarterPeriod
 from modelClass.ticker import Ticker
 from tools import tools
 from valueobject.constant import Constant
+
 
 class FileDataDao():
 
@@ -240,6 +243,19 @@ class FileDataDao():
             .with_entities(getattr(FileData, statusAttr).distinct())
         objectResult = query.all()
         return objectResult
+    
+    def getQuarterPeriodList(self, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(QuarterPeriod)\
+            .with_entities(QuarterPeriod.OID, functions.concat(QuarterPeriod.year, '-' ,QuarterPeriod.quarter))\
+            .order_by(QuarterPeriod.year.desc(), QuarterPeriod.quarter.desc())
+        objectResult = query.all()
+        return objectResult
+    
+    def getQuarterPeriod(self, quarterPeriodOID, session=None):
+        return GenericDao().getOneResult(objectClazz=QuarterPeriod, condition=(QuarterPeriod.OID==quarterPeriodOID), session=session, raiseNoResultFound=True)
     
     def getFileDataForReport(self, fileStatus, companyStatus, entityFactStatus, priceStatus, factStatus, copyStatus, calculateStatus, expressionStatus, session=None, limit=None):
         """get FD for Report"""

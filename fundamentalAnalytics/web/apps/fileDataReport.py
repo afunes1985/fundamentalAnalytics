@@ -22,6 +22,7 @@ from importer.importerExpression import ImporterExpression
 from importer.importerFact import ImporterFact
 from importer.importerFile import ImporterFile
 from importer.importerPrice import ImporterPrice
+from tools import tools
 from web.app import app
 
 
@@ -142,26 +143,22 @@ def executeReport(fileStatus, companyStatus, entityFactStatus, priceStatus, fact
 def doButtonAction(n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, n_clicks7, n_clicks8, n_clicks9, rows, selected_rows, rbValue, 
                    fileStatus, companyStatus, entityFactStatus, priceStatus, factStatus, copyStatus, calculateStatus, expressionStatus):
     if (n_clicks > 0):
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            button_id = 'No clicks yet'
-        else:
-            button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        if(button_id == 'btn-reprocess-calculate'):
+        buttonID = tools.getButtonID()
+        if(buttonID == 'btn-reprocess-calculate'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterCalculate)
-        elif(button_id == 'btn-reprocess-fact'):
+        elif(buttonID == 'btn-reprocess-fact'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterFact)
-        elif(button_id == 'btn-reprocess-entity'):
+        elif(buttonID == 'btn-reprocess-entity'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterEntityFact)
-        elif(button_id == 'btn-reprocess-file'):
+        elif(buttonID == 'btn-reprocess-file'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterFile)
-        elif(button_id == 'btn-reprocess-price'):
+        elif(buttonID == 'btn-reprocess-price'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterPrice)
-        elif(button_id == 'btn-reprocess-copy'):
+        elif(buttonID == 'btn-reprocess-copy'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterCopy)
-        elif(button_id == 'btn-reprocess-expression'):
+        elif(buttonID == 'btn-reprocess-expression'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterExpression)
-        elif(button_id == 'btn-reprocess-company'):
+        elif(buttonID == 'btn-reprocess-company'):
             doAction(n_clicks, rows, selected_rows, rbValue, ImporterCompany)
         return executeReport(fileStatus, companyStatus, entityFactStatus, priceStatus, factStatus, copyStatus, calculateStatus, expressionStatus)
     

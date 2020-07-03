@@ -2,6 +2,7 @@ import logging
 import math
 
 from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 from pandas.core.frame import DataFrame
 from plotly.graph_objs import Layout
 
@@ -11,6 +12,8 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 from dataImport.importerExecutor import ImporterExecutor
+from engine.fileDataEngine import FileDataEngine
+from engine.importFileEngine import ImportFileEngine
 from importer.importerCalculate import ImporterCalculate
 from importer.importerCompany import ImporterCompany
 from importer.importerCopy import ImporterCopy
@@ -21,6 +24,7 @@ from importer.importerFile import ImporterFile
 from importer.importerPrice import ImporterPrice
 import pandas as pd
 import plotly.graph_objects as go
+from tools import tools
 from tools.tools import createLog
 from valueobject.constant import Constant
 from valueobject.constantStatus import ConstantStatus
@@ -80,6 +84,16 @@ ddExpressionStatus = dcc.Dropdown(
     clearable=False
 )
 
+
+quarterPeriodDDList = FileDataEngine().getQuarterPeriodDict()
+ddQuarterPeriod = dcc.Dropdown(
+    id='dd-quarterPeriod',
+    value=None,
+    clearable=False,
+    options=quarterPeriodDDList
+)
+
+
 layout2 = Layout(
     #paper_bgcolor='#002B36'
 )
@@ -93,7 +107,7 @@ layout = dbc.Container(
                             figure=go.Figure(data=go.Sunburst(), layout=layout2),
                             style={'width': '100%'}),
                         html.Div(id='fig-status1')
-                    ]),
+                    ],width=5),
                     dbc.Col(
                         dbc.Card(
                             dbc.CardBody([
@@ -107,6 +121,14 @@ layout = dbc.Container(
                             ]),
                         body=True),
                     width=3),
+                    dbc.Col(
+                        dbc.Card(
+                            dbc.CardBody([
+                                dbc.Row(html.Label(["Quarter Period", ddQuarterPeriod])),
+                                dbc.Row(dbc.Button(id='btn-submit-processStatus3', n_clicks=0, children='Submit'))
+                            ]),
+                        body=True),
+                    width=3),
                 ]),
                 dbc.Row([
                     dbc.Col([
@@ -115,7 +137,7 @@ layout = dbc.Container(
                             figure=go.Figure(go.Sunburst()),
                             style={'width': '100%'}),
                         html.Div(id='fig-status2'),
-                    ]),
+                    ],width=5),
                     dbc.Col(
                         dbc.Card(
                             dbc.CardBody([
@@ -258,6 +280,19 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
     listExpressionStatus = getUniqueValues(df_all_trees, ConstantStatus.EXPRESSION_STATUS)
     
     return sunburstStatus2, listCopyStatus, listCalculateStatus, listExpressionStatus
+
+
+@app.callback(
+    [Output('dd-quarterPeriod', "options")],
+    [Input('btn-submit-processStatus3', 'n_clicks')],
+    [State('dd-quarterPeriod', 'value')])
+def doSubmitProcessStatus3(n_clicks, quarterPeriodOID):
+    buttonID = tools.getButtonID()
+    if(n_clicks > 0):
+        if(buttonID =='btn-submit-processStatus3'):
+            quarterPeriod = FileDataDao().getQuarterPeriod(quarterPeriodOID=quarterPeriodOID)
+            ImportFileEngine().importMasterIndexFor(period=quarterPeriod, replaceMasterFile=True,threadNumber=3)
+    raise PreventUpdate
 
 
 def getUniqueValues(df_all_trees, key):

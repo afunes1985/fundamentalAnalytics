@@ -24,7 +24,11 @@ from valueobject.constant import Constant
 
 class ImportFileEngine():
     
-    def importMasterIndexFor(self, period, replaceMasterFile, session, threadNumber=1):
+    def importMasterIndexFor(self, period, replaceMasterFile, session=None, threadNumber=1):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+            
         file = getBinaryFileFromCache(Constant.CACHE_FOLDER + 'master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
                                     "https://www.sec.gov/Archives/edgar/full-index/" + str(period.year) + "/QTR" + str(period.quarter) + "/master.gz", replaceMasterFile)
         with gzip.open(BytesIO(file), 'rb') as f:
@@ -37,12 +41,12 @@ class ImportFileEngine():
             df = pandas.read_csv(StringIO(text2), sep="|")
             df.set_index("CIK", inplace=True)
             df.head()
-            print("STARTED")
+            print("STARTED FOR PERIOD " + str(period.year) + "-" + str(period.quarter))
             for row in df.iterrows():
                 CIK = row[0]
                 filename = row[1]["Filename"]
                 formType = row[1]["Form Type"]
-                if(formType == "10-Q" or formType == "10-K"):  # edgar/data/1000045/0001564590-19-043374.txt
+                if(formType == "10-Q" or formType == "10-K"):
                     fd = FileDataDao.getFileData(filename, session)
                     if(fd is None):
                         company = CompanyEngine().getOrCreateCompany(CIK=CIK, session=session)

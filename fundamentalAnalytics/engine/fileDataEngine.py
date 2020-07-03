@@ -43,6 +43,10 @@ class FileDataEngine():
         resultList = FileDataDao().getStatusList(statusAttr=ConstantStatus.EXPRESSION_STATUS)
         return tools.convertListToDDDict(resultList)   
     
+    def getQuarterPeriodDict(self):  
+        resultList = FileDataDao().getQuarterPeriodList()
+        return tools.convertListToDDDict(resultList=resultList, indexLabel=1, indexValue=0)   
+    
     def processFileData(self, action, fileName, importerClass):
         if action == 'Reprocess':
             importer = importerClass(filename=fileName, replace=True)

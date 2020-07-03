@@ -14,6 +14,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_table as dt
 from engine.fileDataEngine import FileDataEngine
+from tools import tools
 from valueobject.constant import Constant
 from web.app import app
 
@@ -55,14 +56,10 @@ layout = dbc.Container([
      State('rb-action', 'value')])
 def executeReport(n_clicks, n_clicks2, rows, selected_rows, errorKey, action):
     if(n_clicks > 0):
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            button_id = 'No clicks yet'
-        else:
-            button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        if(button_id == 'btn-executeReport'):
+        buttonID = tools.getButtonID()
+        if(buttonID == 'btn-executeReport'):
             return refreshDT(errorKey)
-        elif(button_id == 'btn-executeImporter'):
+        elif(buttonID == 'btn-executeImporter'):
             return importeFileData(rows, selected_rows, errorKey, action)
 
 
