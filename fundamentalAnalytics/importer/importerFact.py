@@ -10,7 +10,6 @@ import pandas
 import xmltodict
 
 from dao.factDao import FactDao
-from engine.companyEngine import CompanyEngine
 from importer.abstractFactImporter import AbstractFactImporter
 from importer.abstractImporter import AbstractImporter
 from tools.tools import getXSDFileFromCache
@@ -26,7 +25,6 @@ class ImporterFact(AbstractImporter, AbstractFactImporter):
             
     def doImport2(self):
         self.processCache = self.initProcessCache(self.filename, self.session)
-        self.fileData = self.fillFileData(self.fileData, self.processCache, self.session)
         reportDict = self.getReportDict(self.processCache, ["Cover", "Statements"], self.session)
         factVOList = self.getFactByReport(reportDict, self.processCache, self.session)
         factVOList = self.setFactValues(factVOList, self.processCache)

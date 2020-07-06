@@ -35,3 +35,5 @@ fix importerCalculate only show warnigs for important CF
 replace importerClass from executor for string class
 
 one FD of Calcuation is blocked at INIT
+
+Remove one company setting-- importing file data or importing company
