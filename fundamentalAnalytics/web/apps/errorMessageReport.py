@@ -4,7 +4,6 @@ Created on 4 nov. 2018
 @author: afunes
 '''
 
-import dash
 from dash.dependencies import Output, Input, State
 from pandas.core.frame import DataFrame
 
@@ -17,21 +16,22 @@ from engine.fileDataEngine import FileDataEngine
 from tools import tools
 from valueobject.constant import Constant
 from web.app import app
+from valueobject.constantStatus import ConstantStatus
 
 
-errorKeyList = FileDataDao().getErrorKeyList()
+errorKeyList = ConstantStatus.getStatusDict().keys()
 ddDict = []
 for row in errorKeyList:
-        ddDict.append({'label': row[0], 'value': row[0]})
-ddErrorKey = dcc.Dropdown(
-    id='dd-errorKey',
+        ddDict.append({'label': row, 'value': row})
+ddStatusKey = dcc.Dropdown(
+    id='dd-statusKey',
     value=None,
     clearable=False,
     options=ddDict
 )
 
 layout = dbc.Container([
-            dbc.Row([dbc.Col(html.Label(["Error Key", ddErrorKey], style={'width':'100%'}), width=3),
+            dbc.Row([dbc.Col(html.Label(["Status Key", ddStatusKey], style={'width':'100%'}), width=3),
                 dbc.Col(dbc.Button(id='btn-executeReport', n_clicks=0, children='Submit'))]),
             dbc.Row([html.Div(dt.DataTable(data=[{}], id='dt-errorMessage')), html.Div(id='dt-errorMessageContainer')]),
             dbc.Row([dbc.Col(dbc.Button(id='btn-selectAll', n_clicks=0, children='Select All')),
@@ -52,15 +52,16 @@ layout = dbc.Container([
      Input('btn-executeImporter', 'n_clicks')],
     [State('dt-errorMessage', "derived_virtual_data"),
      State('dt-errorMessage', "derived_virtual_selected_rows"),
-     State('dd-errorKey', 'value'),
+     State('dd-statusKey', 'value'),
      State('rb-action', 'value')])
-def executeReport(n_clicks, n_clicks2, rows, selected_rows, errorKey, action):
+def executeReport(n_clicks, n_clicks2, rows, selected_rows, statusKey, action):
     if(n_clicks > 0):
         buttonID = tools.getButtonID()
+        errorKey = ConstantStatus.getStatusDict()[statusKey]['errorKey']
         if(buttonID == 'btn-executeReport'):
-            return refreshDT(errorKey)
+            return refreshDT(statusKey=statusKey, errorKey=errorKey)
         elif(buttonID == 'btn-executeImporter'):
-            return importeFileData(rows, selected_rows, errorKey, action)
+            return importeFileData(rows=rows, selected_rows=selected_rows, errorKey=errorKey, action=action, statusKey=statusKey)
 
 
 @app.callback(
@@ -73,9 +74,8 @@ def select_all(n_clicks, rows):
     else:
         return []
             
-def refreshDT(errorKey):
-    status = Constant().getErrorKeyDict()[errorKey]['status']
-    rs2 = FileDataDao().getErrorMessageGroup(errorKey, status)
+def refreshDT(statusKey, errorKey):
+    rs2 = FileDataDao().getErrorMessageGroup(errorKey=errorKey, statusKey=statusKey)
     df2 = DataFrame(rs2)
     dt2 = dt.DataTable(
         id='dt-errorMessage',
@@ -97,11 +97,11 @@ def refreshDT(errorKey):
 
 
     
-def importeFileData(rows, selected_rows, errorKey, action):
+def importeFileData(rows, selected_rows, errorKey, action, statusKey):
     if (selected_rows != None and len(selected_rows) >= 1):
         for selected_row in selected_rows:
             errorMessage = rows[selected_row]["errorMessage"]
             fileDataList = FileDataDao().getFileDataByError(errorKey=errorKey, errorMessage=errorMessage)
-            importerClass = Constant().getErrorKeyDict()[errorKey]['importerClass']
+            importerClass = ConstantStatus.getStatusDict()[statusKey]['importerClass']
             FileDataEngine().processFileData2(action=action, fileDataList=fileDataList, importerClass=importerClass)
-        return refreshDT(errorKey)
+        return refreshDT(statusKey=statusKey, errorKey=errorKey)

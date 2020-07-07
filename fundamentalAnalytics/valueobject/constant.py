@@ -6,20 +6,7 @@ Created on 18 sep. 2018
 
 
 class Constant:
-    
-    def getErrorKeyDict(self):
-        from importer.importerFile import ImporterFile
-        from importer.importerCompany import ImporterCompany
-        from importer.importerFact import ImporterFact
-        from importer.importerPrice import ImporterPrice
-        from importer.importerEntityFact import ImporterEntityFact
-        ERROR_KEY_DICT = {Constant.ERROR_KEY_FILE: {'importerClass':ImporterFile, 'status':'fileStatus'}, 
-                          Constant.ERROR_KEY_COMPANY: {'importerClass':ImporterCompany, 'status':'companyStatus'}, 
-                          Constant.ERROR_KEY_ENTITY_FACT: {'importerClass':ImporterEntityFact, 'status':'entityStatus'},
-                          Constant.ERROR_KEY_FACT: {'importerClass':ImporterFact, 'status':'factStatus'}, 
-                          Constant.ERROR_KEY_PRICE: {'importerClass':ImporterPrice, 'status':'priceStatus'}}
-        return ERROR_KEY_DICT
-    
+
     STATUS_PENDING = "PENDING"
     STATUS_INIT = "INIT"
     STATUS_OK = "OK"

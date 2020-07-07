@@ -119,37 +119,37 @@ from modelClass.customConcept import RelCustomConceptConcept
                         # "TOTAL_CASH_FROM_INVESTING_ACTIVITIES": ["NetCashProvidedByUsedInInvestingActivitiesContinuingOperations"],
                         # "TOTAL_CASH_FROM_FINANCING_ACTIVITIES": ["NetCashProvidedByUsedInFinancingActivitiesContinuingOperations"]
                         #"CASH_AND_CASH_EQUIVALENTS": ["CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"]
-
-Initializer()
-session = DBConnector().getNewSession()
-
-createCustomConcept = True
-
-if(createCustomConcept): 
-    ccList = []
-    customFactEngine = CustomFactEngine()
+if __name__ == "__main__":
+    Initializer()
+    session = DBConnector().getNewSession()
     
-
+    createCustomConcept = True
+    
+    if(createCustomConcept): 
+        ccList = []
+        customFactEngine = CustomFactEngine()
         
-    for itemToAdd in ccList:
-        Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
-
-customConceptDict = {"NET_CHANGE_IN_CASH": ["CashPeriodIncreaseDecrease"]}
-
-
-#session.query(RelCustomConceptConcept).delete()
-#session.flush()
-
-for customConceptName, conceptList in customConceptDict.items():
-    print ("Configuring " + customConceptName)
-    customConcept = Dao().getCustomConcept(customConceptName, session)
-    for conceptName in conceptList:
-        orderCount = len(customConcept.relationConceptList) + 1
-        concept = Dao().getConcept(conceptName, session)
-        relCCC = RelCustomConceptConcept()
-        relCCC.concept = concept
-        relCCC.order_ = orderCount
-        customConcept.relationConceptList.append(relCCC)
-        print("    Concept added " + conceptName + " order " + str(relCCC.order_))
-    Dao().addObject(objectToAdd=customConcept, session=session, doCommit=True)
+    
+            
+        for itemToAdd in ccList:
+            Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
+    
+    customConceptDict = {"NET_CHANGE_IN_CASH": ["CashPeriodIncreaseDecrease"]}
+    
+    
+    #session.query(RelCustomConceptConcept).delete()
+    #session.flush()
+    
+    for customConceptName, conceptList in customConceptDict.items():
+        print ("Configuring " + customConceptName)
+        customConcept = Dao().getCustomConcept(customConceptName, session)
+        for conceptName in conceptList:
+            orderCount = len(customConcept.relationConceptList) + 1
+            concept = Dao().getConcept(conceptName, session)
+            relCCC = RelCustomConceptConcept()
+            relCCC.concept = concept
+            relCCC.order_ = orderCount
+            customConcept.relationConceptList.append(relCCC)
+            print("    Concept added " + conceptName + " order " + str(relCCC.order_))
+        Dao().addObject(objectToAdd=customConcept, session=session, doCommit=True)
 

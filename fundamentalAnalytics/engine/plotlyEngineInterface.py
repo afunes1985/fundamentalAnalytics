@@ -11,7 +11,6 @@ Created on 20 ago. 2018
 
 from pandas.core.frame import DataFrame
 
-from base.initializer import Initializer
 from dao.factDao import FactDao
 import plotly.graph_objects as go
 import chart_studio.plotly as py

@@ -4,7 +4,6 @@ Created on 4 nov. 2018
 @author: afunes
 '''
 
-import dash
 from dash.dependencies import Output, Input, State
 from pandas.core.frame import DataFrame
 
