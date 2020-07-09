@@ -18,6 +18,7 @@ class ExpressionEngine(object):
         returnList = []
         cfvDict = {}
         errorList = []
+        periodDict ={}
         rs = Dao().getValuesForExpression(fileData.OID, session)
         for row in rs:
             if cfvDict.get(row.conceptName, None) is None:
@@ -30,10 +31,19 @@ class ExpressionEngine(object):
                 symbolList = list(expr.free_symbols)
                 symbolList = [str(x) for x in symbolList]
                 try:
-                    periodOID = None
+                    periodOID = periodDict.get(expression.customConcept.periodType, None)
                     for symbol in symbolList:
                         if(periodOID is None):
                             periodOID = cfvDict[symbol]["periodOID"]
+                    if(periodOID is None):
+                        print(cfvDict)
+                        raise Exception("Period OID not found for " + symbol + " " + str(expr))
+                    else:
+                        firstPeriodOID = periodDict.get(expression.customConcept.periodType, None)
+                        if(firstPeriodOID is None):
+                            periodDict[expression.customConcept.periodType] = periodOID
+                        elif(firstPeriodOID != periodOID):
+                            raise Exception("More than one period for periodType " + str(periodOID) + str(firstPeriodOID))
                     if(len(symbolList) == 2):
                         value = expr.subs([(symbolList[0], cfvDict[symbolList[0]]["value"]), (symbolList[1], cfvDict[symbolList[1]]["value"])])
                     elif(len(symbolList) == 3):
