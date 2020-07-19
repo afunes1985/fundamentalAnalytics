@@ -8,6 +8,7 @@ from base.initializer import Initializer
 from dao.fileDataDao import FileDataDao
 from dataImport.importerExecutor import ImporterExecutor
 from importer.importerCalculate import ImporterCalculate
+from valueobject.constantStatus import ConstantStatus
 
 
 if __name__ == "__main__":
@@ -15,6 +16,6 @@ if __name__ == "__main__":
     maxProcessInQueue = 5
     Initializer()
     session = DBConnector().getNewSession()
-    fileDataList = FileDataDao().getFileData6(statusAttr='fileName', statusValue='edgar/data/70858/0000070858-20-000011.txt', session=session)
+    fileDataList = FileDataDao().getFileData6(statusAttr=ConstantStatus.CALCULATE_STATUS, statusValue='INIT', session=session)
     importerExecutor = ImporterExecutor(threadNumber = 1, maxProcessInQueue = 5, replace = True, isSequential = True, importerClass= ImporterCalculate)
     importerExecutor.execute(fileDataList)

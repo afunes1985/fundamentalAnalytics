@@ -13,7 +13,7 @@ from valueobject.constantStatus import ConstantStatus
 if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
-    fileDataList = FileDataDao().getFileData2(ticker='INTC', statusAttr=ConstantStatus.FACT_STATUS, statusValue='OK', session=session)
+    fileDataList = FileDataDao().getFileData6(statusAttr=ConstantStatus.COPY_STATUS, statusValue='INIT', session=session)
     importerExecutor = ImporterExecutor(threadNumber = 1, maxProcessInQueue = 5, replace = True, isSequential = True, importerClass= ImporterCopy)
     importerExecutor.execute(fileDataList)
     
