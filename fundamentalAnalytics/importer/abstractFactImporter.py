@@ -11,16 +11,16 @@ import pandas
 from pandas.core.series import Series
 import xmltodict
 
+from dao.companyDao import CompanyDao
 from dao.dao import Dao
 from engine.companyEngine import CompanyEngine
 from engine.periodEngine import PeriodEngine
 from importer.abstractImporter import AbstractImporter
 from modelClass.report import Report
 from tools.tools import getXMLDictFromGZCache, XSDNotFoundException, \
-    getXSDFileFromCache
+    getXSDFileFromCache, ConceptValueHasMoreThanOneRow
 from valueobject.constant import Constant
 from valueobject.valueobject import FactVO, FactValueVO
-from dao.companyDao import CompanyDao
 
 
 class AbstractFactImporter(object):
@@ -140,7 +140,13 @@ class AbstractFactImporter(object):
         if(len(resultList) == 1):
             return resultList[0]
         elif(len(resultList) > 1):
-            raise Exception("Concept Value has more than one row - " + str(conceptName))
+            oldValue = None
+            for item in resultList:
+                if oldValue is None:
+                    oldValue = item
+                else:
+                    if oldValue != item:
+                        raise ConceptValueHasMoreThanOneRow(str(conceptName) + " " + str(resultList))
         else:
             return None
     

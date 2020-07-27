@@ -27,7 +27,7 @@ class ImporterCompany(AbstractImporter, AbstractFactImporter):
     def doImport2(self):
         self.priceValidated = False
         self.validateLastPrice()
-        self.processCache = self.initProcessCache2(self.filename, self.session)
+        self.processCache = self.initProcessCache3(self.filename, self.session)
         self.fileData = self.fillFileData(self.fileData, self.processCache, self.session)
         company = self.fillCompanyData(self.session)
         self.fileData.company = company

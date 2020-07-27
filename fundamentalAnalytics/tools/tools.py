@@ -155,6 +155,12 @@ class LastPriceNotFound(CustomException):
     
 class LastPriceIsTooOld(CustomException):
     status = Constant.STATUS_LAST_PRICE_IS_TOO_OLD
+    
+class ConceptValueHasMoreThanOneRow(CustomException):
+    status = Constant.STATUS_ERROR
+    message = 'Concept Value has more than one row'
+    def __init__(self, extraData):
+        self.extraData=extraData[0:149] 
            
 def getXMLDictFromGZCache(filename, documentName):
     finalFileName = Constant.CACHE_FOLDER + filename[0: filename.find(".txt")] + "/" + documentName + ".gz"
