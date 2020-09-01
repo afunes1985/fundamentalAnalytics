@@ -178,6 +178,8 @@ def getXMLDictFromGZCache(filename, documentName):
         
 
 def getNumberValueAsString(value):
+    if(value > 1000000):
+        value = round(value)
     if(value % 1):
         return value
     else:
