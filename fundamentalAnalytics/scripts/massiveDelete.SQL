@@ -12,11 +12,12 @@
 
 update fa_file_data set companyStatus = 'PENDING' where fileStatus != 'OK';
 update fa_file_data set entityStatus = 'PENDING' where companyStatus != 'OK';
+#update fa_file_data set entityStatus = 'PENDING' where companyOID in (select OID from fa_company where listed = 0);
 update fa_file_data set priceStatus = 'PENDING' where (entityStatus != 'OK' and entityStatus!= 'NO_DATA');
 update fa_file_data set factStatus = 'PENDING' where priceStatus != 'OK';
 update fa_file_data set copyStatus = 'PENDING' where (factStatus != 'OK' and factStatus != 'NO_DATA');
 update fa_file_data set calculateStatus = 'PENDING' where (copyStatus != 'OK' and copyStatus != 'NO_DATA');
-update fa_file_data set expressionStatus = 'PENDING' where (calculateStatus != 'OK' and calculateStatus != 'NO_DATA');
+update fa_file_data set expressionStatus = 'PENDING' where (calculateStatus not in('OK','NO_DATA','WARNING'));
 
 #update fd where listed = 0
 update fa_file_data set copyStatus = 'PENDING', calculateStatus = 'PENDING', expressionStatus = 'PENDING', factStatus = 'PENDING', entityStatus = 'PENDING', priceStatus = 'PENDING'

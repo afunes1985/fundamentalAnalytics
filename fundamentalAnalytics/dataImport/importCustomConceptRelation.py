@@ -67,7 +67,8 @@ from modelClass.customConcept import RelCustomConceptConcept
 #     ccList.append(customFactEngine.createCustomConcept("NET_CHANGE_IN_CASH", "CUSTOM_CASH_FLOW", 4, 'QTD', "COPY_CALCULATE", session));
 
 
-# customConceptDict = {"REVENUE": ["Revenues", "SalesRevenueNet", "RevenueFromContractWithCustomerExcludingAssessedTax"], #1,2,3
+# customConceptDict = {
+#     "REVENUE": ["Revenues", "SalesRevenueNet", "RevenueFromContractWithCustomerExcludingAssessedTax"], #1,2,3
 #                      "COST_OF_REVENUE": ["CostOfRevenue", "CostOfGoodsAndServicesSold"],  # 1,2
 #                      "GROSS_PROFIT": ["GrossProfit"],
 #                      "SELLING_AND_MARKETING_EXPENSE": ["SellingAndMarketingExpense"],
@@ -118,7 +119,7 @@ from modelClass.customConcept import RelCustomConceptConcept
                         # "TOTAL_CASH_FROM_OPERATING_ACTIVITIES": ["NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
                         # "TOTAL_CASH_FROM_INVESTING_ACTIVITIES": ["NetCashProvidedByUsedInInvestingActivitiesContinuingOperations"],
                         # "TOTAL_CASH_FROM_FINANCING_ACTIVITIES": ["NetCashProvidedByUsedInFinancingActivitiesContinuingOperations"]
-                        #"CASH_AND_CASH_EQUIVALENTS": ["CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"]
+
 if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
@@ -134,7 +135,7 @@ if __name__ == "__main__":
         for itemToAdd in ccList:
             Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
     
-    customConceptDict = {"NET_CHANGE_IN_CASH": ["CashPeriodIncreaseDecrease"]}
+    customConceptDict = {"TOTAL_SHAREHOLDERS_EQUITY": ["StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"]}
     
     
     #session.query(RelCustomConceptConcept).delete()
