@@ -17,7 +17,15 @@ options = CompanyDao().getAllTicker()
 options2 = []
 for o in options:
     options2.append({"label":o[0], "value":o[0]})
- 
+
+btnGroup=dbc.ButtonGroup(
+    [
+        dbc.Col(dbc.Button(id='btn-submit', style={'margin': 5}, className="fa fa-refresh")),
+        dbc.Col(dbc.Button(id='btn-sendPlotyData', style={'margin': 5}, className="fa fa-line-chart"))
+    ],
+    vertical=True,
+)
+
 layout = dbc.Container(
     [
         dbc.Row([dbc.Col([html.Label("Company Tickers"),
@@ -32,13 +40,15 @@ layout = dbc.Container(
                                 value='Custom',
                                 style = {'margin' : 2}
                             )], width=2),
-                 dbc.Col([html.Label("Company list"), dt.DataTable(data=[{}], id='dt-companyData'), html.Div(id='dt-companyDataContainer')], width=4),
-                 dbc.Col(dbc.Button(id='btn-executeReport', n_clicks=0, children='Submit'), align='end')],
-                 justify="center", style={'margin':10}),
-        dbc.Row([html.Div(dt.DataTable(data=[{}], id='dt-factReport')), html.Div(id='dt-factReportContainer')]),
-        dbc.Row([dbc.Col(dbc.Button(id='btn-sendPlotyData', n_clicks=0, children='Submit', style = {'margin' : 5}))]),
+                 dbc.Col([html.Label("Company list"), dt.DataTable(data=[{}], id='dt-companyData'), html.Div(id='dt-companyDataContainer')], width=4)],
+                 style={'margin':10}),
+        dbc.Row([dbc.Col(btnGroup, width={"size": "1px"}),
+                 dbc.Col(html.Div(id='dt-factReportContainer', style={'width':'100%'}), width=11),
+                 dbc.Col(html.Div(dt.DataTable(data=[{}], id='dt-factReport'), style={'display': 'none'}), width={"size": 0})],
+                 no_gutters=True,
+                 style={'margin':0}),
         dbc.Row(html.Div(id='hidden-div2', style={'display':'none'}))
-    ], style={"max-width":"95%"}
+    ], style={"max-width":"100%"}
 )
 
  
@@ -79,7 +89,7 @@ def updateDTCompanyData(values):
 
 @app.callback(
     Output('dt-factReportContainer', "children"),
-    [Input('btn-executeReport', 'n_clicks')],
+    [Input('btn-submit', 'n_clicks')],
     [State('dt-companyData', "derived_virtual_data"),
      State('ri-CustomOrFact', "value")])
 def executeFactReport(n_clicks, rows, riValue):
