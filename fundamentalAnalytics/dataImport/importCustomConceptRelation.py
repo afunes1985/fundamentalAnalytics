@@ -135,7 +135,7 @@ if __name__ == "__main__":
         for itemToAdd in ccList:
             Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
     
-    customConceptDict = {"TOTAL_SHAREHOLDERS_EQUITY": ["StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"]}
+    customConceptDict = {"COST_OF_REVENUE": ["CostOfGoodsSold"]}
     
     
     #session.query(RelCustomConceptConcept).delete()
