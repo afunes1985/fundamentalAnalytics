@@ -29,6 +29,7 @@ from tools.tools import createLog
 from valueobject.constant import Constant
 from valueobject.constantStatus import ConstantStatus
 from web.app import app
+from dataImport.importerMassiveExecutor import ImporterMassiveExecutor
 
 
 hoverTemplate = '<b>%{customdata} </b> <br>%{label}<br>%{text} '
@@ -93,6 +94,15 @@ ddQuarterPeriod = dcc.Dropdown(
     options=quarterPeriodDDList
 )
 
+cl_massiveImporter = dbc.Checklist(
+            options=[
+                {"label": "Auto Massive importer", "value": 1},
+            ],
+            value=[],
+            id="auto-massive-importer",
+            inline=True,
+            switch=True,
+        )
 
 layout2 = Layout(
     #paper_bgcolor='#002B36'
@@ -125,7 +135,8 @@ layout = dbc.Container(
                         dbc.Card(
                             dbc.CardBody([
                                 dbc.Row(html.Label(["Quarter Period", ddQuarterPeriod])),
-                                dbc.Row(dbc.Button(id='btn-submit-processStatus3', n_clicks=0, children='Submit'))
+                                dbc.Row(cl_massiveImporter),
+                                dbc.Row(dbc.Button(id='btn-submit-processStatus3', n_clicks=0, children='Submit')),
                             ]),
                         body=True),
                     width=3),
@@ -285,13 +296,17 @@ def doSubmitProcessStatus2(n_clicks, copyStatus, calculateStatus, expressionStat
 @app.callback(
     [Output('dd-quarterPeriod', "options")],
     [Input('btn-submit-processStatus3', 'n_clicks')],
-    [State('dd-quarterPeriod', 'value')])
-def doSubmitProcessStatus3(n_clicks, quarterPeriodOID):
+    [State('dd-quarterPeriod', 'value'),
+     State('auto-massive-importer', 'value')])
+def doSubmitProcessStatus3(n_clicks, quarterPeriodOID, autoMassiveImporter):
     buttonID = tools.getButtonID()
     if(n_clicks > 0):
         if(buttonID =='btn-submit-processStatus3'):
-            quarterPeriod = FileDataDao().getQuarterPeriod(quarterPeriodOID=quarterPeriodOID)
-            ImportFileEngine().importMasterIndexFor(period=quarterPeriod, replaceMasterFile=True,threadNumber=3)
+            if(quarterPeriodOID is not None):
+                quarterPeriod = FileDataDao().getQuarterPeriod(quarterPeriodOID=quarterPeriodOID)
+                ImportFileEngine().importMasterIndexFor(period=quarterPeriod, replaceMasterFile=True,threadNumber=3)
+            if(1 in autoMassiveImporter):
+                ImporterMassiveExecutor().execute()
     raise PreventUpdate
 
 

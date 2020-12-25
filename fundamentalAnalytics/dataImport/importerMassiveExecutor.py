@@ -12,6 +12,7 @@ import time
 from sqlalchemy import event
 from sqlalchemy.engine.base import Engine
 
+from base.dbConnector import DBConnector
 from dao.fileDataDao import FileDataDao
 from importer.importerCopy import ImporterCopy
 from tools.tools import createLog
@@ -33,7 +34,10 @@ class ImporterMassiveExecutor(object):
         self.isSequential = isSequential
         
         
-    def execute(self, session):
+    def execute(self, session=None):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
         statusDict = ConstantStatus().getStatusDict()
         for status in statusDict:
             prevStatus = statusDict[status].get('prevStatus')
