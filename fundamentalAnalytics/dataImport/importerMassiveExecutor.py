@@ -36,10 +36,9 @@ class ImporterMassiveExecutor(object):
         
     def execute(self, session=None):
         dbconnector = DBConnector()
-        if (session is None): 
-            session = dbconnector.getNewSession()
         statusDict = ConstantStatus().getStatusDict()
         for status in statusDict:
+            session = dbconnector.getNewSession()
             prevStatus = statusDict[status].get('prevStatus')
             importerClass = statusDict[status].get('importerClass')
             print('status ' + status)
