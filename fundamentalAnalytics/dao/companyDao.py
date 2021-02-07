@@ -44,7 +44,8 @@ class CompanyDao():
                 session = dbconnector.getNewSession()
         query = session.query(Company)\
             .join(Company.tickerList)\
-            .filter(Ticker.ticker.in_(tickerList))\
+            .filter(and_(Ticker.ticker.in_(tickerList), 
+                         Ticker.active == True))\
             .with_entities(Company.CIK, Company.entityRegistrantName, Ticker.ticker)
         objectResult = query.all()
         return objectResult
