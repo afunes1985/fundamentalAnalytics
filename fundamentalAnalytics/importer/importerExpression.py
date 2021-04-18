@@ -20,14 +20,10 @@ class ImporterExpression(AbstractImporter):
     
     def __init__(self, filename, replace):
         AbstractImporter.__init__(self, Constant.ERROR_KEY_EXPRESSION, filename, replace, ConstantStatus.COPY_STATUS, ConstantStatus.EXPRESSION_STATUS)
-        expressionList = ExpressionDao().getExpressionList(session=self.session)
-        self.expressionDict = {}
-        for expression in expressionList:
-            expr = parse_expr(expression.expression)
-            self.expressionDict[expression] = expr
+        self.expressionDict = ExpressionEngine().getExpressionDict(self.session)
     
     def doImport2(self):
-        return ExpressionEngine().solveAndAddExpression(expressionDict=self.expressionDict, fileData=self.fileData, session=self.session)
+        return ExpressionEngine().solveHistoricalExpression(expressionDict=self.expressionDict, fileData=self.fileData, session=self.session)
             
     def getPersistent(self, vo):
         customFactValue = CustomFactEngine().getNewCustomFactValue(value=vo.value, origin=vo.origin, fileDataOID=vo.fileDataOID,

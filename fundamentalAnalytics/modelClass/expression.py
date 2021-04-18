@@ -6,7 +6,7 @@ Created on 20 ago. 2018
 from sqlalchemy import Column
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import ForeignKey
-from sqlalchemy.sql.sqltypes import String, Integer
+from sqlalchemy.sql.sqltypes import String, Integer, Boolean
 
 from modelClass import PersistenObject
 
@@ -18,3 +18,4 @@ class Expression(PersistenObject):
     customConceptOID = Column(Integer, ForeignKey('fa_custom_concept.OID'))
     customConcept = relationship("CustomConcept", back_populates="expressionList")
     defaultOrder = Column(Integer, nullable=False)
+    isCurrent = Column(Boolean, nullable=False)

@@ -122,6 +122,27 @@ class Dao():
                         where p.fileDataOID = :fileDataOID""")
         return session.execute(query, params)
     
+    def getValuesForCurrentExpression(self, fileDataOID, session):
+        params = { 'fileDataOID' : fileDataOID}
+        query = text(""" select concept.conceptName,  fv.value, period.OID as periodOID
+                        FROM fa_custom_fact fact
+                            join fa_custom_fact_value fv on fv.customFactOID = fact.OID
+                            join fa_custom_concept concept on fact.customConceptOID = concept.OID
+                            join fa_expression exp on concept.oid = exp.customConceptOID
+                            join fa_period period on fv.periodOID = period.OID
+                        where fv.fileDataOID = :fileDataOID
+                            and exp.isCurrent != True
+                        union
+                        select concept.conceptName,  efv.value, null as periodOID
+                        FROM fa_entity_fact ef
+                            join fa_entity_fact_value efv on ef.oid = efv.entityFactOID
+                            join fa_concept concept on ef.conceptOID = concept.OID
+                            join fa_explicit_member em on em.oid = efv.explicitMemberOID
+                        where efv.fileDataOID = :fileDataOID
+                            and em.explicitMemberValue = 'NO_EXPLICIT_MEMBER'""")
+        return session.execute(query, params)
+    
+    
     def getValuesForApp4(self, CIK, session = None):
         if (session is None): 
             dbconnector = DBConnector()

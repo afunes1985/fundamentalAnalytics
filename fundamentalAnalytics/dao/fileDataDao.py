@@ -182,6 +182,17 @@ class FileDataDao():
         objectResult = query.all()
         return objectResult
     
+    def getLastFileDataByCIK(self, CIK, session):
+        dbconnector = DBConnector()
+        if (session is None): 
+            session = dbconnector.getNewSession()
+        query = session.query(func.max(FileData.fileName))\
+            .join(FileData.company)\
+            .filter(Company.CIK == CIK)\
+            .group_by(FileData.companyOID)
+        objectResult = query.one()
+        return objectResult
+    
     def getErrorList(self, fileName, session=None):
         dbconnector = DBConnector()
         if (session is None): 

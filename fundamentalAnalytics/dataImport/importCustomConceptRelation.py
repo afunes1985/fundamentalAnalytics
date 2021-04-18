@@ -124,18 +124,15 @@ if __name__ == "__main__":
     Initializer()
     session = DBConnector().getNewSession()
     
-    createCustomConcept = True
+#     createCustomConcept = True
+#     
+#     if(createCustomConcept): 
+#         ccList = []
+#         customFactEngine = CustomFactEngine()
+#         for itemToAdd in ccList:
+#             Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
     
-    if(createCustomConcept): 
-        ccList = []
-        customFactEngine = CustomFactEngine()
-        
-    
-            
-        for itemToAdd in ccList:
-            Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
-    
-    customConceptDict = {"COST_OF_REVENUE": ["CostOfGoodsSold"]}
+    customConceptDict = {"REVENUE": ["RefiningAndMarketingRevenue"]}
     
     
     #session.query(RelCustomConceptConcept).delete()
