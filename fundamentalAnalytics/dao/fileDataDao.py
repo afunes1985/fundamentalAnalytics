@@ -183,15 +183,20 @@ class FileDataDao():
         return objectResult
     
     def getLastFileDataByCIK(self, CIK, session):
-        dbconnector = DBConnector()
-        if (session is None): 
-            session = dbconnector.getNewSession()
-        query = session.query(func.max(FileData.fileName))\
-            .join(FileData.company)\
-            .filter(Company.CIK == CIK)\
-            .group_by(FileData.companyOID)
-        objectResult = query.one()
-        return objectResult
+        session = DBConnector().getNewSession()
+        query = text("""
+                    select fileName 
+                    from fa_file_data fd
+                    join fa_company  c on fd.companyOID = c.OID
+                    where CIK = '320193' and 
+                    documentPeriodEndDate = (
+                        select max(documentPeriodEndDate) 
+                        from fa_file_data fd
+                        join fa_company  c on fd.companyOID = c.OID 
+                        where CIK = '320193'
+                        group by companyOID);
+                    """)
+        return session.execute(query, '')
     
     def getErrorList(self, fileName, session=None):
         dbconnector = DBConnector()

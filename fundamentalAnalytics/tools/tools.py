@@ -181,7 +181,7 @@ def getNumberValueAsString(value):
     if(value > 1000000):
         value = round(value)
     if(value % 1):
-        return value
+        return round(value,4)
     else:
         intLen = len(str(int(value)))
         if(intLen < 4):

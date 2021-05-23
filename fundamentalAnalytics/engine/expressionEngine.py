@@ -23,12 +23,15 @@ class ExpressionEngine(object):
         return self.solveExpression(expressionDict, fileData, cfvDict)
     
     def solveCurrentExpression(self, CIK, ticker, session):
-        filename = FileDataDao().getLastFileDataByCIK(CIK=CIK, session=session)
-        fileData = FileDataDao().getFileData(filename[0], session)
+        rs = FileDataDao().getLastFileDataByCIK(CIK=CIK, session=session)
+        row = rs.fetchone()
+#         print(row[0])
+        fileData = FileDataDao().getFileData(row[0], session)
         expressionDict = self.getExpressionDict2(isCurrent=True, session=session)
         cfvDict = self.getValuesForExpression(fileDataOID=fileData.OID, isCurrent=True, session=session)
         priceValue = PricingInterfaceTradier().getMarketPriceByAssetName(ticker)
         cfvDict['PRICE'] = {'value': priceValue, 'periodOID': None}
+#         print('PRICE', priceValue)
         return self.solveExpression(expressionDict, fileData, cfvDict)
     
     def getExpressionDict(self, session):
@@ -86,10 +89,12 @@ class ExpressionEngine(object):
                             raise Exception("More than one period for periodType " + str(periodOID) + str(firstPeriodOID))
                     if(len(symbolList) == 2):
                         value = expr.subs([(symbolList[0], cfvDict[symbolList[0]]["value"]), (symbolList[1], cfvDict[symbolList[1]]["value"])])
+#                         print(expression.customConcept.conceptName, symbolList[0], cfvDict[symbolList[0]]["value"], symbolList[1], cfvDict[symbolList[1]]["value"])
                     elif(len(symbolList) == 3):
                         value = expr.subs([(symbolList[0], cfvDict[symbolList[0]]["value"]), (symbolList[1], cfvDict[symbolList[1]]["value"]), (symbolList[2], cfvDict[symbolList[2]]["value"])])
                     origin = 'CALCULATED_BY_RULE'
-                    cfv = CustomFactValueVO(value, origin, fileData.OID, expression.customConcept, expression.customConcept.defaultOrder, periodOID)
+                    cfv = CustomFactValueVO(value=value, origin=origin, fileDataOID=fileData.OID, customConcept=expression.customConcept, 
+                                            order_=expression.customConcept.defaultOrder, periodOID=periodOID, periodType=expression.customConcept.periodType)
                     cfvDict[expression.customConcept.conceptName] = {"value": value, "periodOID" : periodOID}
                     returnList.append(cfv)
                 except KeyError as e:
@@ -104,6 +109,7 @@ if __name__ == '__main__':
 #     fileData = FileDataDao.getFileData('edgar/data/320193/0000320193-21-000010.txt', session)
     ee = ExpressionEngine()
     rList = ee.solveCurrentExpression(CIK = '320193', ticker='AAPL', session=session)
-    print(rList)
+    for cfVO in rList:
+        print(cfVO.customConcept.conceptName, cfVO.value)
 #     priceValue = PricingInterfaceTradier().getMarketPriceByAssetName('AAPL')
 #     print(priceValue)

@@ -2,12 +2,14 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from pandas.core.frame import DataFrame
 
+from base.dbConnector import DBConnector
 from dao.companyDao import CompanyDao
 from dao.factDao import FactDao
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table as dt
+from engine.expressionEngine import ExpressionEngine
 from engine.plotlyEngineInterface import PlotlyEngineInterface
 from tools.tools import getNumberValueAsString
 from valueobject.valueobject import FilterFactVO
@@ -113,10 +115,10 @@ def executeFactReport(n_clicks, rows, riValue):
                 },
                 fixed_columns={'headers': True, 'data': 2}, 
                 style_table={'overflowX': 'auto', 
-                             'minWidth': '900px', 'width': '1900px', 'maxWidth': '1900px'},
+                             'minWidth': '900px', 'width': '100%', 'maxWidth': '1450px'},
                 #style_data={ 'border': '1px grey' },
-#                 css= [{ 'selector': 'td.cell--selected, td.focused', 'rule': 'background-color: #FF4136;' }, 
-#                       { 'selector': 'td.cell--selected *, td.focused *', 'rule': 'color: #3C3C3C !important;'}]
+#                 css= [{'selector': 'table',   TRY TO EXPAND THE TABLE AT 100% of SCREEN
+#                        'rule': 'width: 100%;'}]
             )
             return dt2
     else:
@@ -144,19 +146,25 @@ def doSubmitSendPlotlyData(n_clicks, rows, selected_rows):
 def getFactValues(CIK, ticker, customOrFact):
     rs = FactDao.getFactValues2(CIK=CIK, customOrFact=customOrFact)
     rows = rs.fetchall()
-    rows_list = []
+    tableDict = {}
     rowDict = {}
     columnNameForDate = []
+    oldRowID = None
     for row in rows:
-        reportName = row[0][0:70]
-        conceptName = row[1]
-        value = getNumberValueAsString(row[3])
-        valueDate = row[4]
-        periodType = row[5]
-        order = row[6]
-        if(rowDict.get('conceptName', None) != conceptName or rowDict.get('periodType', None) != periodType):
+        reportName = row.reportShortName[0:70]
+        conceptName = row.conceptName
+        value = getNumberValueAsString(row.value)
+        valueDate = row.date_
+        periodType = row.periodType
+        order = row.order_
+        newRowID = reportName +"-"+ conceptName +"-"+ periodType
+#         print('newRowID', newRowID)
+        if(oldRowID is None or newRowID != oldRowID):
+            #Changing row
+#             print('oldRowID', oldRowID)
             if(rowDict.get('conceptName', None) is not None):
-                rows_list.append(rowDict)
+                tableDict[oldRowID] = rowDict
+            oldRowID = newRowID
             rowDict = {} 
             rowDict['reportName'] = reportName
             rowDict['conceptName'] = conceptName
@@ -165,14 +173,29 @@ def getFactValues(CIK, ticker, customOrFact):
         rowDict[valueDate.strftime('%d-%m-%Y')] = value
         if valueDate not in columnNameForDate:
             columnNameForDate.append(valueDate)
-    rows_list.append(rowDict)     
+    tableDict[newRowID] = rowDict
     columnKeys = ['reportName', 'conceptName', 'periodType', 'order']
     columnNameForDate.sort()
     columnNameForDate = (x.strftime('%d-%m-%Y') for x in columnNameForDate)
     columnKeys.extend(columnNameForDate)
-    
-    df = DataFrame(rows_list, columns=columnKeys)
+    columnKeys.append('CURRENT')
+    setCurrentFactValues(tableDict=tableDict, CIK=CIK, ticker=ticker)
+    df = DataFrame(list(tableDict.values()), columns=columnKeys)
     df = df.sort_values(["reportName", "order"], ascending=[True, True])
+    print(df.to_string())
     app.CIK = CIK
     app.ticker = ticker
     return df
+
+def setCurrentFactValues(tableDict, CIK, ticker):
+    ee = ExpressionEngine()
+    session = DBConnector(isNullPool=True).getNewSession()
+    rList = ee.solveCurrentExpression(CIK = CIK, ticker=ticker, session=session)
+    for cfVO in rList:
+        rowID = "CUSTOM_RATIO" +"-"+ cfVO.customConcept.conceptName +"-"+ cfVO.periodType
+        print(rowID, cfVO.value)
+        tableDict[rowID]["CURRENT"] = getNumberValueAsString(cfVO.value)
+        tableDict[rowID]['reportName'] = "CUSTOM_RATIO"
+        tableDict[rowID]['conceptName'] = cfVO.customConcept.conceptName
+        tableDict[rowID]['periodType'] = cfVO.periodType
+        tableDict[rowID]['order'] = cfVO.order_

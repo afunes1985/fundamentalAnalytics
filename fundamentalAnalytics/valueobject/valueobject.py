@@ -60,8 +60,9 @@ class CustomFactValueVO():
     endDate = None
     order_ = None
     periodOID = None
+    periodType = None
 
-    def __init__(self, value, origin, fileDataOID, customConcept, order_, periodOID=None, endDate=None):
+    def __init__(self, value, origin, fileDataOID, customConcept, order_, periodOID=None, endDate=None, periodType=None):
         self.value = value
         self.origin = origin
         self.fileDataOID = fileDataOID
@@ -69,3 +70,4 @@ class CustomFactValueVO():
         self.endDate = endDate
         self.order_ = order_
         self.periodOID = periodOID
+        self.periodType = periodType

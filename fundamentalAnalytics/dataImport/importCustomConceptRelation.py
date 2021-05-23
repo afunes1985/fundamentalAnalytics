@@ -132,7 +132,7 @@ if __name__ == "__main__":
 #         for itemToAdd in ccList:
 #             Dao().addObject(objectToAdd=itemToAdd, session=session, doCommit=True) 
     
-    customConceptDict = {"REVENUE": ["RefiningAndMarketingRevenue"]}
+    customConceptDict = {"CASH_AND_CASH_EQUIVALENTS": ["Cash"]}
     
     
     #session.query(RelCustomConceptConcept).delete()
