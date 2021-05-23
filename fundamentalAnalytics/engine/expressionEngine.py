@@ -103,13 +103,13 @@ class ExpressionEngine(object):
         return returnList
     
 
-if __name__ == '__main__':
-    Initializer()
-    session = DBConnector(isNullPool=True).getNewSession()
-#     fileData = FileDataDao.getFileData('edgar/data/320193/0000320193-21-000010.txt', session)
-    ee = ExpressionEngine()
-    rList = ee.solveCurrentExpression(CIK = '320193', ticker='AAPL', session=session)
-    for cfVO in rList:
-        print(cfVO.customConcept.conceptName, cfVO.value)
-#     priceValue = PricingInterfaceTradier().getMarketPriceByAssetName('AAPL')
-#     print(priceValue)
+# if __name__ == '__main__':
+#     Initializer()
+#     session = DBConnector(isNullPool=True).getNewSession()
+# #     fileData = FileDataDao.getFileData('edgar/data/320193/0000320193-21-000010.txt', session)
+#     ee = ExpressionEngine()
+#     rList = ee.solveCurrentExpression(CIK = '320193', ticker='AAPL', session=session)
+#     for cfVO in rList:
+#         print(cfVO.customConcept.conceptName, cfVO.value)
+# #     priceValue = PricingInterfaceTradier().getMarketPriceByAssetName('AAPL')
+# #     print(priceValue)

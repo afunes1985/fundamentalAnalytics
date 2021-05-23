@@ -182,7 +182,7 @@ def getFactValues(CIK, ticker, customOrFact):
     setCurrentFactValues(tableDict=tableDict, CIK=CIK, ticker=ticker)
     df = DataFrame(list(tableDict.values()), columns=columnKeys)
     df = df.sort_values(["reportName", "order"], ascending=[True, True])
-    print(df.to_string())
+#     print(df.to_string())
     app.CIK = CIK
     app.ticker = ticker
     return df
