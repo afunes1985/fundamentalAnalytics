@@ -17,3 +17,4 @@ class Ticker(PersistenObject):
     companyOID = Column(Integer, ForeignKey('fa_company.OID'))
     company = relationship("Company", back_populates="tickerList")
     active = Column(Boolean, nullable=False)
+    onlinePricingSymbol = Column(String(10), nullable=False)

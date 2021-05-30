@@ -15,6 +15,9 @@ from dao.priceDao import PriceDao
 
 
 class PricingInterface:
+    
+    TRADIER = "TRADIER"
+    
     @staticmethod
     def getPriceInterfacesDict():
         return dict({"EXCEL":PricingInterfaceExcel(), 
@@ -213,10 +216,11 @@ class PricingInterfaceDB:
         returnList.append(returnRow)
         return returnList
 
-if __name__ == '__main__':
-    datetime.strptime('Dec 31, 2015', '%b %d, %Y')
-    
-    cp = PricingInterface.getExchangeRateByDate("USD", "MXN", datetime(2020, 12, 31).date())
-#     cp = PricingInterfaceExcel().getExchangeRateByDate("USD", "MXN", datetime(2019, 12, 31).date())
-#     cp = PricingInterfaceExcel().getPriceByDate(assetName='ICA.MX', date=datetime(2019, 12, 31).date())
-    print(cp)
+# if __name__ == '__main__':
+#     datetime.strptime('Dec 31, 2015', '%b %d, %Y')
+#     
+# #     cp = PricingInterface.getExchangeRateByDate("USD", "MXN", datetime(2020, 12, 31).date())
+# #     cp = PricingInterfaceExcel().getExchangeRateByDate("USD", "MXN", datetime(2019, 12, 31).date())
+# #     cp = PricingInterfaceExcel().getPriceByDate(assetName='ICA.MX', date=datetime(2019, 12, 31).date())
+#     cp = PricingInterface().getMarketPriceByAssetName("BRK/B", PricingInterface.TRADIER)
+#     print(cp)

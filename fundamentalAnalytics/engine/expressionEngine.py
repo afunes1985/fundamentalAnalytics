@@ -11,8 +11,9 @@ from base.initializer import Initializer
 from dao.dao import Dao
 from dao.expressionDao import ExpressionDao
 from dao.fileDataDao import FileDataDao
-from pricingAPI.PricingInterface import PricingInterfaceTradier
+from pricingAPI.PricingInterface import PricingInterface
 from valueobject.valueobject import CustomFactValueVO
+from dao.companyDao import CompanyDao
 
 
 class ExpressionEngine(object):
@@ -25,11 +26,11 @@ class ExpressionEngine(object):
     def solveCurrentExpression(self, CIK, ticker, session):
         rs = FileDataDao().getLastFileDataByCIK(CIK=CIK, session=session)
         row = rs.fetchone()
-#         print(row[0])
+        tickerObject = CompanyDao().getTicker(ticker, session)
         fileData = FileDataDao().getFileData(row[0], session)
         expressionDict = self.getExpressionDict2(isCurrent=True, session=session)
         cfvDict = self.getValuesForExpression(fileDataOID=fileData.OID, isCurrent=True, session=session)
-        priceValue = PricingInterfaceTradier().getMarketPriceByAssetName(ticker)
+        priceValue = PricingInterface().getMarketPriceByAssetName(tickerObject.onlinePricingSymbol, PricingInterface.TRADIER)
         cfvDict['PRICE'] = {'value': priceValue, 'periodOID': None}
 #         print('PRICE', priceValue)
         return self.solveExpression(expressionDict, fileData, cfvDict)
