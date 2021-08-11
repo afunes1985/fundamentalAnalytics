@@ -74,7 +74,7 @@ class ImporterCompany(AbstractImporter, AbstractFactImporter):
                     json_data = json.loads(result.text)
                     latestTime = json_data['latestTime']
                     try:
-                        if(latestTime != 'N/A'):
+                        if(latestTime != 'N/A' and latestTime != None):
                             datetime.strptime(latestTime, '%H:%M:%S %p')
                             atLeastOnePriceIsNew = True
                             self.logger.debug("Ticker OK: " + ticker.ticker + " " + str(result))
