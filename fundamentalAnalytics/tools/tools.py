@@ -35,13 +35,18 @@ def getBinaryFileFromCache(filename, url = None, replaceMasterFile = False):
         with open(filename, mode='rb') as file: 
             file = file.read()
     elif (url is not None):
-        response = requests.get(url, timeout = 30) 
-        directory = os.path.dirname(filename)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        with open(filename, 'wb') as f:
-            f.write(response.content)
-            file = response.content
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.76 Safari/537.36'}
+        response = requests.get(url, timeout=30, headers=headers) 
+        if(response.status_code == 200):
+            directory = os.path.dirname(filename)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+                file = response.content
+        else:
+            print(response.content.decode())
+            raise Exception(response.content.decode())
     return file
 
 def getTxtFileFromCache(filename, url):

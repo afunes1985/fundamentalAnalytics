@@ -28,9 +28,10 @@ class ImportFileEngine():
         dbconnector = DBConnector()
         if (session is None): 
             session = dbconnector.getNewSession()
-            
-        file = getBinaryFileFromCache(Constant.CACHE_FOLDER + 'master' + str(period.year) + "-Q" + str(period.quarter) + '.gz',
-                                    "https://www.sec.gov/Archives/edgar/full-index/" + str(period.year) + "/QTR" + str(period.quarter) + "/master.gz", replaceMasterFile)
+        localURL = Constant.CACHE_FOLDER + 'master' + str(period.year) + "-Q" + str(period.quarter) + '.gz'
+        secURL = "https://www.sec.gov/Archives/edgar/full-index/" + str(period.year) + "/QTR" + str(period.quarter) + "/master.gz"
+        print(localURL, secURL)
+        file = getBinaryFileFromCache(localURL, secURL, replaceMasterFile)
         with gzip.open(BytesIO(file), 'rb') as f:
             file_content = f.read()
             text = file_content.decode("ISO-8859-1")

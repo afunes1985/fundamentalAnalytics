@@ -90,7 +90,7 @@ class ExpressionEngine(object):
                             raise Exception("More than one period for periodType " + str(periodOID) + str(firstPeriodOID))
                     if(len(symbolList) == 2):
                         value = expr.subs([(symbolList[0], cfvDict[symbolList[0]]["value"]), (symbolList[1], cfvDict[symbolList[1]]["value"])])
-#                         print(expression.customConcept.conceptName, symbolList[0], cfvDict[symbolList[0]]["value"], symbolList[1], cfvDict[symbolList[1]]["value"])
+                        print(expression.customConcept.conceptName, expr, symbolList[0], cfvDict[symbolList[0]]["value"], symbolList[1], cfvDict[symbolList[1]]["value"])
                     elif(len(symbolList) == 3):
                         value = expr.subs([(symbolList[0], cfvDict[symbolList[0]]["value"]), (symbolList[1], cfvDict[symbolList[1]]["value"]), (symbolList[2], cfvDict[symbolList[2]]["value"])])
                     origin = 'CALCULATED_BY_RULE'
@@ -104,13 +104,13 @@ class ExpressionEngine(object):
         return returnList
     
 
-# if __name__ == '__main__':
-#     Initializer()
-#     session = DBConnector(isNullPool=True).getNewSession()
-# #     fileData = FileDataDao.getFileData('edgar/data/320193/0000320193-21-000010.txt', session)
-#     ee = ExpressionEngine()
-#     rList = ee.solveCurrentExpression(CIK = '320193', ticker='AAPL', session=session)
-#     for cfVO in rList:
-#         print(cfVO.customConcept.conceptName, cfVO.value)
-# #     priceValue = PricingInterfaceTradier().getMarketPriceByAssetName('AAPL')
-# #     print(priceValue)
+if __name__ == '__main__':
+    Initializer()
+    session = DBConnector(isNullPool=True).getNewSession()
+#     fileData = FileDataDao.getFileData('edgar/data/320193/0000320193-21-000010.txt', session)
+    ee = ExpressionEngine()
+    rList = ee.solveCurrentExpression(CIK = '858877', ticker='CSCO', session=session)
+    for cfVO in rList:
+        print(cfVO.customConcept.conceptName, cfVO.value)
+#     priceValue = PricingInterfaceTradier().getMarketPriceByAssetName('AAPL')
+#     print(priceValue)

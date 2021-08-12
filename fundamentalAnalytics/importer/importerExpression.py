@@ -3,10 +3,8 @@ Created on Jul 10, 2019
 
 @author: afunes
 '''
-from sympy.parsing.sympy_parser import parse_expr
 
 from dao.customFactDao import CustomFactDao
-from dao.expressionDao import ExpressionDao
 from engine.customFactEngine import CustomFactEngine
 from engine.expressionEngine import ExpressionEngine
 from importer.abstractImporter import AbstractImporter
